@@ -1,0 +1,65 @@
+{
+    "identifier": "austenblokker.TabsSidebar",
+    "name": "Tabs Sidebar",
+    "organization": "Austen Blokker",
+    "description": "Manage open files from the sidebar.",
+    "version": "1.0",
+    "categories": ["sidebars"],
+
+    "main": "main.js",
+
+    "activationEvents": [
+        "onWorkspaceContains:*"
+    ],
+
+    "entitlements": {
+
+    },
+
+    "sidebars": [
+        {
+            "id": "tabs-sidebar",
+            "name": "Tabs Sidebar",
+            "smallImage": "tabs-sidebar-small",
+            "smallSelectedImage": "tabs-sidebar-small-selected",
+            "largeImage": "tabs-sidebar-large",
+            "largeSelectedImage": "tabs-sidebar-large-selected",
+            "sections": [
+                {
+                    "id": "tabs-sidebar",
+                    "name": "Open Files",
+                    "allowMultiple": true,
+                    "placeholderText": "No profiles have been created.",
+                    "placeholderImage": "tabs-sidebar-placeholder",
+                    "headerCommands": [
+                        {
+                            "title": "Add",
+                            "image": "__builtin.add",
+                            "tooltip": "Add a new profile",
+                            "command": "tabs-sidebar.add"
+                        },
+                        {
+                            "title": "Remove",
+                            "image": "__builtin.remove",
+                            "tooltip": "Remove the selected profiles",
+                            "command": "tabs-sidebar.remove",
+                            "when": "viewItem != null"
+                        }
+                    ],
+                    "contextCommands": [
+                        {
+                            "title": "Remove",
+                            "command": "tabs-sidebar.remove",
+                            "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Show in Finder",
+                            "command": "tabs-sidebar.showInFinder",
+                            "when": "viewItem != null"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
