@@ -6,8 +6,25 @@ exports.activate = function() {
     // Do work when the extension is activated
 
     // Create the TreeView
+    const tabDataProvider = new TabDataProvider(nova.workspace.textDocuments);
     treeView = new TreeView("tabs-sidebar", {
-        dataProvider: new TabDataProvider()
+        dataProvider: tabDataProvider
+    });
+
+    nova.workspace.onDidAddTextEditor((editor) => {
+        console.log('Document opened');
+
+        tabDataProvider.loadData(nova.workspace.textDocuments);
+        treeView.reload();
+
+        editor.onDidDestroy(destroyedEditor => {
+            console.log('Document closed');
+
+            setTimeout(() => {
+                tabDataProvider.loadData(nova.workspace.textDocuments);
+                treeView.reload();
+            }, 1);
+        });
     });
 
     treeView.onDidChangeSelection((selection) => {
@@ -71,11 +88,14 @@ class TabItem {
 
 
 class TabDataProvider {
-    constructor() {
-        let rootItems = [];
-        let tabs = nova.workspace.textDocuments;
+    constructor(documentTabs) {
+        this.loadData(documentTabs);
+    }
 
-        tabs.forEach((tab) => {
+    loadData(documentTabs) {
+        let rootItems = [];
+
+        documentTabs.forEach((tab) => {
             const tabName = nova.path.basename(tab.path);
             const tabDir = nova.path.split(nova.path.dirname(tab.path));
             const tabDescription = tabDir[tabDir.length - 1];
