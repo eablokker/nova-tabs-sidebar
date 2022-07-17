@@ -16,14 +16,11 @@ exports.activate = function() {
         //console.log('Document opened');
 
         tabDataProvider.loadData(nova.workspace.textDocuments);
-        treeView.reload();
-
-        // Focus tab in sidebar
-        setTimeout(() => {
-            // nova.workspace.activeTextEditor
+        treeView.reload().then(() => {
+            // Focus tab in sidebar
             focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
             treeView.reveal(focusedTab);
-        }, 100);
+        });
 
         // Remove tab from sidebar when editor closed
         editor.onDidDestroy(destroyedEditor => {
@@ -242,11 +239,9 @@ class TabDataProvider {
 
         this.sortRootItems();
         focusedTab = tabDataProvider.getElementByUri(tab.uri);
-        treeView.reload();
-
-        setTimeout(() => {
+        treeView.reload().then(() => {
             treeView.reveal(focusedTab);
-        }, 10);
+        });
     }
 
     setSortAlpha(sortAlpha) {
