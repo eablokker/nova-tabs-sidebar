@@ -54,10 +54,13 @@ nova.commands.register("tabs-sidebar.doubleClick", () => {
 
 
 class TabItem {
-    constructor(name) {
+    constructor(name, path = '', description = '') {
         this.name = name;
+        this.path = path;
+        this.descriptiveText = description;
         this.children = [];
         this.parent = null;
+        this.collapsibleState = TreeItemCollapsibleState.None;
     }
 
     addChild(element) {
@@ -70,16 +73,13 @@ class TabItem {
 class TabDataProvider {
     constructor() {
         let rootItems = [];
+        let tabs = nova.workspace.textDocuments;
 
-        let fruits = ["Apple", "Banana", "Cherry", "Date", "Fig", "Grapefruit", "Kiwi", "Lemon", "Mango", "Nectarine", "Orange", "Pear", "Raspberry", "Strawberry", "Tangerine", "Watermellon"];
-
-        fruits.forEach((f) => {
-            let element = new TabItem(f);
-
-            for (let i = 0; i < 3; i++) {
-                element.addChild(new TabItem("Test " + (i + 1)));
-            }
-
+        tabs.forEach((tab) => {
+            const tabName = nova.path.basename(tab.path);
+            const tabDir = nova.path.split(nova.path.dirname(tab.path));
+            const tabDescription = tabDir[tabDir.length - 1];
+            let element = new TabItem(tabName, tab.path, tabDescription);
             rootItems.push(element);
         });
 
@@ -105,14 +105,18 @@ class TabDataProvider {
         // Converts an element into its display (TreeItem) representation
         let item = new TreeItem(element.name);
         if (element.children.length > 0) {
+            item.descriptiveText = element.descriptiveText;
             item.collapsibleState = TreeItemCollapsibleState.Collapsed;
-            item.image = "__filetype.png";
-            item.contextValue = "fruit";
+            item.path = element.path;
+            item.contextValue = "tab";
+            item.identifier = element.path;
         }
         else {
-            item.image = "__filetype.txt";
+            item.descriptiveText = element.descriptiveText;
+            item.path = element.path;
             item.command = "tabs-sidebar.doubleClick";
             item.contextValue = "info";
+            item.identifier = element.path;
         }
         return item;
     }

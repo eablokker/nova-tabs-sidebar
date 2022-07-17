@@ -28,7 +28,7 @@
                 {
                     "id": "tabs-sidebar",
                     "name": "Open Files",
-                    "allowMultiple": true,
+                    "allowMultiple": false,
                     "placeholderText": "No profiles have been created.",
                     "placeholderImage": "tabs-sidebar-placeholder",
                     "headerCommands": [
