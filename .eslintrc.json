@@ -1,0 +1,39 @@
+{
+	"root": true,
+	"env": {
+			"node": true,
+			"es2021": true
+	 },
+	"extends": "eslint:recommended",
+	"rules": {
+			"indent": [
+				"warn",
+				4
+			],
+			"linebreak-style": [
+				"error",
+				"unix"
+			],
+			"quotes": [
+				"error",
+				"double"
+			],
+			"semi": [
+				"error",
+				"always"
+			],
+			"no-undef": [
+				"warn"
+			]
+	},
+	"globals": {
+			"nova": true,
+			"IssueCollection": true,
+			"Range": true,
+			"Process": true,
+			"IssueParser": true,
+			"TreeView": true,
+			"TreeItem": true,
+			"TreeItemCollapsibleState": true
+	}
+}
