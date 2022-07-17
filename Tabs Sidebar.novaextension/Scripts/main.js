@@ -280,12 +280,14 @@ class TabDataProvider {
             item.descriptiveText = element.descriptiveText;
             item.collapsibleState = TreeItemCollapsibleState.Collapsed;
             item.path = element.path;
+            item.tooltip = "tooltip";
             item.contextValue = "tab";
             item.identifier = element.path;
         }
         else {
             item.descriptiveText = element.descriptiveText;
             item.path = element.path;
+            item.tooltip = element.path;
             item.command = "tabs-sidebar.doubleClick";
             item.contextValue = "info";
             item.identifier = element.path;
