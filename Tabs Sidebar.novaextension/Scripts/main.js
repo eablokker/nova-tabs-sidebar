@@ -13,7 +13,7 @@ exports.activate = function() {
     });
 
     nova.workspace.onDidAddTextEditor((editor) => {
-        console.log('Document opened');
+        //console.log('Document opened');
 
         tabDataProvider.loadData(nova.workspace.textDocuments);
         treeView.reload();
@@ -27,7 +27,7 @@ exports.activate = function() {
 
         // Remove tab from sidebar when editor closed
         editor.onDidDestroy(destroyedEditor => {
-            console.log('Document closed');
+            //console.log('Document closed');
 
             setTimeout(() => {
                 tabDataProvider.loadData(nova.workspace.textDocuments);
@@ -37,15 +37,15 @@ exports.activate = function() {
 
         // Focus tab in sidebar when editing document
         editor.onDidChange(changedEditor => {
-            console.log('Document changed');
+            //console.log('Document changed');
 
             focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
             treeView.reveal(focusedTab);
-        })
+        });
 
         // Focus tab in sidebar when saving document
         editor.onDidSave(savedEditor => {
-            console.log('Document saved');
+            //console.log('Document saved');
 
             focusedTab = tabDataProvider.getElementByUri(savedEditor.document.uri);
             treeView.reveal(focusedTab);
@@ -54,7 +54,7 @@ exports.activate = function() {
 
     treeView.onDidChangeSelection((selection) => {
         // console.log("New selection: " + selection.map((e) => e.name));
-        nova.workspace.openFile(selection.map((e) => e.uri));
+        //nova.workspace.openFile(selection.map((e) => e.uri));
     });
 
     treeView.onDidExpandElement((element) => {
@@ -71,11 +71,11 @@ exports.activate = function() {
 
     // TreeView implements the Disposable interface
     nova.subscriptions.add(treeView);
-}
+};
 
 exports.deactivate = function() {
     // Clean up state before the extension is deactivated
-}
+};
 
 nova.commands.register("tabs-sidebar.doubleClick", () => {
     // Invoked when an item is double-clicked
@@ -102,30 +102,30 @@ nova.commands.register("tabs-sidebar.down", () => {
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
-    console.log('cleanUpByAlpha');
+    console.log("cleanUpByAlpha");
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
-    console.log('cleanUpByKind');
+    console.log("cleanUpByKind");
 });
 
 nova.commands.register("tabs-sidebar.sortByAlpha", () => {
-    console.log('Sort alphabetically');
+    console.log("Sort alphabetically");
 
-    const sortAlpha = !nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', "boolean");
+    const sortAlpha = !nova.workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
 
-    nova.workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', sortAlpha);
+    nova.workspace.config.set("eablokker.tabsSidebar.config.sortAlpha", sortAlpha);
 
     tabDataProvider.setSortAlpha(sortAlpha);
     treeView.reload();
 });
 
 nova.commands.register("tabs-sidebar.groupByKind", () => {
-    console.log('groupByKind');
+    console.log("groupByKind");
 
-    const groupByKind = !nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', "boolean");
+    const groupByKind = !nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
 
-    nova.workspace.config.set('eablokker.tabsSidebar.config.groupByKind', groupByKind);
+    nova.workspace.config.set("eablokker.tabsSidebar.config.groupByKind", groupByKind);
 });
 
 class TabItem {
@@ -133,7 +133,7 @@ class TabItem {
         this.name = tab.name;
         this.path = tab.path;
         this.uri = tab.uri;
-        this.descriptiveText = tab.description || '';
+        this.descriptiveText = tab.description || "";
         this.isRemote = tab.isRemote || false;
         this.isDirty = tab.isDirty || false;
         this.isUntitled = tab.isUntitled || false;
@@ -153,7 +153,7 @@ class TabDataProvider {
     constructor(documentTabs) {
         this.customOrderedItems = [];
 
-        this.sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', "boolean");
+        this.sortAlpha = nova.workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
 
         this.loadData(documentTabs);
     }
@@ -162,8 +162,6 @@ class TabDataProvider {
         let rootItems = [];
 
         documentTabs.forEach((tab) => {
-            const tabName = nova.path.basename(tab.path || 'untitled');
-            const tabDir = nova.path.split(nova.path.dirname(tab.path || ''));
             const tabDescription = tabDir[tabDir.length - 1];
             let element = new TabItem({
                 name: tabName,
@@ -182,7 +180,7 @@ class TabDataProvider {
     }
 
     setSortAlpha(sortAlpha) {
-        console.log('Setting sort alpha', sortAlpha);
+        console.log("Setting sort alpha", sortAlpha);
         this.sortAlpha = sortAlpha;
 
         this.sortRootItems();
@@ -190,7 +188,7 @@ class TabDataProvider {
 
     sortRootItems() {
         if (this.sortAlpha) {
-            console.log('Sorting by alpha');
+            console.log("Sorting by alpha");
 
             this.rootItems.sort((a, b) => {
                 return a.name.localeCompare(b.name);
