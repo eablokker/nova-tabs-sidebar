@@ -17,6 +17,7 @@ exports.activate = function() {
         tabDataProvider.loadData(nova.workspace.textDocuments);
         treeView.reload();
 
+        // Remove tab from sidebar when editor closed
         editor.onDidDestroy(destroyedEditor => {
             console.log('Document closed');
 
@@ -25,6 +26,14 @@ exports.activate = function() {
                 treeView.reload();
             }, 1);
         });
+
+        // Focus tab in sidebar when editing document
+        editor.onDidChange(changedEditor => {
+            console.log('Document changed');
+
+            const element = tabDataProvider.getElementByUri(changedEditor.document.uri);
+            treeView.reveal(element);
+        })
     });
 
     treeView.onDidChangeSelection((selection) => {
@@ -124,6 +133,12 @@ class TabDataProvider {
         });
 
         this.rootItems = rootItems;
+    }
+
+    getElementByUri(uri) {
+        return this.rootItems.find((item) => {
+            return item.uri === uri;
+        });
     }
 
     getChildren(element) {
