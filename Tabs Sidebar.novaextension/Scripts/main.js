@@ -162,6 +162,7 @@ class TabItem {
 class TabDataProvider {
     constructor(documentTabs) {
         this.customOrderedItems = [];
+        this.customOrder = [];
 
         this.sortAlpha = nova.workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
         this.groupByKind = nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
@@ -173,12 +174,16 @@ class TabDataProvider {
         let rootItems = [];
 
         documentTabs.forEach((tab) => {
-            const tabName = this.basename(tab.path);
+            if (tab.isUntitled) {
+                return;
+            }
+
+            const tabName = this.basename(tab.path || "untitled");
             let tabDescription = "";
 
             const isUnique = this.isUniqueName(tab, documentTabs);
             if (!isUnique) {
-                const tabDir = nova.path.split(nova.path.dirname(tab.path || ""));
+                const tabDir = nova.path.split(nova.path.dirname(tab.uri || ""));
                 tabDescription = "‹ " + tabDir[tabDir.length - 1];
             }
 
@@ -279,18 +284,18 @@ class TabDataProvider {
         if (element.children.length > 0) {
             item.descriptiveText = element.descriptiveText;
             item.collapsibleState = TreeItemCollapsibleState.Collapsed;
-            item.path = element.path;
+            item.path = element.uri;
             item.tooltip = "tooltip";
             item.contextValue = "tab";
-            item.identifier = element.path;
+            item.identifier = element.uri;
         }
         else {
             item.descriptiveText = element.descriptiveText;
-            item.path = element.path;
+            item.path = element.uri;
             item.tooltip = element.path;
             item.command = "tabs-sidebar.doubleClick";
             item.contextValue = "info";
-            item.identifier = element.path;
+            item.identifier = element.uri;
         }
         return item;
     }
