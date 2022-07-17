@@ -169,13 +169,32 @@ class TabDataProvider {
         this.loadData(documentTabs);
     }
 
+    basename(path) {
+        return nova.path.basename(path || "untitled");
+    }
+
+    isUniqueName(tab, documentTabs) {
+        return documentTabs
+            .filter(obj => obj.uri !== tab.uri)
+            .every(obj => {
+                const basename = this.basename(obj.uri).toLowerCase();
+                return basename !== this.basename(tab.uri).toLowerCase();
+            });
+    }
+
     loadData(documentTabs) {
         let rootItems = [];
 
         documentTabs.forEach((tab) => {
-            const tabName = nova.path.basename(tab.path || "untitled");
-            const tabDir = nova.path.split(nova.path.dirname(tab.path || ""));
-            const tabDescription = tabDir[tabDir.length - 1];
+            const tabName = this.basename(tab.path);
+            let tabDescription = "";
+
+            const isUnique = this.isUniqueName(tab, documentTabs);
+            if (!isUnique) {
+                const tabDir = nova.path.split(nova.path.dirname(tab.path || ""));
+                tabDescription = "‹ " + tabDir[tabDir.length - 1];
+            }
+
             let element = new TabItem({
                 name: tabName,
                 path: tab.path,
