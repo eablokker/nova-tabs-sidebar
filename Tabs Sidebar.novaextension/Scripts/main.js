@@ -81,6 +81,8 @@ nova.commands.register("tabs-sidebar.doubleClick", () => {
     // Invoked when an item is double-clicked
     let selection = treeView.selection;
     console.log("DoubleClick: " + selection.map((e) => e.name));
+
+    nova.workspace.openFile(selection.map((e) => e.uri));
 });
 
 nova.commands.register("tabs-sidebar.up", () => {
@@ -162,6 +164,8 @@ class TabDataProvider {
         let rootItems = [];
 
         documentTabs.forEach((tab) => {
+            const tabName = nova.path.basename(tab.path || "untitled");
+            const tabDir = nova.path.split(nova.path.dirname(tab.path || ""));
             const tabDescription = tabDir[tabDir.length - 1];
             let element = new TabItem({
                 name: tabName,
@@ -177,6 +181,8 @@ class TabDataProvider {
 
         this.customOrderedItems = rootItems;
         this.rootItems = rootItems;
+
+        this.sortRootItems();
     }
 
     setSortAlpha(sortAlpha) {
@@ -194,7 +200,8 @@ class TabDataProvider {
                 return a.name.localeCompare(b.name);
             });
         } else {
-            this.rootItems = this.customOrderedItems;
+            console.log("Sorting by custom");
+            this.rootItems = this.customOrderedItems.slice();
         }
     }
 
