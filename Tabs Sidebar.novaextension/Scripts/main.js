@@ -43,6 +43,7 @@ exports.activate = function() {
             treeView.reveal(focusedTab);
         })
 
+        // Focus tab in sidebar when saving document
         editor.onDidSave(savedEditor => {
             console.log('Document saved');
 
