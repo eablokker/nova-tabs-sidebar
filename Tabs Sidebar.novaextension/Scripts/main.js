@@ -91,21 +91,25 @@ nova.commands.register("tabs-sidebar.doubleClick", () => {
 });
 
 nova.commands.register("tabs-sidebar.up", () => {
-    // Invoked when the "add" header button is clicked
+    // Invoked when the "Move Up" header button is clicked
     let selection = treeView.selection;
 
     console.log(JSON.stringify(selection[0]));
 
     console.log("Move Up: " + selection.map((e) => e.name));
+
+    tabDataProvider.moveTab(selection[0], -1);
 });
 
 nova.commands.register("tabs-sidebar.down", () => {
-    // Invoked when the "remove" header button is clicked
+    // Invoked when the "Move Down" header button is clicked
     let selection = treeView.selection;
 
     console.log(JSON.stringify(selection[0]));
 
     console.log("Move Down: " + selection.map((e) => e.name));
+
+    tabDataProvider.moveTab(selection[0], 1);
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
@@ -172,10 +176,16 @@ class TabDataProvider {
 
     loadData(documentTabs) {
         let rootItems = [];
+        const customOrderIsNotSet = !this.customOrder.length;
 
         documentTabs.forEach((tab) => {
+            // Hide untitled tabs
             if (tab.isUntitled) {
                 return;
+            }
+
+            if (customOrderIsNotSet) {
+                this.customOrder.push(tab.path);
             }
 
             const tabName = this.basename(tab.path || "untitled");
@@ -194,7 +204,8 @@ class TabDataProvider {
                 description: tabDescription,
                 isRemote: tab.isRemote,
                 isDirty: tab.isDirty,
-                isUntitled: tab.isUntitled
+                isUntitled: tab.isUntitled,
+                contextValue: "tabItem"
             });
             rootItems.push(element);
         });
@@ -218,21 +229,63 @@ class TabDataProvider {
             });
     }
 
+    moveTab(tab, distance) {
+        const fromIndex = this.customOrder.indexOf(tab.path);
+        const toIndex = fromIndex + distance;
+
+        if (toIndex < 0 || toIndex > this.customOrder.length) {
+            return;
+        }
+
+        const item = this.customOrder.splice(fromIndex, 1)[0];
+        this.customOrder.splice(toIndex, 0, item);
+
+        this.sortRootItems();
+        focusedTab = tabDataProvider.getElementByUri(tab.uri);
+        treeView.reload();
+
+        setTimeout(() => {
+            treeView.reveal(focusedTab);
+        }, 10);
+    }
+
     setSortAlpha(sortAlpha) {
-        console.log("Setting sort alpha", sortAlpha);
+        //console.log("Setting sort alpha", sortAlpha);
         this.sortAlpha = sortAlpha;
 
         this.sortRootItems();
     }
 
     setGroupByKind(groupByKind) {
-        console.log("Setting sort by kind", groupByKind);
+        //console.log("Setting sort by kind", groupByKind);
         this.groupByKind = groupByKind;
 
         this.sortRootItems();
     }
 
     sortRootItems() {
+        const length = this.customOrderedItems.length;
+
+        this.customOrderedItems.sort((a, b) => {
+            if (this.customOrder.indexOf(a.path) < 0) {
+                return 1;
+            }
+
+            return this.customOrder.indexOf(a.path) - this.customOrder.indexOf(b.path);
+        });
+
+        this.customOrderedItems.forEach((tab, i) => {
+            if (i === 0) {
+                tab.contextValue = "first";
+            } else if (i === length - 1) {
+                tab.contextValue = "last";
+            } else {
+                tab.contextValue = "tab";
+            }
+        });
+
+        //console.log("this.customOrder", this.customOrder);
+
         if (this.sortAlpha) {
             console.log("Sorting by alpha");
 
@@ -294,7 +347,7 @@ class TabDataProvider {
             item.path = element.uri;
             item.tooltip = element.path;
             item.command = "tabs-sidebar.doubleClick";
-            item.contextValue = "info";
+            item.contextValue = element.contextValue;
             item.identifier = element.uri;
         }
         return item;

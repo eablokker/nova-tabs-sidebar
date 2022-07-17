@@ -37,14 +37,14 @@
                             "image": "__builtin.previous",
                             "tooltip": "Move Tab Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first'"
                         },
                         {
                             "title": "Move Down",
                             "image": "__builtin.next",
                             "tooltip": "Move Tab Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
                         },
                         {
                             "title": "Clean Up Alphabetically",
@@ -84,12 +84,12 @@
                         {
                             "title": "Move Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first"
                         },
                         {
                             "title": "Move Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last"
                         },
                         {"separator": true},
                         {
