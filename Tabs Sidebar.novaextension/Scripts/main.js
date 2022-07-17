@@ -52,15 +52,22 @@ exports.deactivate = function() {
 }
 
 
-nova.commands.register("tabs-sidebar.add", () => {
+nova.commands.register("tabs-sidebar.up", () => {
     // Invoked when the "add" header button is clicked
-    console.log("Add");
+    let selection = treeView.selection;
+
+    console.log(JSON.stringify(selection[0]));
+
+    console.log("Move Up: " + selection.map((e) => e.name));
 });
 
-nova.commands.register("tabs-sidebar.remove", () => {
+nova.commands.register("tabs-sidebar.down", () => {
     // Invoked when the "remove" header button is clicked
     let selection = treeView.selection;
-    console.log("Remove: " + selection.map((e) => e.name));
+
+    console.log(JSON.stringify(selection[0]));
+
+    console.log("Move Down: " + selection.map((e) => e.name));
 });
 
 nova.commands.register("tabs-sidebar.doubleClick", () => {
@@ -71,10 +78,14 @@ nova.commands.register("tabs-sidebar.doubleClick", () => {
 
 
 class TabItem {
-    constructor(name, path = '', description = '') {
-        this.name = name;
-        this.path = path;
-        this.descriptiveText = description;
+    constructor(tab) {
+        this.name = tab.name;
+        this.path = tab.path;
+        this.uri = tab.uri;
+        this.descriptiveText = tab.description || '';
+        this.isRemote = tab.isRemote || false;
+        this.isDirty = tab.isDirty || false;
+        this.isUntitled = tab.isUntitled || false;
         this.children = [];
         this.parent = null;
         this.collapsibleState = TreeItemCollapsibleState.None;
@@ -96,10 +107,18 @@ class TabDataProvider {
         let rootItems = [];
 
         documentTabs.forEach((tab) => {
-            const tabName = nova.path.basename(tab.path);
-            const tabDir = nova.path.split(nova.path.dirname(tab.path));
+            const tabName = nova.path.basename(tab.path || 'untitled');
+            const tabDir = nova.path.split(nova.path.dirname(tab.path || ''));
             const tabDescription = tabDir[tabDir.length - 1];
-            let element = new TabItem(tabName, tab.path, tabDescription);
+            let element = new TabItem({
+                name: tabName,
+                path: tab.path,
+                uri: tab.uri,
+                description: tabDescription,
+                isRemote: tab.isRemote,
+                isDirty: tab.isDirty,
+                isUntitled: tab.isUntitled
+            });
             rootItems.push(element);
         });
 

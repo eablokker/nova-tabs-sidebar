@@ -33,29 +33,56 @@
                     "placeholderImage": "tabs-sidebar-placeholder",
                     "headerCommands": [
                         {
-                            "title": "Add",
-                            "image": "__builtin.add",
-                            "tooltip": "Add a new profile",
-                            "command": "tabs-sidebar.add"
+                            "title": "Move Up",
+                            "image": "__builtin.previous",
+                            "tooltip": "Move Tab Up",
+                            "command": "tabs-sidebar.up",
+                            "when": "viewItem != null"
                         },
                         {
-                            "title": "Remove",
-                            "image": "__builtin.remove",
-                            "tooltip": "Remove the selected profiles",
-                            "command": "tabs-sidebar.remove",
+                            "title": "Move Down",
+                            "image": "__builtin.next",
+                            "tooltip": "Move Tab Down",
+                            "command": "tabs-sidebar.down",
                             "when": "viewItem != null"
                         }
                     ],
                     "contextCommands": [
                         {
-                            "title": "Remove",
-                            "command": "tabs-sidebar.remove",
-                            "when": "viewItem != null"
-                        },
-                        {
                             "title": "Show in Finder",
                             "command": "tabs-sidebar.showInFinder",
                             "when": "viewItem != null"
+                        },
+                        {"separator": true},
+                        {
+                            "title": "Move Up",
+                            "command": "tabs-sidebar.up",
+                            "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Move Down",
+                            "command": "tabs-sidebar.down",
+                            "when": "viewItem != null"
+                        },
+                        {"separator": true},
+                        {
+                          "title": "Clean Up Alphabetically",
+                          "command": "tabs-sidebar.cleanUpByAlpha"
+                        },
+                        {
+                          "title": "Clean Up By Kind",
+                          "command": "tabs-sidebar.cleanUpByKind"
+                        },
+                        {"separator": true},
+                        {
+                          "title": "Sort Alphabetically",
+                          "command": "tabs-sidebar.sortByAlpha",
+                          "state": "eablokker.tabs-sidebar.config.sortAlpha == true"
+                        },
+                        {
+                          "title": "Group By Kind",
+                          "command": "tabs-sidebar.groupByKind",
+                          "state": "eablokker.tabs-sidebar.config.groupKind == true"
                         }
                     ]
                 }
