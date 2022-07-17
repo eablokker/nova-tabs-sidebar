@@ -12,7 +12,7 @@ exports.activate = function() {
         dataProvider: tabDataProvider
     });
 
-    nova.workspace.onDidAddTextEditor((editor) => {
+    nova.workspace.onDidAddTextEditor(editor => {
         //console.log('Document opened');
 
         tabDataProvider.loadData(nova.workspace.textDocuments);
@@ -40,12 +40,27 @@ exports.activate = function() {
             treeView.reveal(focusedTab);
         });
 
+        editor.onDidStopChanging(changedEditor => {
+            //console.log('Document stopped changing');
+
+            focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
+            tabDataProvider.setDirty(changedEditor);
+
+            treeView.reload(focusedTab).then(() => {
+                treeView.reveal(focusedTab);
+            });
+        });
+
         // Focus tab in sidebar when saving document
         editor.onDidSave(savedEditor => {
             //console.log('Document saved');
 
             focusedTab = tabDataProvider.getElementByUri(savedEditor.document.uri);
-            treeView.reveal(focusedTab);
+            tabDataProvider.setDirty(savedEditor);
+
+            treeView.reload(focusedTab).then(() => {
+                treeView.reveal(focusedTab);
+            });
         });
     });
 
@@ -199,7 +214,7 @@ class TabDataProvider {
             const isUnique = this.isUniqueName(tab, documentTabs);
             if (!isUnique) {
                 const tabDir = nova.path.split(nova.path.dirname(tab.uri || ""));
-                tabDescription = "‹ " + tabDir[tabDir.length - 1];
+                tabDescription = "‹ " + decodeURI(tabDir[tabDir.length - 1]);
             }
 
             let element = new TabItem({
@@ -219,6 +234,14 @@ class TabDataProvider {
         this.rootItems = rootItems;
 
         this.sortRootItems();
+    }
+
+    setDirty(editor) {
+        this.rootItems.forEach(item => {
+            if (item.path === editor.document.path) {
+                item.isDirty = editor.document.isDirty;
+            }
+        });
     }
 
     basename(uri) {
@@ -336,7 +359,7 @@ class TabDataProvider {
 
     getTreeItem(element) {
         // Converts an element into its display (TreeItem) representation
-        let item = new TreeItem(element.name);
+        let item = new TreeItem((element.isDirty ? "● " : "") + element.name);
         if (element.children.length > 0) {
             item.descriptiveText = element.descriptiveText;
             item.collapsibleState = TreeItemCollapsibleState.Collapsed;
