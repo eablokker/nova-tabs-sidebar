@@ -50,13 +50,15 @@
                             "title": "Clean Up Alphabetically",
                             "image": "__builtin.path",
                             "tooltip": "Clean Up Alphabetically",
-                            "command": "tabs-sidebar.cleanUpByAlpha"
+                            "command": "tabs-sidebar.cleanUpByAlpha",
+                            "when": "eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {
                             "title": "Clean Up By Kind",
                             "image": "__builtin.branch",
                             "tooltip": "Clean Up By Kind",
-                            "command": "tabs-sidebar.cleanUpByKind"
+                            "command": "tabs-sidebar.cleanUpByKind",
+                            "when": "eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {"separator": true},
                         {
@@ -94,11 +96,13 @@
                         {"separator": true},
                         {
                             "title": "Clean Up Alphabetically",
-                            "command": "tabs-sidebar.cleanUpByAlpha"
+                            "command": "tabs-sidebar.cleanUpByAlpha",
+                            "when": "eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {
                             "title": "Clean Up By Kind",
-                            "command": "tabs-sidebar.cleanUpByKind"
+                            "command": "tabs-sidebar.cleanUpByKind",
+                            "when": "eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {"separator": true},
                         {
