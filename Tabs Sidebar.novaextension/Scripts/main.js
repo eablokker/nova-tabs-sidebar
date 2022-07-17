@@ -1,13 +1,13 @@
 
 var treeView = null;
+var tabDataProvider = null;
 var focusedTab = null;
-
 
 exports.activate = function() {
     // Do work when the extension is activated
 
     // Create the TreeView
-    const tabDataProvider = new TabDataProvider(nova.workspace.textDocuments);
+    tabDataProvider = new TabDataProvider(nova.workspace.textDocuments);
     treeView = new TreeView("tabs-sidebar", {
         dataProvider: tabDataProvider
     });
@@ -77,6 +77,11 @@ exports.deactivate = function() {
     // Clean up state before the extension is deactivated
 }
 
+nova.commands.register("tabs-sidebar.doubleClick", () => {
+    // Invoked when an item is double-clicked
+    let selection = treeView.selection;
+    console.log("DoubleClick: " + selection.map((e) => e.name));
+});
 
 nova.commands.register("tabs-sidebar.up", () => {
     // Invoked when the "add" header button is clicked
@@ -96,12 +101,32 @@ nova.commands.register("tabs-sidebar.down", () => {
     console.log("Move Down: " + selection.map((e) => e.name));
 });
 
-nova.commands.register("tabs-sidebar.doubleClick", () => {
-    // Invoked when an item is double-clicked
-    let selection = treeView.selection;
-    console.log("DoubleClick: " + selection.map((e) => e.name));
+nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
+    console.log('cleanUpByAlpha');
 });
 
+nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
+    console.log('cleanUpByKind');
+});
+
+nova.commands.register("tabs-sidebar.sortByAlpha", () => {
+    console.log('Sort alphabetically');
+
+    const sortAlpha = !nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', "boolean");
+
+    nova.workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', sortAlpha);
+
+    tabDataProvider.setSortAlpha(sortAlpha);
+    treeView.reload();
+});
+
+nova.commands.register("tabs-sidebar.groupByKind", () => {
+    console.log('groupByKind');
+
+    const groupByKind = !nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', "boolean");
+
+    nova.workspace.config.set('eablokker.tabsSidebar.config.groupByKind', groupByKind);
+});
 
 class TabItem {
     constructor(tab) {
@@ -126,6 +151,10 @@ class TabItem {
 
 class TabDataProvider {
     constructor(documentTabs) {
+        this.customOrderedItems = [];
+
+        this.sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', "boolean");
+
         this.loadData(documentTabs);
     }
 
@@ -148,7 +177,27 @@ class TabDataProvider {
             rootItems.push(element);
         });
 
+        this.customOrderedItems = rootItems;
         this.rootItems = rootItems;
+    }
+
+    setSortAlpha(sortAlpha) {
+        console.log('Setting sort alpha', sortAlpha);
+        this.sortAlpha = sortAlpha;
+
+        this.sortRootItems();
+    }
+
+    sortRootItems() {
+        if (this.sortAlpha) {
+            console.log('Sorting by alpha');
+
+            this.rootItems.sort((a, b) => {
+                return a.name.localeCompare(b.name);
+            });
+        } else {
+            this.rootItems = this.customOrderedItems;
+        }
     }
 
     getElementByUri(uri) {

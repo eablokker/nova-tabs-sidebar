@@ -29,7 +29,7 @@
                     "id": "tabs-sidebar",
                     "name": "Open Files",
                     "allowMultiple": false,
-                    "placeholderText": "No profiles have been created.",
+                    "placeholderText": "No tabs are open.",
                     "placeholderImage": "tabs-sidebar-placeholder",
                     "headerCommands": [
                         {
@@ -45,6 +45,20 @@
                             "tooltip": "Move Tab Down",
                             "command": "tabs-sidebar.down",
                             "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Sort Alphabetically",
+                            "image": "__builtin.path",
+                            "tooltip": "Sort Alphabetically",
+                            "command": "tabs-sidebar.sortByAlpha",
+                            "state": "eablokker.tabsSidebar.config.sortAlpha == true"
+                        },
+                        {
+                            "title": "Group By Kind",
+                            "image": "__builtin.branch",
+                            "tooltip": "Group By Kind",
+                            "command": "tabs-sidebar.groupByKind",
+                            "state": "eablokker.tabsSidebar.config.groupByKind"
                         }
                     ],
                     "contextCommands": [
@@ -66,27 +80,29 @@
                         },
                         {"separator": true},
                         {
-                          "title": "Clean Up Alphabetically",
-                          "command": "tabs-sidebar.cleanUpByAlpha"
+                            "title": "Clean Up Alphabetically",
+                            "command": "tabs-sidebar.cleanUpByAlpha"
                         },
                         {
-                          "title": "Clean Up By Kind",
-                          "command": "tabs-sidebar.cleanUpByKind"
+                            "title": "Clean Up By Kind",
+                            "command": "tabs-sidebar.cleanUpByKind"
                         },
                         {"separator": true},
                         {
-                          "title": "Sort Alphabetically",
-                          "command": "tabs-sidebar.sortByAlpha",
-                          "state": "eablokker.tabs-sidebar.config.sortAlpha == true"
+                            "title": "Sort Alphabetically",
+                            "command": "tabs-sidebar.sortByAlpha",
+                            "state": "eablokker.tabsSidebar.config.sortAlpha == true"
                         },
                         {
-                          "title": "Group By Kind",
-                          "command": "tabs-sidebar.groupByKind",
-                          "state": "eablokker.tabs-sidebar.config.groupKind == true"
+                            "title": "Group By Kind",
+                            "command": "tabs-sidebar.groupByKind",
+                            "state": "eablokker.tabsSidebar.config.groupByKind"
                         }
                     ]
                 }
             ]
         }
-    ]
+    ],
+
+    "config": []
 }
