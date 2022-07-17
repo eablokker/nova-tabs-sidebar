@@ -63,8 +63,8 @@
                     ],
                     "contextCommands": [
                         {
-                            "title": "Show in Finder",
-                            "command": "tabs-sidebar.showInFinder",
+                            "title": "Open",
+                            "command": "tabs-sidebar.open",
                             "when": "viewItem != null"
                         },
                         {"separator": true},
@@ -97,6 +97,12 @@
                             "title": "Group By Kind",
                             "command": "tabs-sidebar.groupByKind",
                             "state": "eablokker.tabsSidebar.config.groupByKind"
+                        },
+                        {"separator": true},
+                        {
+                            "title": "Show in Finder",
+                            "command": "tabs-sidebar.showInFinder",
+                            "when": "viewItem != null"
                         }
                     ]
                 }

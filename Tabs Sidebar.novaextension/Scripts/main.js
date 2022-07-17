@@ -77,6 +77,11 @@ exports.deactivate = function() {
     // Clean up state before the extension is deactivated
 };
 
+nova.commands.register("tabs-sidebar.open", () => {
+    let selection = treeView.selection;
+    nova.workspace.openFile(selection.map((e) => e.uri));
+});
+
 nova.commands.register("tabs-sidebar.doubleClick", () => {
     // Invoked when an item is double-clicked
     let selection = treeView.selection;
