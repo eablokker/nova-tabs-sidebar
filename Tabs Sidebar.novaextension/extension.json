@@ -19,7 +19,7 @@
     "sidebars": [
         {
             "id": "tabs-sidebar",
-            "name": "Tabs Sidebar",
+            "name": "Tabs",
             "smallImage": "tabs-sidebar-small",
             "smallSelectedImage": "tabs-sidebar-small-selected",
             "largeImage": "tabs-sidebar-large",
