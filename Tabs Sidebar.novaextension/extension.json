@@ -37,14 +37,14 @@
                             "image": "__builtin.previous",
                             "tooltip": "Move Tab Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {
                             "title": "Move Down",
                             "image": "__builtin.next",
                             "tooltip": "Move Tab Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {
                             "title": "Sort Alphabetically",
@@ -71,12 +71,12 @@
                         {
                             "title": "Move Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {
                             "title": "Move Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {"separator": true},
                         {
