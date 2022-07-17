@@ -128,6 +128,9 @@ nova.commands.register("tabs-sidebar.groupByKind", () => {
     const groupByKind = !nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
 
     nova.workspace.config.set("eablokker.tabsSidebar.config.groupByKind", groupByKind);
+
+    tabDataProvider.setGroupByKind(groupByKind);
+    treeView.reload();
 });
 
 class TabItem {
@@ -156,6 +159,7 @@ class TabDataProvider {
         this.customOrderedItems = [];
 
         this.sortAlpha = nova.workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
+        this.groupByKind = nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
 
         this.loadData(documentTabs);
     }
@@ -192,6 +196,13 @@ class TabDataProvider {
         this.sortRootItems();
     }
 
+    setGroupByKind(groupByKind) {
+        console.log("Setting sort by kind", groupByKind);
+        this.groupByKind = groupByKind;
+
+        this.sortRootItems();
+    }
+
     sortRootItems() {
         if (this.sortAlpha) {
             console.log("Sorting by alpha");
@@ -200,6 +211,18 @@ class TabDataProvider {
                 return a.name.localeCompare(b.name);
             });
         } else {
+            this.rootItems = this.customOrderedItems.slice();
+        }
+
+        if (this.groupByKind) {
+            console.log("Grouping by kind");
+
+            this.rootItems.sort((a, b) => {
+                return nova.path.extname(a.uri).localeCompare(nova.path.extname(b.uri));
+            });
+        }
+
+        if (!this.sortAlpha && ! this.groupByKind) {
             console.log("Sorting by custom");
             this.rootItems = this.customOrderedItems.slice();
         }
