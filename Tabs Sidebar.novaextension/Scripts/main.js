@@ -169,19 +169,6 @@ class TabDataProvider {
         this.loadData(documentTabs);
     }
 
-    basename(path) {
-        return nova.path.basename(path || "untitled");
-    }
-
-    isUniqueName(tab, documentTabs) {
-        return documentTabs
-            .filter(obj => obj.uri !== tab.uri)
-            .every(obj => {
-                const basename = this.basename(obj.uri).toLowerCase();
-                return basename !== this.basename(tab.uri).toLowerCase();
-            });
-    }
-
     loadData(documentTabs) {
         let rootItems = [];
 
@@ -211,6 +198,19 @@ class TabDataProvider {
         this.rootItems = rootItems;
 
         this.sortRootItems();
+    }
+
+    basename(uri) {
+        return nova.path.basename(uri);
+    }
+
+    isUniqueName(tab, documentTabs) {
+        return documentTabs
+            .filter(obj => obj.uri !== tab.uri)
+            .every(obj => {
+                const basename = this.basename(obj.uri).toLowerCase();
+                return basename !== this.basename(tab.uri).toLowerCase();
+            });
     }
 
     setSortAlpha(sortAlpha) {
