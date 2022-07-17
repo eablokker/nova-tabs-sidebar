@@ -139,6 +139,14 @@ nova.commands.register("tabs-sidebar.groupByKind", () => {
     treeView.reload();
 });
 
+nova.commands.register("tabs-sidebar.showInFinder", () => {
+    let selection = treeView.selection;
+
+    console.log(selection[0].path);
+
+    //nova.fs.reveal(selection[0].path);
+});
+
 class TabItem {
     constructor(tab) {
         this.name = tab.name;

@@ -13,7 +13,7 @@
     ],
 
     "entitlements": {
-
+        "filesystem": "readonly"
     },
 
     "sidebars": [
