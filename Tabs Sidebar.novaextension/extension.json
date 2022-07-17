@@ -84,12 +84,12 @@
                         {
                             "title": "Move Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first'"
                         },
                         {
                             "title": "Move Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
                         },
                         {"separator": true},
                         {
