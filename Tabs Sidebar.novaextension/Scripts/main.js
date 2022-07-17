@@ -1,5 +1,6 @@
 
 var treeView = null;
+var focusedTab = null;
 
 
 exports.activate = function() {
@@ -17,6 +18,13 @@ exports.activate = function() {
         tabDataProvider.loadData(nova.workspace.textDocuments);
         treeView.reload();
 
+        // Focus tab in sidebar
+        setTimeout(() => {
+            // nova.workspace.activeTextEditor
+            focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+            treeView.reveal(focusedTab);
+        }, 100);
+
         // Remove tab from sidebar when editor closed
         editor.onDidDestroy(destroyedEditor => {
             console.log('Document closed');
@@ -31,9 +39,16 @@ exports.activate = function() {
         editor.onDidChange(changedEditor => {
             console.log('Document changed');
 
-            const element = tabDataProvider.getElementByUri(changedEditor.document.uri);
-            treeView.reveal(element);
+            focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
+            treeView.reveal(focusedTab);
         })
+
+        editor.onDidSave(savedEditor => {
+            console.log('Document saved');
+
+            focusedTab = tabDataProvider.getElementByUri(savedEditor.document.uri);
+            treeView.reveal(focusedTab);
+        });
     });
 
     treeView.onDidChangeSelection((selection) => {
