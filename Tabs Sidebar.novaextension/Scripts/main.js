@@ -135,6 +135,11 @@ nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
 
 nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
     console.log("cleanUpByKind");
+
+    tabDataProvider.cleanUpByKind();
+    treeView.reload().then(() => {
+        treeView.reveal(focusedTab);
+    });
 });
 
 nova.commands.register("tabs-sidebar.sortByAlpha", () => {
@@ -283,6 +288,14 @@ class TabDataProvider {
     cleanUpByAlpha() {
         this.customOrder.sort((a, b) => {
             return nova.path.basename(a).localeCompare(nova.path.basename(b));
+        });
+
+        this.sortRootItems();
+    }
+
+    cleanUpByKind() {
+        this.customOrder.sort((a, b) => {
+            return nova.path.extname(a).localeCompare(nova.path.extname(b));
         });
 
         this.sortRootItems();
