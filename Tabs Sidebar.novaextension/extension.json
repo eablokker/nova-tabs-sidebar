@@ -33,15 +33,15 @@
                     "placeholderImage": "tabs-sidebar-placeholder",
                     "headerCommands": [
                         {
-                            "title": "Move Up",
-                            "image": "__builtin.previous",
+                            "title": "↑",
+                            "image": "",
                             "tooltip": "Move Tab Up",
                             "command": "tabs-sidebar.up",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first'"
                         },
                         {
-                            "title": "Move Down",
-                            "image": "__builtin.next",
+                            "title": "↓",
+                            "image": "",
                             "tooltip": "Move Tab Down",
                             "command": "tabs-sidebar.down",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
@@ -84,12 +84,12 @@
                         },
                         {"separator": true},
                         {
-                            "title": "Move Up",
+                            "title": "Move Tab Up",
                             "command": "tabs-sidebar.up",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first'"
                         },
                         {
-                            "title": "Move Down",
+                            "title": "Move Tab Down",
                             "command": "tabs-sidebar.down",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
                         },
