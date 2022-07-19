@@ -102,13 +102,16 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
 
     if (selection[0].uri === activeDocument.uri) {
         // Close currently active tab
-        tabDataProvider
-            .runProcess("/click_menu_item.sh", ["File", "Close Tab"])
-            .then(result => {
+        workspace.openFile(selection[0].uri)
+            .then(editor => {
+                tabDataProvider
+                    .runProcess("/click_menu_item.sh", ["File", "Close Tab"])
+                    .then(result => {
 
-            })
-            .catch(err => {
-                console.error(err);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                    });
             });
     } else {
         // Close non currently active tab by switching to it and back
