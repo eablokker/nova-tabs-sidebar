@@ -89,17 +89,17 @@ exports.deactivate = function() {
     // Clean up state before the extension is deactivated
 };
 
-nova.commands.register("tabs-sidebar.open", () => {
+nova.commands.register("tabs-sidebar.open", (workspace) => {
     let selection = treeView.selection;
-    nova.workspace.openFile(selection.map((e) => e.uri));
+    workspace.openFile(selection.map((e) => e.uri));
 });
 
-nova.commands.register("tabs-sidebar.doubleClick", () => {
+nova.commands.register("tabs-sidebar.doubleClick", (workspace) => {
     // Invoked when an item is double-clicked
     let selection = treeView.selection;
     console.log("DoubleClick: " + selection.map((e) => e.name));
 
-    nova.workspace.openFile(selection.map((e) => e.uri));
+    workspace.openFile(selection.map((e) => e.uri));
 });
 
 nova.commands.register("tabs-sidebar.up", () => {
@@ -142,23 +142,23 @@ nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
     });
 });
 
-nova.commands.register("tabs-sidebar.sortByAlpha", () => {
+nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
     console.log("Sort alphabetically");
 
-    const sortAlpha = !nova.workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
+    const sortAlpha = !workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
 
-    nova.workspace.config.set("eablokker.tabsSidebar.config.sortAlpha", sortAlpha);
+    workspace.config.set("eablokker.tabsSidebar.config.sortAlpha", sortAlpha);
 
     tabDataProvider.setSortAlpha(sortAlpha);
     treeView.reload();
 });
 
-nova.commands.register("tabs-sidebar.groupByKind", () => {
+nova.commands.register("tabs-sidebar.groupByKind", (workspace) => {
     console.log("groupByKind");
 
-    const groupByKind = !nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
+    const groupByKind = !workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
 
-    nova.workspace.config.set("eablokker.tabsSidebar.config.groupByKind", groupByKind);
+    workspace.config.set("eablokker.tabsSidebar.config.groupByKind", groupByKind);
 
     tabDataProvider.setGroupByKind(groupByKind);
     treeView.reload();
