@@ -69,7 +69,7 @@ exports.activate = function() {
 
     treeView.onDidChangeSelection((selection) => {
         // console.log("New selection: " + selection.map((e) => e.name));
-        //nova.workspace.openFile(selection.map((e) => e.uri));
+        //nova.workspace.openFile(selection[0].uri));
     });
 
     treeView.onDidExpandElement((element) => {
