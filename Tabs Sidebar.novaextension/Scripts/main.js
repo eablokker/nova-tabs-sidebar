@@ -18,7 +18,7 @@ exports.activate = function() {
     nova.workspace.onDidAddTextEditor(editor => {
         //console.log('Document opened');
 
-        tabDataProvider.loadData(nova.workspace.textDocuments);
+        tabDataProvider.loadData(nova.workspace.textDocuments, focusedTab);
         treeView.reload().then(() => {
             // Focus tab in sidebar
             focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
@@ -101,15 +101,17 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
 
 nova.commands.register("tabs-sidebar.open", (workspace) => {
     let selection = treeView.selection;
-    workspace.openFile(selection.map((e) => e.uri));
+    console.log("DoubleClick: " + selection.map((e) => e.name));
+
+    workspace.openFile(selection[0].uri);
+
+    focusedTab = tabDataProvider.getElementByUri(selection[0].uri);
+    treeView.reveal(focusedTab);
 });
 
 nova.commands.register("tabs-sidebar.doubleClick", (workspace) => {
     // Invoked when an item is double-clicked
-    let selection = treeView.selection;
-    console.log("DoubleClick: " + selection.map((e) => e.name));
-
-    workspace.openFile(selection.map((e) => e.uri));
+    nova.commands.invoke("tabs-sidebar.open", workspace);
 });
 
 nova.commands.register("tabs-sidebar.up", () => {
@@ -233,9 +235,15 @@ class TabDataProvider {
         this.loadData(documentTabs);
     }
 
-    loadData(documentTabs) {
+    loadData(documentTabs, focusedTab) {
         let rootItems = [];
-        const customOrderIsNotSet = !this.customOrder.length;
+
+        // Remove extraneous from custom order
+        if (this.customOrder.length) {
+            this.customOrder = this.customOrder.filter(path => {
+                return documentTabs.some(tab => tab.path === path);
+            });
+        }
 
         documentTabs.forEach((tab) => {
             // Hide untitled tabs
@@ -243,7 +251,12 @@ class TabDataProvider {
                 return;
             }
 
-            if (customOrderIsNotSet || this.customOrder.every(path => path !== tab.path)) {
+            // Set custom order
+            const tabIsNew = this.customOrder.every(path => path !== tab.path);
+            if (tabIsNew && focusedTab) {
+                const tabIndex = this.customOrder.findIndex(path => path === focusedTab.path);
+                this.customOrder.splice(tabIndex + 1, 0, tab.path);
+            } else if (tabIsNew) {
                 this.customOrder.push(tab.path);
             }
 
