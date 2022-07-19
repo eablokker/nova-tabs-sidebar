@@ -437,7 +437,9 @@ class TabDataProvider {
         });
 
         this.customOrderedItems.forEach((tab, i) => {
-            if (i === 0) {
+            if (this.customOrderedItems.length === 1) {
+                tab.contextValue = "only";
+            } else if (i === 0) {
                 tab.contextValue = "first";
             } else if (i === length - 1) {
                 tab.contextValue = "last";
