@@ -38,14 +38,14 @@
                             "image": "",
                             "tooltip": "Move Tab Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first' && viewItem != 'only'"
                         },
                         {
                             "title": "↓",
                             "image": "",
                             "tooltip": "Move Tab Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last' && viewItem != 'only'"
                         },
                         {
                             "title": "Clean Up By Tab Bar Order",
@@ -98,12 +98,12 @@
                         {
                             "title": "Move Tab Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first' && viewItem != 'only'"
                         },
                         {
                             "title": "Move Tab Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last' && viewItem != 'only'"
                         },
                         {"separator": true},
                         {
