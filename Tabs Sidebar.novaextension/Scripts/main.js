@@ -103,10 +103,11 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
     let selection = treeView.selection;
     console.log("DoubleClick: " + selection.map((e) => e.name));
 
-    workspace.openFile(selection[0].uri);
-
-    focusedTab = tabDataProvider.getElementByUri(selection[0].uri);
-    treeView.reveal(focusedTab);
+    workspace.openFile(selection[0].uri)
+        .then(editor => {
+            focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+            treeView.reveal(focusedTab);
+        });
 });
 
 nova.commands.register("tabs-sidebar.doubleClick", (workspace) => {
