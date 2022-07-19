@@ -230,6 +230,25 @@ nova.commands.register("tabs-sidebar.groupByKind", (workspace) => {
     treeView.reload();
 });
 
+nova.commands.register("tabs-sidebar.showInFilesSidebar", (workspace) => {
+    console.log("Show in Files Sidebar");
+
+    let selection = treeView.selection;
+
+    // Need to open selected tab in order to invoke command
+    workspace.openFile(selection[0].uri)
+        .then(editor => {
+            tabDataProvider
+                .runProcess("/click_menu_item.sh", ["File", "Show in Files Sidebar"])
+                .then(result => {
+
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+        });
+});
+
 nova.commands.register("tabs-sidebar.showInFinder", () => {
     let selection = treeView.selection;
 
