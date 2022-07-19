@@ -31,7 +31,9 @@ exports.activate = function() {
 
             setTimeout(() => {
                 tabDataProvider.loadData(nova.workspace.textDocuments);
-                treeView.reload();
+                treeView.reload().then(() => {
+                    treeView.reveal(focusedTab);
+                });
             }, 1);
         });
 
@@ -96,7 +98,36 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
     console.log("Close Tab clicked");
 
     let selection = treeView.selection;
-    let activeTextEditor = workspace.activeTextEditor;
+    let activeDocument = workspace.activeTextEditor.document;
+
+    if (selection[0].uri === activeDocument.uri) {
+        // Close currently active tab
+        tabDataProvider
+            .runProcess("/click_menu_item.sh", ["File", "Close Tab"])
+            .then(result => {
+
+            })
+            .catch(err => {
+                console.error(err);
+            });
+    } else {
+        // Close non currently active tab by switching to it and back
+        workspace.openFile(selection[0].uri)
+            .then(editor => {
+                tabDataProvider
+                    .runProcess("/click_menu_item.sh", ["File", "Close Tab"])
+                    .then(result => {
+                        workspace.openFile(activeDocument.uri)
+                            .then(editor => {
+                                focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+                                treeView.reveal(focusedTab);
+                            });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                    });
+            });
+    }
 });
 
 nova.commands.register("tabs-sidebar.open", (workspace) => {
