@@ -137,49 +137,20 @@ nova.commands.register("tabs-sidebar.down", () => {
 nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
     //console.log("Clean up by tab bar order clicked");
 
-    const processPromise = new Promise((resolve, reject) => {
-        let outString = "";
-        let errorString = "";
+    tabDataProvider.runProcess("/list_menu_items.sh", ["Window"])
+        .then(result => {
+            //console.log(result);
 
-        const process = new Process(__dirname + "/list_menu_items.sh", { args: ["Window"] });
+            tabDataProvider.cleanUpByTabBarOrder(result);
 
-        process.onStdout(line => {
-            outString += line;
+            focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
+            treeView.reload().then(() => {
+                treeView.reveal(focusedTab);
+            });
+        })
+        .catch(err => {
+            console.error(err);
         });
-
-        process.onStderr(line => {
-            errorString += line;
-        });
-
-        let timeoutID = setTimeout(() => {
-            // Ensure the process terminates in a timely fashion
-            reject("The process did not respond in a timely manner.");
-            process.terminate();
-        }, 3000);
-
-        process.onDidExit(status => {
-            clearTimeout(timeoutID);
-
-            if (errorString.length) {
-                reject(new Error(errorString));
-            } else {
-                resolve(outString);
-            }
-        });
-
-        process.start();
-    });
-
-    processPromise.then(result => {
-        //console.log(result);
-
-        tabDataProvider.cleanUpByTabBarOrder(result);
-
-        focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
-        treeView.reload().then(() => {
-            treeView.reveal(focusedTab);
-        });
-    });
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
@@ -302,6 +273,41 @@ class TabDataProvider {
         this.rootItems = rootItems;
 
         this.sortRootItems();
+    }
+
+    runProcess(scriptName, args, timeout = 3000) {
+        return new Promise((resolve, reject) => {
+            let outString = "";
+            let errorString = "";
+
+            const process = new Process(__dirname + scriptName, { args: args });
+
+            process.onStdout(line => {
+                outString += line;
+            });
+
+            process.onStderr(line => {
+                errorString += line;
+            });
+
+            let timeoutID = setTimeout(() => {
+                // Ensure the process terminates in a timely fashion
+                reject("The process did not respond in a timely manner.");
+                process.terminate();
+            }, timeout);
+
+            process.onDidExit(status => {
+                clearTimeout(timeoutID);
+
+                if (errorString.length) {
+                    reject(new Error(errorString));
+                } else {
+                    resolve(outString);
+                }
+            });
+
+            process.start();
+        });
     }
 
     setDirty(editor) {
