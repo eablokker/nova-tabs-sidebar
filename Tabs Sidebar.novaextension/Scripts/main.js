@@ -243,7 +243,7 @@ class TabDataProvider {
                 return;
             }
 
-            if (customOrderIsNotSet) {
+            if (customOrderIsNotSet || this.customOrder.every(path => path !== tab.path)) {
                 this.customOrder.push(tab.path);
             }
 
