@@ -92,6 +92,13 @@ exports.deactivate = function() {
     // Clean up state before the extension is deactivated
 };
 
+nova.commands.register("tabs-sidebar.close", (workspace) => {
+    console.log("Close Tab clicked");
+
+    let selection = treeView.selection;
+    let activeTextEditor = workspace.activeTextEditor;
+});
+
 nova.commands.register("tabs-sidebar.open", (workspace) => {
     let selection = treeView.selection;
     workspace.openFile(selection.map((e) => e.uri));

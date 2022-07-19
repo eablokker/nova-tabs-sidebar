@@ -89,6 +89,11 @@
                             "command": "tabs-sidebar.open",
                             "when": "viewItem != null"
                         },
+                        {
+                            "title": "Close Tab",
+                            "command": "tabs-sidebar.close",
+                            "when": "viewItem != null"
+                        },
                         {"separator": true},
                         {
                             "title": "Move Tab Up",
@@ -99,6 +104,28 @@
                             "title": "Move Tab Down",
                             "command": "tabs-sidebar.down",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
+                        },
+                        {"separator": true},
+                        {
+                            "title": "Show in Files Sidebar",
+                            "command": "tabs-sidebar.showInFilesSidebar",
+                            "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Show in Finder",
+                            "command": "tabs-sidebar.showInFinder",
+                            "when": "viewItem != null"
+                        },
+                        {"separator": true},
+                        {
+                            "title": "Copy Path",
+                            "command": "tabs-sidebar.copyPath",
+                            "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Copy Relative Path",
+                            "command": "tabs-sidebar.copyRelativePath",
+                            "when": "viewItem != null"
                         },
                         {"separator": true},
                         {
@@ -127,12 +154,7 @@
                             "command": "tabs-sidebar.groupByKind",
                             "state": "eablokker.tabsSidebar.config.groupByKind"
                         },
-                        {"separator": true},
-                        {
-                            "title": "Show in Finder",
-                            "command": "tabs-sidebar.showInFinder",
-                            "when": "viewItem != null"
-                        }
+                        {"separator": true}
                     ]
                 }
             ]
