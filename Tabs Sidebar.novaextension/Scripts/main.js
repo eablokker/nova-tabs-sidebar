@@ -12,6 +12,9 @@ exports.activate = function() {
         dataProvider: tabDataProvider
     });
 
+    // Initially sort by tabs bar order
+    nova.commands.invoke("tabs-sidebar.cleanUpByTabBarOrder");
+
     nova.workspace.onDidAddTextEditor(editor => {
         //console.log('Document opened');
 
@@ -122,6 +125,54 @@ nova.commands.register("tabs-sidebar.down", () => {
     console.log("Move Down: " + selection.map((e) => e.name));
 
     tabDataProvider.moveTab(selection[0], 1);
+});
+
+nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
+    //console.log("Clean up by tab bar order clicked");
+
+    const processPromise = new Promise((resolve, reject) => {
+        let outString = "";
+        let errorString = "";
+
+        const process = new Process(__dirname + "/list_menu_items.sh", { args: ["Window"] });
+
+        process.onStdout(line => {
+            outString += line;
+        });
+
+        process.onStderr(line => {
+            errorString += line;
+        });
+
+        let timeoutID = setTimeout(() => {
+            // Ensure the process terminates in a timely fashion
+            reject("The process did not respond in a timely manner.");
+            process.terminate();
+        }, 3000);
+
+        process.onDidExit(status => {
+            clearTimeout(timeoutID);
+
+            if (errorString.length) {
+                reject(new Error(errorString));
+            } else {
+                resolve(outString);
+            }
+        });
+
+        process.start();
+    });
+
+    processPromise.then(result => {
+        //console.log(result);
+
+        tabDataProvider.cleanUpByTabBarOrder(result);
+
+        focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
+        treeView.reload().then(() => {
+            treeView.reveal(focusedTab);
+        });
+    });
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
@@ -283,6 +334,39 @@ class TabDataProvider {
         treeView.reload().then(() => {
             treeView.reveal(focusedTab);
         });
+    }
+
+    cleanUpByTabBarOrder(result) {
+        const workspaceName = nova.workspace.config.get("workspace.name", "string") || nova.path.split(nova.workspace.path).pop();
+
+        const menuGroups = result
+            .split(", missing value, ")
+            .map((group) => {
+                const items = group.split(",")
+                    .map(item => item.trim())
+                    .filter(item => item !== "missing value");
+                const name = items.shift();
+                return {
+                    name: name,
+                    tabs: items
+                };
+            });
+
+        const lastWindowMenuItemIndex = menuGroups
+            .findIndex(item => item.name === "Bring All to Front");
+        menuGroups.splice(0, lastWindowMenuItemIndex + 1);
+        const currentWindow = menuGroups
+            .find(item => item.name === workspaceName);
+
+        this.customOrder.sort((a, b) => {
+            if (currentWindow.tabs.indexOf(nova.path.basename(a)) < 0) {
+                return 1;
+            }
+
+            return currentWindow.tabs.indexOf(nova.path.basename(a)) - currentWindow.tabs.indexOf(nova.path.basename(b));
+        });
+
+        this.sortRootItems();
     }
 
     cleanUpByAlpha() {

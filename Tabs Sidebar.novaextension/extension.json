@@ -13,6 +13,7 @@
     ],
 
     "entitlements": {
+        "process": true,
         "filesystem": "readonly"
     },
 
@@ -45,6 +46,12 @@
                             "tooltip": "Move Tab Down",
                             "command": "tabs-sidebar.down",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
+                        },
+                        {
+                            "title": "Clean Up By Tab Bar Order",
+                            "image": "__builtin.path",
+                            "command": "tabs-sidebar.cleanUpByTabBarOrder",
+                            "when": "eablokker.tabsSidebar.config.sortAlpha != true"
                         },
                         {
                             "title": "Clean Up Alphabetically",
@@ -94,6 +101,11 @@
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last'"
                         },
                         {"separator": true},
+                        {
+                            "title": "Clean Up By Tab Bar Order",
+                            "command": "tabs-sidebar.cleanUpByTabBarOrder",
+                            "when": "eablokker.tabsSidebar.config.sortAlpha != true"
+                        },
                         {
                             "title": "Clean Up Alphabetically",
                             "command": "tabs-sidebar.cleanUpByAlpha",
