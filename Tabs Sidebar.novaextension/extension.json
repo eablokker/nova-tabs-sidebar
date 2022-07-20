@@ -153,8 +153,7 @@
                             "title": "Group By Kind",
                             "command": "tabs-sidebar.groupByKind",
                             "state": "eablokker.tabsSidebar.config.groupByKind"
-                        },
-                        {"separator": true}
+                        }
                     ]
                 }
             ]
