@@ -176,6 +176,13 @@
             "default": false
         },
         {
+            "key": "eablokker.tabs-sidebar.always-show-parent-folder",
+            "title": "Show files count when grouping by kind",
+            "description": "Whether to show the number of files in each group next to the group's name.",
+            "type": "boolean",
+            "default": false
+        },
+        {
             "key": "eablokker.tabs-sidebar.unsaved-symbol",
             "title": "Unsaved tab symbol",
             "description": "Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.",
