@@ -38,14 +38,14 @@
                             "image": "",
                             "tooltip": "Move Tab Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first' && viewItem != 'only' && viewItem != 'kindGroup'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && eablokker.tabsSidebar.config.groupByKind != true && viewItem != 'first' && viewItem != 'only' && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "↓",
                             "image": "",
                             "tooltip": "Move Tab Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last' && viewItem != 'only' && viewItem != 'kindGroup'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && eablokker.tabsSidebar.config.groupByKind != true && viewItem != 'last' && viewItem != 'only' && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "Clean Up By Tab Bar Order",
@@ -98,12 +98,12 @@
                         {
                             "title": "Move Tab Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first' && viewItem != 'only' && viewItem != 'kindGroup'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && eablokker.tabsSidebar.config.groupByKind != true && viewItem != 'first' && viewItem != 'only' && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "Move Tab Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last' && viewItem != 'only' && viewItem != 'kindGroup'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && eablokker.tabsSidebar.config.groupByKind != true && viewItem != 'last' && viewItem != 'only' && viewItem != 'kindGroup'"
                         },
                         {"separator": true},
                         {
