@@ -161,5 +161,38 @@
         }
     ],
 
-    "config": []
+    "config": [
+        {
+            "key": "eablokker.tabs-sidebar.open-on-single-click",
+            "title": "Open tab on single click",
+            "description": "Disabling will open tab on double click or context menu only.",
+            "type": "boolean",
+            "default": true
+        },
+        {
+            "key": "eablokker.tabs-sidebar.always-show-parent-folder",
+            "title": "Always show parent folder next to file name",
+            "description": "Disabling will only show parent folder when there are multiple files with the same name.",
+            "type": "boolean",
+            "default": false
+        },
+        {
+            "key": "eablokker.tabs-sidebar.unsaved-symbol",
+            "title": "Unsaved tab symbol",
+            "description": "Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.",
+            "type": "string",
+            "default": "●"
+        },
+        {
+            "key": "eablokker.tabs-sidebar.unsaved-symbol-location",
+            "title": "Show unsaved tab symbol",
+            "type": "enum",
+            "values": [
+                ["before-filename", "Before file name"],
+                ["after-filename", "After file name, before folder name"],
+                [null, "Never"]
+            ],
+            "default": "before-filename"
+        }
+    ]
 }
