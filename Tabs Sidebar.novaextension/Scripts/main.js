@@ -168,13 +168,65 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
 
 nova.commands.register("tabs-sidebar.open", (workspace) => {
     let selection = treeView.selection;
-    console.log("DoubleClick: " + selection.map((e) => e.name));
+    console.log("DoubleClick: " + selection[0].name);
 
-    workspace.openFile(selection[0].uri)
-        .then(editor => {
-            focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-            treeView.reveal(focusedTab);
+    const isRemote = selection[0].isRemote;
+
+    if (!isRemote) {
+        workspace.openFile(selection[0].uri)
+            .then(editor => {
+                focusedTab = tabDataProvider.getElementByPath(editor.document.path);
+                treeView.reveal(focusedTab);
+            });
+        return;
+    }
+
+
+
+    tabDataProvider
+        .runProcess("/list_menu_items.sh", ["Window"])
+        .then(result => {
+            const workspaceName = nova.workspace.config.get("workspace.name", "string") || nova.path.split(nova.workspace.path).pop();
+            const resultArray = result.split(", ");
+            const baseName = nova.path.basename(selection[0].path);
+
+            let menuPosition = -1;
+            let projectFound = false;
+            resultArray.every((menuItem, i, self) => {
+                if (menuItem.trim() === workspaceName && self[i - 1].trim() === "missing value") {
+                    projectFound = true;
+                }
+
+                if (menuItem.trim() === baseName) {
+                    menuPosition = i + 1; // Zero-indexed to 1-indexed
+                }
+
+                // Exit early at end of project items
+                if (projectFound && menuItem.trim() === "missing value") {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (menuPosition < 0) {
+                return;
+            }
+
+            tabDataProvider
+                .runProcess("/click_menu_item_by_number.sh", ["Window", menuPosition.toString()])
+                .then(result => {
+                    console.log("Menu item" + menuPosition + "of Window menu clicked");
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+        })
+        .catch(err => {
+            console.error(err);
         });
+
+
 });
 
 nova.commands.register("tabs-sidebar.doubleClick", (workspace) => {
@@ -683,8 +735,8 @@ class TabDataProvider {
             item.image = element.extension ? "__filetype." + element.extension : "__filetype.txt";
         }
         else {
-            item.descriptiveText = element.descriptiveText;
-            item.path = element.uri;
+            item.descriptiveText = (element.isRemote ? "☁️ " : "") + element.descriptiveText;
+            item.path = element.path;
             item.tooltip = element.path;
             item.command = "tabs-sidebar.doubleClick";
             item.contextValue = element.contextValue;
