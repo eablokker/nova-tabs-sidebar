@@ -133,20 +133,25 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
     let selection = treeView.selection;
     let activeDocument = workspace.activeTextEditor.document;
 
-    if (selection[0].uri === activeDocument.uri) {
-        // Close currently active tab
-        workspace.openFile(selection[0].uri)
-            .then(editor => {
-                tabDataProvider
-                    .runProcess("/click_menu_item.sh", ["File", "Close Tab"])
-                    .then(result => {
+    if (!selection[0].isRemote) {
 
-                    })
-                    .catch(err => {
-                        console.error(err);
-                    });
-            });
-    } else {
+        if (selection[0].uri === activeDocument.uri) {
+            // Close currently active tab
+            workspace.openFile(selection[0].uri)
+                .then(editor => {
+                    tabDataProvider
+                        .runProcess("/click_menu_item.sh", ["File", "Close Tab"])
+                        .then(result => {
+
+                        })
+                        .catch(err => {
+                            console.error(err);
+                        });
+                });
+
+            return;
+        }
+
         // Close non currently active tab by switching to it and back
         workspace.openFile(selection[0].uri)
             .then(editor => {
@@ -163,7 +168,11 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
                         console.error(err);
                     });
             });
+
+        return;
     }
+
+    console.log("Close remote tab");
 });
 
 nova.commands.register("tabs-sidebar.open", (workspace) => {
@@ -175,7 +184,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
     if (!isRemote) {
         workspace.openFile(selection[0].uri)
             .then(editor => {
-                focusedTab = tabDataProvider.getElementByPath(editor.document.path);
+                focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
                 treeView.reveal(focusedTab);
             });
         return;
@@ -216,7 +225,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
             tabDataProvider
                 .runProcess("/click_menu_item_by_number.sh", ["Window", menuPosition.toString()])
                 .then(result => {
-                    console.log("Menu item" + menuPosition + "of Window menu clicked");
+                    console.log("Menu item " + menuPosition + " of Window menu clicked");
                 })
                 .catch(err => {
                     console.error(err);
