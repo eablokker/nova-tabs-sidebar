@@ -186,7 +186,7 @@ nova.commands.register("tabs-sidebar.up", () => {
     // Invoked when the "Move Up" header button is clicked
     let selection = treeView.selection;
 
-    console.log(JSON.stringify(selection[0]));
+    //console.log(JSON.stringify(selection[0]));
 
     console.log("Move Up: " + selection.map((e) => e.name));
 
@@ -197,7 +197,7 @@ nova.commands.register("tabs-sidebar.down", () => {
     // Invoked when the "Move Down" header button is clicked
     let selection = treeView.selection;
 
-    console.log(JSON.stringify(selection[0]));
+    //console.log(JSON.stringify(selection[0]));
 
     console.log("Move Down: " + selection.map((e) => e.name));
 
@@ -493,8 +493,15 @@ class TabDataProvider {
     }
 
     cleanUpByKind() {
+        const elementArray = this.customOrder.map(path => {
+            return tabDataProvider.getElementByPath(path);
+        });
+
         this.customOrder.sort((a, b) => {
-            return nova.path.extname(a).localeCompare(nova.path.extname(b));
+            const aElement = elementArray.find(item => item.path === a);
+            const bElement = elementArray.find(item => item.path === b);
+
+            return aElement.syntax.localeCompare(bElement.syntax);
         });
 
         this.sortRootItems();
@@ -525,6 +532,7 @@ class TabDataProvider {
             return this.customOrder.indexOf(a.path) - this.customOrder.indexOf(b.path);
         });
 
+        // Set context of position in list
         this.customOrderedItems.forEach((tab, i) => {
             if (this.customOrderedItems.length === 1) {
                 tab.contextValue = "only";
@@ -539,14 +547,15 @@ class TabDataProvider {
 
         //console.log("this.customOrder", this.customOrder);
 
+        // Reset root items to flat structure
+        this.rootItems = this.customOrderedItems.slice();
+
         if (this.sortAlpha) {
             console.log("Sorting by alpha");
 
             this.rootItems.sort((a, b) => {
                 return a.name.localeCompare(b.name);
             });
-        } else {
-            this.rootItems = this.customOrderedItems.slice();
         }
 
         if (this.groupByKind) {
@@ -586,6 +595,14 @@ class TabDataProvider {
                 });
             });
 
+            if (this.sortAlpha) {
+                console.log("Sorting folders by alpha");
+
+                folders.sort((a, b) => {
+                    return a.name.localeCompare(b.name);
+                });
+            }
+
             this.rootItems = folders;
 
         }
@@ -609,6 +626,27 @@ class TabDataProvider {
         this.rootItems.some(item => {
             childElement = item.children.find(child => {
                 return child.uri === uri;
+            });
+
+            return !!childElement;
+        });
+
+        return childElement;
+    }
+
+    getElementByPath(path) {
+        const element = this.rootItems.find(item => {
+            return item.path === path;
+        });
+
+        if (element) {
+            return element;
+        }
+
+        let childElement = null;
+        this.rootItems.some(item => {
+            childElement = item.children.find(child => {
+                return child.path === path;
             });
 
             return !!childElement;
