@@ -38,14 +38,14 @@
                             "image": "",
                             "tooltip": "Move Tab Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first' && viewItem != 'only'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first' && viewItem != 'only' && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "↓",
                             "image": "",
                             "tooltip": "Move Tab Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last' && viewItem != 'only'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last' && viewItem != 'only' && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "Clean Up By Tab Bar Order",
@@ -87,45 +87,45 @@
                         {
                             "title": "Open",
                             "command": "tabs-sidebar.open",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "Close Tab",
                             "command": "tabs-sidebar.close",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && viewItem != 'kindGroup'"
                         },
                         {"separator": true},
                         {
                             "title": "Move Tab Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first' && viewItem != 'only'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'first' && viewItem != 'only' && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "Move Tab Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last' && viewItem != 'only'"
+                            "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha != true && viewItem != 'last' && viewItem != 'only' && viewItem != 'kindGroup'"
                         },
                         {"separator": true},
                         {
                             "title": "Show in Files Sidebar",
                             "command": "tabs-sidebar.showInFilesSidebar",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "Show in Finder",
                             "command": "tabs-sidebar.showInFinder",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && viewItem != 'kindGroup'"
                         },
                         {"separator": true},
                         {
                             "title": "Copy Path",
                             "command": "tabs-sidebar.copyPath",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && viewItem != 'kindGroup'"
                         },
                         {
                             "title": "Copy Relative Path",
                             "command": "tabs-sidebar.copyRelativePath",
-                            "when": "viewItem != null"
+                            "when": "viewItem != null && viewItem != 'kindGroup'"
                         },
                         {"separator": true},
                         {

@@ -3,6 +3,39 @@ var treeView = null;
 var tabDataProvider = null;
 var focusedTab = null;
 
+var syntaxnames = {
+    "plaintext": "Plain Text",
+    "coffeescript": "CoffeeScript",
+    "css": "CSS",
+    "diff": "Diff",
+    "erb": "ERB",
+    "haml": "Haml",
+    "html": "HTML",
+    "ini": "INI",
+    "javascript": "JavaScript",
+    "json": "JSON",
+    "jsx": "JSX",
+    "less": "Less",
+    "lua": "Lua",
+    "markdown": "Markdown",
+    "perl": "Perl",
+    "php": "PHP-HTML",
+    "python": "Python",
+    "ruby": "Ruby",
+    "sass": "Sass",
+    "scss": "SCSS",
+    "shell": "Shell Script",
+    "smarty": "Smarty",
+    "sql": "SQL",
+    "tsx": "TSX",
+    "twig": "Twig-HTML",
+    "twig-markdown": "Twig-Markdown",
+    "typescript": "TypeScript",
+    "vue": "Vue",
+    "xml": "XML",
+    "yaml": "YAML"
+};
+
 exports.activate = function() {
     // Do work when the extension is activated
 
@@ -269,6 +302,9 @@ class TabItem {
         this.children = [];
         this.parent = null;
         this.collapsibleState = TreeItemCollapsibleState.None;
+        this.syntax = tab.syntax || "plaintext";
+        this.extension = tab.extension || null;
+        this.icon = tab.icon || null;
     }
 
     addChild(element) {
@@ -331,8 +367,10 @@ class TabDataProvider {
                 isRemote: tab.isRemote,
                 isDirty: tab.isDirty,
                 isUntitled: tab.isUntitled,
-                contextValue: "tabItem"
+                contextValue: "tabItem",
+                syntax: tab.syntax
             });
+
             rootItems.push(element);
         });
 
@@ -517,9 +555,42 @@ class TabDataProvider {
         if (this.groupByKind) {
             console.log("Grouping by kind");
 
-            this.rootItems.sort((a, b) => {
-                return nova.path.extname(a.uri).localeCompare(nova.path.extname(b.uri));
+            const folders = this.rootItems
+                .filter((a, index, self) => {
+                    return self.findIndex((b) => b.syntax === a.syntax) === index;
+                })
+                .map(item => {
+                    const titleCaseName = item.syntax
+                        .split(" ")
+                        .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+                        .join(" ");
+                    const extName = nova.path.extname(item.path).replace(/^\./, "");
+                    const count = this.rootItems.filter(f => {
+                        return f.syntax === item.syntax;
+                    }).length;
+
+                    return new TabItem({
+                        name: syntaxnames[item.syntax] || titleCaseName,
+                        path: "",
+                        uri: "",
+                        //description: count ? count : "",
+                        syntax: item.syntax,
+                        extension: extName
+                    });
+                });
+
+            folders.forEach(folder => {
+                this.rootItems.forEach(tab => {
+                    if (tab.syntax !== folder.syntax) {
+                        return;
+                    }
+
+                    folder.addChild(tab);
+                });
             });
+
+            this.rootItems = folders;
+
         }
 
         if (!this.sortAlpha && ! this.groupByKind) {
@@ -546,7 +617,7 @@ class TabDataProvider {
 
     getParent(element) {
         // Requests the parent of an element, for use with the reveal() method
-        return element.parent;
+        return element?.parent;
     }
 
     getTreeItem(element) {
@@ -554,11 +625,12 @@ class TabDataProvider {
         let item = new TreeItem((element.isDirty ? "● " : "") + element.name);
         if (element.children.length > 0) {
             item.descriptiveText = element.descriptiveText;
-            item.collapsibleState = TreeItemCollapsibleState.Collapsed;
-            item.path = element.uri;
-            item.tooltip = "tooltip";
-            item.contextValue = "tab";
+            item.collapsibleState = TreeItemCollapsibleState.Expanded;
+            item.path = element.path;
+            item.tooltip = "";
+            item.contextValue = "kindGroup";
             item.identifier = element.uri;
+            item.image = element.extension ? "__filetype." + element.extension : "__filetype.txt";
         }
         else {
             item.descriptiveText = element.descriptiveText;
