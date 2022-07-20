@@ -416,11 +416,8 @@ class TabDataProvider {
     }
 
     setDirty(editor) {
-        this.rootItems.forEach(item => {
-            if (item.path === editor.document.path) {
-                item.isDirty = editor.document.isDirty;
-            }
-        });
+        const element = this.getElementByUri(editor.document.uri);
+        element.isDirty = editor.document.isDirty;
     }
 
     basename(uri) {
@@ -600,9 +597,24 @@ class TabDataProvider {
     }
 
     getElementByUri(uri) {
-        return this.rootItems.find((item) => {
+        const element = this.rootItems.find(item => {
             return item.uri === uri;
         });
+
+        if (element) {
+            return element;
+        }
+
+        let childElement = null;
+        this.rootItems.some(item => {
+            childElement = item.children.find(child => {
+                return child.uri === uri;
+            });
+
+            return !!childElement;
+        });
+
+        return childElement;
     }
 
     getChildren(element) {
