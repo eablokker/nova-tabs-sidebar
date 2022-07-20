@@ -305,7 +305,8 @@ nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
 nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
     console.log("Sort alphabetically");
 
-    const sortAlpha = !workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
+    const sortAlpha = !workspace.config
+        .get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
 
     workspace.config.set("eablokker.tabsSidebar.config.sortAlpha", sortAlpha);
 
@@ -316,7 +317,8 @@ nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
 nova.commands.register("tabs-sidebar.groupByKind", (workspace) => {
     console.log("groupByKind");
 
-    const groupByKind = !workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
+    const groupByKind = !workspace.config
+        .get("eablokker.tabsSidebar.config.groupByKind", "boolean");
 
     workspace.config.set("eablokker.tabsSidebar.config.groupByKind", groupByKind);
 
@@ -380,8 +382,10 @@ class TabDataProvider {
         this.customOrderedItems = [];
         this.customOrder = [];
 
-        this.sortAlpha = nova.workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
-        this.groupByKind = nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
+        this.sortAlpha = nova.workspace.config
+            .get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
+        this.groupByKind = nova.workspace.config
+            .get("eablokker.tabsSidebar.config.groupByKind", "boolean");
 
         this.loadData(documentTabs);
     }
@@ -405,7 +409,8 @@ class TabDataProvider {
             // Set custom order
             const tabIsNew = this.customOrder.every(path => path !== tab.path);
             if (tabIsNew && focusedTab) {
-                const tabIndex = this.customOrder.findIndex(path => path === focusedTab.path);
+                const tabIndex = this.customOrder
+                    .findIndex(path => path === focusedTab.path);
                 this.customOrder.splice(tabIndex + 1, 0, tab.path);
             } else if (tabIsNew) {
                 this.customOrder.push(tab.path);
@@ -513,7 +518,9 @@ class TabDataProvider {
     }
 
     cleanUpByTabBarOrder(result) {
-        const workspaceName = nova.workspace.config.get("workspace.name", "string") || nova.path.split(nova.workspace.path).pop();
+        const workspaceName =
+            nova.workspace.config.get("workspace.name", "string") ||
+            nova.path.split(nova.workspace.path).pop();
 
         const menuGroups = result
             .split(", missing value, ")
@@ -539,7 +546,10 @@ class TabDataProvider {
                 return 1;
             }
 
-            return currentWindow.tabs.indexOf(nova.path.basename(a)) - currentWindow.tabs.indexOf(nova.path.basename(b));
+            return (
+                currentWindow.tabs.indexOf(nova.path.basename(a)) -
+                currentWindow.tabs.indexOf(nova.path.basename(b))
+            );
         });
 
         this.sortRootItems();
@@ -664,7 +674,7 @@ class TabDataProvider {
                 });
             }
 
-            this.rootItems = folders;
+            this.rootItems = folders.slice();
 
         }
 
@@ -740,7 +750,7 @@ class TabDataProvider {
             item.path = element.path;
             item.tooltip = "";
             item.contextValue = "kindGroup";
-            item.identifier = element.uri;
+            item.identifier = element.name;
             item.image = element.extension ? "__filetype." + element.extension : "__filetype.txt";
         }
         else {
