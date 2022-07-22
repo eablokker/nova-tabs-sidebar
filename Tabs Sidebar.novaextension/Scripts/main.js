@@ -103,8 +103,13 @@ exports.activate = function() {
     });
 
     treeView.onDidChangeSelection((selection) => {
-        // console.log("New selection: " + selection.map((e) => e.name));
-        //nova.workspace.openFile(selection[0].uri));
+        console.log("New selection: " + selection[0].name);
+
+        const singleClick = nova.config.get("eablokker.tabs-sidebar.open-on-single-click", "boolean");
+
+        if (singleClick) {
+            nova.commands.invoke("tabs-sidebar.open", nova.workspace);
+        }
     });
 
     treeView.onDidExpandElement((element) => {
@@ -177,7 +182,7 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
 
 nova.commands.register("tabs-sidebar.open", (workspace) => {
     let selection = treeView.selection;
-    console.log("DoubleClick: " + selection[0].name);
+    console.log("Selection: " + selection[0].name);
 
     const isRemote = selection[0].isRemote;
 
