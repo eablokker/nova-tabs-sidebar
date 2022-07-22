@@ -738,7 +738,7 @@ class TabDataProvider {
 
     getParent(element) {
         // Requests the parent of an element, for use with the reveal() method
-        return element?.parent;
+        return element.parent;
     }
 
     getTreeItem(element) {
