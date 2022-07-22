@@ -5,8 +5,12 @@
     "description": "Manage open files from the sidebar.",
     "version": "1.0",
     "categories": ["sidebars"],
+    "license": "MIT",
+    "repository": "https://github.com/eablokker/nova-tabs-sidebar",
+    "bugs": "https://github.com/eablokker/nova-tabs-sidebar/issues",
 
     "main": "main.js",
+    "min_runtime": "7.5",
 
     "activationEvents": [
         "onWorkspaceContains:*"
