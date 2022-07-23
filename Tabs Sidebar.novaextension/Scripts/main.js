@@ -89,8 +89,19 @@ exports.activate = function() {
     nova.workspace.onDidAddTextEditor(editor => {
         //console.log('Document opened');
 
+        let reload;
+        const folder = tabDataProvider.getFolderBySyntax(editor.document.syntax || "plaintext");
+
         tabDataProvider.loadData(nova.workspace.textDocuments, focusedTab);
-        treeView.reload().then(() => {
+
+        if (folder && nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean")) {
+            console.log("Only reload", editor.document.syntax, folder.syntax);
+            reload = treeView.reload(folder);
+        } else {
+            reload = treeView.reload();
+        }
+
+        reload.then(() => {
             // Focus tab in sidebar
             focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
             treeView.reveal(focusedTab);
@@ -702,7 +713,7 @@ class TabDataProvider {
         // Sort custom ordered items by custom order
         this.flatItems.sort(this.byCustomOrder.bind(this));
 
-        this.groupedItems.sort(this.byCustomOrder.bind(this));
+        //this.groupedItems.sort(this.byCustomOrder.bind(this));
         this.groupedItems.forEach(item => {
             item.children.sort(this.byCustomOrder.bind(this));
         });
@@ -787,6 +798,10 @@ class TabDataProvider {
         return childElement;
     }
 
+    getFolderBySyntax(syntax) {
+        return this.groupedItems.find(folder => folder.syntax === syntax);
+    }
+
     getChildren(element) {
         // Requests the children of an element
         if (!element) {
@@ -835,6 +850,7 @@ class TabDataProvider {
             item.contextValue = "kindGroup";
             item.identifier = element.name;
             item.image = element.extension ? "__filetype." + element.extension : "__filetype.txt";
+            item.syntax = element.syntax;
         }
         else {
             const tabDirArray = nova.path.split(nova.path.dirname(element.path || ""));
