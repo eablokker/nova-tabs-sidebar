@@ -34,7 +34,7 @@
                     "id": "tabs-sidebar",
                     "name": "Open Files",
                     "allowMultiple": false,
-                    "placeholderText": "No tabs are open.",
+                    "placeholderText": "No files are open yet.",
                     "placeholderImage": "tabs-sidebar-placeholder",
                     "headerCommands": [
                         {
