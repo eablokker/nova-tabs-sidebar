@@ -61,7 +61,7 @@ exports.activate = function() {
     nova.config.onDidChange("eablokker.tabs-sidebar.show-group-count", (newVal, oldVal) => {
         showGroupCount = newVal;
 
-        tabDataProvider.sortRootItems();
+        tabDataProvider.sortItems();
         treeView.reload();
     });
 
@@ -143,7 +143,7 @@ exports.activate = function() {
     });
 
     treeView.onDidChangeSelection((selection) => {
-        console.log("New selection: " + selection[0].name);
+        //console.log("New selection: " + selection[0].name);
 
         if (openOnSingleClick) {
             nova.commands.invoke("tabs-sidebar.open", nova.workspace);
@@ -233,8 +233,6 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
         return;
     }
 
-
-
     tabDataProvider
         .runProcess("/list_menu_items.sh", ["Window"])
         .then(result => {
@@ -294,7 +292,9 @@ nova.commands.register("tabs-sidebar.up", () => {
 
     console.log("Move Up: " + selection.map((e) => e.name));
 
-    tabDataProvider.moveTab(selection[0], -1);
+    tabDataProvider.moveTab(selection[0], -1).then(() => {
+        treeView.reveal(selection[0]);
+    });
 });
 
 nova.commands.register("tabs-sidebar.down", () => {
@@ -305,7 +305,9 @@ nova.commands.register("tabs-sidebar.down", () => {
 
     console.log("Move Down: " + selection.map((e) => e.name));
 
-    tabDataProvider.moveTab(selection[0], 1);
+    tabDataProvider.moveTab(selection[0], 1).then(() => {
+        treeView.reveal(selection[0]);
+    });
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
@@ -424,7 +426,8 @@ class TabItem {
 
 class TabDataProvider {
     constructor(documentTabs) {
-        this.customOrderedItems = [];
+        this.flatItems = [];
+        this.groupedItems = [];
         this.customOrder = [];
 
         this.sortAlpha = nova.workspace.config
@@ -436,8 +439,6 @@ class TabDataProvider {
     }
 
     loadData(documentTabs, focusedTab) {
-        let rootItems = [];
-
         // Remove extraneous from custom order
         if (this.customOrder.length) {
             this.customOrder = this.customOrder.filter(path => {
@@ -445,51 +446,106 @@ class TabDataProvider {
             });
         }
 
-        documentTabs.forEach((tab) => {
+        // Remove closed tabs
+        this.flatItems.forEach((item, i) => {
+            const tabIsClosed = documentTabs.every(tab => tab.uri !== item.uri);
+            if (tabIsClosed) {
+                // Remove from flat items
+                this.flatItems.splice(i, 1);
+                // Remove from custom order
+                this.customOrder.splice(this.customOrder.indexOf(item.path, 1));
+            }
+        });
+
+        // Add newly opened tabs
+        documentTabs.forEach(tab => {
             // Hide untitled tabs
             if (tab.isUntitled) {
                 return;
             }
 
-            // Set custom order
-            const tabIsNew = this.customOrder.every(path => path !== tab.path);
-            if (tabIsNew && focusedTab) {
+            // Check if tab is new in custom order
+            const tabIsNewInCustomOrder = this.customOrder.every(path => path !== tab.path);
+
+            // Add new tab to custom order
+            if (tabIsNewInCustomOrder && focusedTab) {
+                // Splice new tab into array just after focused tab
                 const tabIndex = this.customOrder
                     .findIndex(path => path === focusedTab.path);
                 this.customOrder.splice(tabIndex + 1, 0, tab.path);
-            } else if (tabIsNew) {
+            } else if (tabIsNewInCustomOrder) {
                 this.customOrder.push(tab.path);
             }
 
-            const tabName = this.basename(tab.path || "untitled");
-            let parentPath = "";
+            // Check if tab is new in flat items
+            const tabIsNew = this.flatItems.every(item => item.uri !== tab.uri);
 
-            const isUnique = this.isUniqueName(tab, documentTabs);
-            if (!isUnique) {
-                const tabDirArray = nova.path.split(nova.path.dirname(tab.path || ""));
-                parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
+            // Add tab to flat items if new
+            if (tabIsNew) {
+                // Calculate parent folder path for description
+                const tabName = this.basename(tab.path || "untitled");
+                let parentPath = "";
+                const isUnique = this.isUniqueName(tab, documentTabs);
+                if (!isUnique) {
+                    const tabDirArray = nova.path.split(nova.path.dirname(tab.path || ""));
+                    parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
+                }
+
+                const element = new TabItem({
+                    name: tabName,
+                    path: tab.path,
+                    uri: tab.uri,
+                    description: "",
+                    isRemote: tab.isRemote,
+                    isDirty: tab.isDirty,
+                    isUntitled: tab.isUntitled,
+                    contextValue: "tabItem",
+                    syntax: tab.syntax,
+                    parentPath: parentPath
+                });
+
+                this.flatItems.push(element);
+
+                // Add tab to grouped items if new
+                const tabSyntax = tab.syntax || "plaintext";
+                const folder = this.groupedItems.find(group => group.syntax === tabSyntax);
+
+                if (folder) {
+                    const childIndex = folder.children.findIndex(child => child.uri === tab.uri);
+                    if (childIndex < 0) {
+                        folder.addChild(Object.assign({}, element));
+                    }
+                } else {
+                    const titleCaseName = tabSyntax
+                        .split(" ")
+                        .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+                        .join(" ");
+                    const extName = nova.path.extname(tab.path).replace(/^\./, "");
+
+                    let count = 0;
+                    if (showGroupCount) {
+                        count = this.flatItems.filter(f => {
+                            return f.syntax === tab.syntax;
+                        }).length;
+                    }
+
+                    const newFolder = new TabItem({
+                        name: syntaxnames[tab.syntax] || titleCaseName,
+                        path: "",
+                        uri: "",
+                        description: "",
+                        syntax: tab.syntax,
+                        extension: extName,
+                        count: count
+                    });
+
+                    newFolder.addChild(Object.assign({}, element));
+                    this.groupedItems.push(newFolder);
+                }
             }
-
-            let element = new TabItem({
-                name: tabName,
-                path: tab.path,
-                uri: tab.uri,
-                description: "",
-                isRemote: tab.isRemote,
-                isDirty: tab.isDirty,
-                isUntitled: tab.isUntitled,
-                contextValue: "tabItem",
-                syntax: tab.syntax,
-                parentPath: parentPath
-            });
-
-            rootItems.push(element);
         });
 
-        this.customOrderedItems = rootItems;
-        this.rootItems = rootItems;
-
-        this.sortRootItems();
+        this.sortItems();
     }
 
     runProcess(scriptName, args, timeout = 3000) {
@@ -556,11 +612,8 @@ class TabDataProvider {
         const item = this.customOrder.splice(fromIndex, 1)[0];
         this.customOrder.splice(toIndex, 0, item);
 
-        this.sortRootItems();
-        focusedTab = tabDataProvider.getElementByUri(tab.uri);
-        treeView.reload().then(() => {
-            treeView.reveal(focusedTab);
-        });
+        this.sortItems();
+        return treeView.reload();
     }
 
     cleanUpByTabBarOrder(result) {
@@ -598,7 +651,7 @@ class TabDataProvider {
             );
         });
 
-        this.sortRootItems();
+        this.sortItems();
     }
 
     cleanUpByAlpha() {
@@ -606,7 +659,7 @@ class TabDataProvider {
             return nova.path.basename(a).localeCompare(nova.path.basename(b));
         });
 
-        this.sortRootItems();
+        this.sortItems();
     }
 
     cleanUpByKind() {
@@ -621,37 +674,43 @@ class TabDataProvider {
             return aElement.syntax.localeCompare(bElement.syntax);
         });
 
-        this.sortRootItems();
+        this.sortItems();
     }
 
     setSortAlpha(sortAlpha) {
         //console.log("Setting sort alpha", sortAlpha);
         this.sortAlpha = sortAlpha;
 
-        this.sortRootItems();
+        this.sortItems();
     }
 
     setGroupByKind(groupByKind) {
         //console.log("Setting sort by kind", groupByKind);
         this.groupByKind = groupByKind;
 
-        this.sortRootItems();
+        this.sortItems();
     }
 
-    sortRootItems() {
-        const length = this.customOrderedItems.length;
+    byCustomOrder(a, b) {
+        if (this.customOrder.indexOf(a.path) < 0) {
+            return 1;
+        }
+        return this.customOrder.indexOf(a.path) - this.customOrder.indexOf(b.path);
+    }
 
-        this.customOrderedItems.sort((a, b) => {
-            if (this.customOrder.indexOf(a.path) < 0) {
-                return 1;
-            }
+    sortItems() {
+        // Sort custom ordered items by custom order
+        this.flatItems.sort(this.byCustomOrder.bind(this));
 
-            return this.customOrder.indexOf(a.path) - this.customOrder.indexOf(b.path);
+        this.groupedItems.sort(this.byCustomOrder.bind(this));
+        this.groupedItems.forEach(item => {
+            item.children.sort(this.byCustomOrder.bind(this));
         });
 
         // Set context of position in list
-        this.customOrderedItems.forEach((tab, i) => {
-            if (this.customOrderedItems.length === 1) {
+        const length = this.flatItems.length;
+        this.flatItems.forEach((tab, i) => {
+            if (length === 1) {
                 tab.contextValue = "only";
             } else if (i === 0) {
                 tab.contextValue = "first";
@@ -664,100 +723,51 @@ class TabDataProvider {
 
         //console.log("this.customOrder", this.customOrder);
 
-        // Reset root items to flat structure
-        this.rootItems = this.customOrderedItems.slice();
-
         if (this.sortAlpha) {
             console.log("Sorting by alpha");
 
-            this.rootItems.sort((a, b) => {
+            this.flatItems.sort((a, b) => {
                 return a.name.localeCompare(b.name);
             });
         }
 
-        if (this.groupByKind) {
-            console.log("Grouping by kind");
+        if (this.groupByKind && this.sortAlpha) {
+            console.log("Sorting folders by alpha");
 
-            const folders = this.rootItems
-                .filter((a, index, self) => {
-                    return self.findIndex((b) => b.syntax === a.syntax) === index;
-                })
-                .map(item => {
-                    const titleCaseName = item.syntax
-                        .split(" ")
-                        .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
-                        .join(" ");
-                    const extName = nova.path.extname(item.path).replace(/^\./, "");
-
-                    let count = 0;
-                    if (showGroupCount) {
-                        count = this.rootItems.filter(f => {
-                            return f.syntax === item.syntax;
-                        }).length;
-                    }
-
-                    return new TabItem({
-                        name: syntaxnames[item.syntax] || titleCaseName,
-                        path: "",
-                        uri: "",
-                        description: "",
-                        syntax: item.syntax,
-                        extension: extName,
-                        count: count
-                    });
-                });
-
-            folders.forEach(folder => {
-                this.rootItems.forEach(tab => {
-                    if (tab.syntax !== folder.syntax) {
-                        return;
-                    }
-
-                    folder.addChild(tab);
-                });
+            this.groupedItems.sort((a, b) => {
+                return a.name.localeCompare(b.name);
             });
 
-            if (this.sortAlpha) {
-                console.log("Sorting folders by alpha");
-
-                folders.sort((a, b) => {
+            this.groupedItems.forEach(item => {
+                item.children.sort((a, b) => {
                     return a.name.localeCompare(b.name);
                 });
-            }
-
-            this.rootItems = folders.slice();
-
-        }
-
-        if (!this.sortAlpha && ! this.groupByKind) {
-            console.log("Sorting by custom");
-            this.rootItems = this.customOrderedItems.slice();
+            });
         }
     }
 
     getElementByUri(uri) {
-        const element = this.rootItems.find(item => {
+        if (this.groupByKind) {
+            let childElement = null;
+            this.groupedItems.some(item => {
+                childElement = item.children.find(child => {
+                    return child.uri === uri;
+                });
+
+                return !!childElement;
+            });
+
+            return childElement;
+        }
+
+        return this.flatItems.find(item => {
             return item.uri === uri;
         });
 
-        if (element) {
-            return element;
-        }
-
-        let childElement = null;
-        this.rootItems.some(item => {
-            childElement = item.children.find(child => {
-                return child.uri === uri;
-            });
-
-            return !!childElement;
-        });
-
-        return childElement;
     }
 
     getElementByPath(path) {
-        const element = this.rootItems.find(item => {
+        const element = this.flatItems.find(item => {
             return item.path === path;
         });
 
@@ -766,7 +776,7 @@ class TabDataProvider {
         }
 
         let childElement = null;
-        this.rootItems.some(item => {
+        this.flatItems.some(item => {
             childElement = item.children.find(child => {
                 return child.path === path;
             });
@@ -780,7 +790,11 @@ class TabDataProvider {
     getChildren(element) {
         // Requests the children of an element
         if (!element) {
-            return this.rootItems;
+            if (this.groupByKind) {
+                return this.groupedItems;
+            } else {
+                return this.flatItems;
+            }
         }
         else {
             return element.children;
@@ -826,7 +840,6 @@ class TabDataProvider {
             const tabDirArray = nova.path.split(nova.path.dirname(element.path || ""));
             const parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
 
-
             description += element.isRemote ? "☁️ " : "";
 
             if (alwaysShowParentFolder) {
@@ -845,4 +858,3 @@ class TabDataProvider {
         return item;
     }
 }
-
