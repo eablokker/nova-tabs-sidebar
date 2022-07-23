@@ -95,7 +95,6 @@ exports.activate = function() {
         tabDataProvider.loadData(nova.workspace.textDocuments, focusedTab);
 
         if (folder && nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean")) {
-            console.log("Only reload", editor.document.syntax, folder.syntax);
             reload = treeView.reload(folder);
         } else {
             reload = treeView.reload();
@@ -112,8 +111,18 @@ exports.activate = function() {
             //console.log('Document closed');
 
             setTimeout(() => {
+                let reload;
+                const folder = tabDataProvider.getFolderBySyntax(destroyedEditor.document.syntax || "plaintext");
+
+                if (folder && folder.children.length > 1 && nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean")) {
+                    reload = treeView.reload(folder);
+                } else {
+                    reload = treeView.reload();
+                }
+
                 tabDataProvider.loadData(nova.workspace.textDocuments);
-                treeView.reload().then(() => {
+
+                reload.then(() => {
                     const document = nova.workspace.activeTextEditor.document;
                     focusedTab = tabDataProvider.getElementByUri(document.uri);
                     treeView.reveal(focusedTab);
@@ -466,6 +475,20 @@ class TabDataProvider {
                 // Remove from custom order
                 this.customOrder.splice(this.customOrder.indexOf(item.path, 1));
             }
+        });
+
+        this.groupedItems.forEach((folder, i) => {
+            folder.children.forEach((child, i2) => {
+                const tabIsClosed = documentTabs.every(tab => tab.uri !== child.uri);
+                if (tabIsClosed) {
+                    folder.children.splice(i2, 1);
+
+                    // Remove folder if now empty
+                    if (!folder.children.length) {
+                        this.groupedItems.splice(i, 1);
+                    }
+                }
+            });
         });
 
         // Add newly opened tabs
