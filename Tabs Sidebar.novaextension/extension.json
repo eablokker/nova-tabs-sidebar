@@ -200,7 +200,7 @@
             "values": [
                 ["before-filename", "Before file name"],
                 ["after-filename", "After file name, before folder name"],
-                [null, "Never"]
+                ["never", "Never"]
             ],
             "default": "before-filename"
         }

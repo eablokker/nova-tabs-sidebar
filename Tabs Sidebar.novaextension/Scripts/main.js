@@ -8,6 +8,9 @@ let openOnSingleClick = nova.config.get("eablokker.tabs-sidebar.open-on-single-c
 let alwaysShowParentFolder = nova.config.get("eablokker.tabs-sidebar.always-show-parent-folder");
 let showGroupCount = nova.config.get("eablokker.tabs-sidebar.show-group-count", "boolean");
 
+let unsavedSymbol = nova.config.get("eablokker.tabs-sidebar.unsaved-symbol", "string");
+let unsavedSymbolLocation = nova.config.get("eablokker.tabs-sidebar.unsaved-symbol-location", "string");
+
 var syntaxnames = {
     "plaintext": "Plain Text",
     "coffeescript": "CoffeeScript",
@@ -59,6 +62,18 @@ exports.activate = function() {
         showGroupCount = newVal;
 
         tabDataProvider.sortRootItems();
+        treeView.reload();
+    });
+
+    nova.config.onDidChange("eablokker.tabs-sidebar.unsaved-symbol", (newVal, oldVal) => {
+        unsavedSymbol = newVal;
+
+        treeView.reload();
+    });
+
+    nova.config.onDidChange("eablokker.tabs-sidebar.unsaved-symbol-location", (newVal, oldVal) => {
+        unsavedSymbolLocation = newVal;
+
         treeView.reload();
     });
 
@@ -779,7 +794,25 @@ class TabDataProvider {
 
     getTreeItem(element) {
         // Converts an element into its display (TreeItem) representation
-        let item = new TreeItem((element.isDirty ? "● " : "") + element.name);
+
+        let name = element.name;
+        let description = "";
+
+        if (element.isDirty) {
+            switch (unsavedSymbolLocation) {
+            case "never":
+                break;
+            case "after-filename":
+                description = (unsavedSymbol || "●") + " " + description;
+                break;
+            case "before-filename":
+            default:
+                name = (unsavedSymbol || "●") + " " + name;
+                break;
+            }
+        }
+
+        let item = new TreeItem(name);
         if (element.children.length > 0) {
             item.descriptiveText = element.count ? "(" + element.count + ")" : "";
             item.collapsibleState = TreeItemCollapsibleState.Expanded;
@@ -793,7 +826,8 @@ class TabDataProvider {
             const tabDirArray = nova.path.split(nova.path.dirname(element.path || ""));
             const parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
 
-            let description = element.isRemote ? "☁️ " : "";
+
+            description += element.isRemote ? "☁️ " : "";
 
             if (alwaysShowParentFolder) {
                 description += "‹ " + parentPath;
@@ -801,7 +835,7 @@ class TabDataProvider {
                 description += "‹ " + element.parentPath;
             }
 
-            item.descriptiveText = description + element.descriptiveText;
+            item.descriptiveText = description;
             item.path = element.path;
             item.tooltip = element.path;
             item.command = "tabs-sidebar.doubleClick";
