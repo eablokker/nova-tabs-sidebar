@@ -65,6 +65,8 @@ exports.activate = function() {
             setTimeout(() => {
                 tabDataProvider.loadData(nova.workspace.textDocuments);
                 treeView.reload().then(() => {
+                    const document = nova.workspace.activeTextEditor.document;
+                    focusedTab = tabDataProvider.getElementByUri(document.uri);
                     treeView.reveal(focusedTab);
                 });
             }, 1);
