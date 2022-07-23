@@ -557,21 +557,13 @@ class TabDataProvider {
                         .join(" ");
                     const extName = nova.path.extname(tab.path).replace(/^\./, "");
 
-                    let count = 0;
-                    if (showGroupCount) {
-                        count = this.flatItems.filter(f => {
-                            return f.syntax === tab.syntax;
-                        }).length;
-                    }
-
                     const newFolder = new TabItem({
                         name: syntaxnames[tab.syntax] || titleCaseName,
                         path: "",
                         uri: "",
                         description: "",
                         syntax: tab.syntax,
-                        extension: extName,
-                        count: count
+                        extension: extName
                     });
 
                     newFolder.addChild(Object.assign({}, element));
@@ -867,7 +859,7 @@ class TabDataProvider {
 
         let item = new TreeItem(name);
         if (element.children.length > 0) {
-            item.descriptiveText = element.count ? "(" + element.count + ")" : "";
+            item.descriptiveText = showGroupCount ? "(" + element.children.length + ")" : "";
             item.collapsibleState = TreeItemCollapsibleState.Expanded;
             item.path = element.path;
             item.tooltip = "";
