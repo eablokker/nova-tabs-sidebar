@@ -5,11 +5,13 @@ var focusedTab = null;
 
 // Config vars
 let openOnSingleClick = nova.config.get("eablokker.tabs-sidebar.open-on-single-click", "boolean");
-let alwaysShowParentFolder = nova.config.get("eablokker.tabs-sidebar.always-show-parent-folder");
+let alwaysShowParentFolder = nova.config.get("eablokker.tabs-sidebar.always-show-parent-folder", "boolean");
 let showGroupCount = nova.config.get("eablokker.tabs-sidebar.show-group-count", "boolean");
 
 let unsavedSymbol = nova.config.get("eablokker.tabs-sidebar.unsaved-symbol", "string");
 let unsavedSymbolLocation = nova.config.get("eablokker.tabs-sidebar.unsaved-symbol-location", "string");
+
+let groupByKind = nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
 
 var syntaxnames = {
     "plaintext": "Plain Text",
@@ -77,6 +79,13 @@ exports.activate = function() {
         treeView.reload();
     });
 
+    nova.workspace.config.onDidChange("eablokker.tabsSidebar.config.groupByKind", (newVal, oldVal) => {
+        groupByKind = newVal;
+
+        tabDataProvider.setGroupByKind(groupByKind);
+        treeView.reload();
+    });
+
     // Create the TreeView
     tabDataProvider = new TabDataProvider(nova.workspace.textDocuments);
     treeView = new TreeView("tabs-sidebar", {
@@ -94,7 +103,7 @@ exports.activate = function() {
 
         tabDataProvider.loadData(nova.workspace.textDocuments, focusedTab);
 
-        if (folder && nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean")) {
+        if (folder && groupByKind) {
             reload = treeView.reload(folder);
         } else {
             reload = treeView.reload();
@@ -114,7 +123,7 @@ exports.activate = function() {
                 let reload;
                 const folder = tabDataProvider.getFolderBySyntax(destroyedEditor.document.syntax || "plaintext");
 
-                if (folder && folder.children.length > 1 && nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean")) {
+                if (folder && folder.children.length > 1 && groupByKind) {
                     reload = treeView.reload(folder);
                 } else {
                     reload = treeView.reload();
@@ -370,8 +379,7 @@ nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
 nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
     console.log("Sort alphabetically");
 
-    const sortAlpha = !workspace.config
-        .get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
+    const sortAlpha = !workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
 
     workspace.config.set("eablokker.tabsSidebar.config.sortAlpha", sortAlpha);
 
@@ -382,13 +390,7 @@ nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
 nova.commands.register("tabs-sidebar.groupByKind", (workspace) => {
     console.log("groupByKind");
 
-    const groupByKind = !workspace.config
-        .get("eablokker.tabsSidebar.config.groupByKind", "boolean");
-
-    workspace.config.set("eablokker.tabsSidebar.config.groupByKind", groupByKind);
-
-    tabDataProvider.setGroupByKind(groupByKind);
-    treeView.reload();
+    workspace.config.set("eablokker.tabsSidebar.config.groupByKind", !groupByKind);
 });
 
 nova.commands.register("tabs-sidebar.showInFilesSidebar", (workspace) => {
@@ -452,8 +454,7 @@ class TabDataProvider {
 
         this.sortAlpha = nova.workspace.config
             .get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
-        this.groupByKind = nova.workspace.config
-            .get("eablokker.tabsSidebar.config.groupByKind", "boolean");
+        this.groupByKind = groupByKind;
 
         this.loadData(documentTabs);
     }
