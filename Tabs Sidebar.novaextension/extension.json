@@ -180,7 +180,7 @@
             "default": false
         },
         {
-            "key": "eablokker.tabs-sidebar.always-show-parent-folder",
+            "key": "eablokker.tabs-sidebar.show-group-count",
             "title": "Show files count when grouping by kind",
             "description": "Whether to show the number of files in each group next to the group's name.",
             "type": "boolean",

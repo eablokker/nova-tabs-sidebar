@@ -3,6 +3,11 @@ var treeView = null;
 var tabDataProvider = null;
 var focusedTab = null;
 
+// Config vars
+let openOnSingleClick = nova.config.get("eablokker.tabs-sidebar.open-on-single-click", "boolean");
+let alwaysShowParentFolder = nova.config.get("eablokker.tabs-sidebar.always-show-parent-folder");
+let showGroupCount = nova.config.get("eablokker.tabs-sidebar.show-group-count", "boolean");
+
 var syntaxnames = {
     "plaintext": "Plain Text",
     "coffeescript": "CoffeeScript",
@@ -38,6 +43,24 @@ var syntaxnames = {
 
 exports.activate = function() {
     // Do work when the extension is activated
+
+    // Watch for config changes
+    nova.config.onDidChange("eablokker.tabs-sidebar.open-on-single-click", (newVal, oldVal) => {
+        openOnSingleClick = newVal;
+    });
+
+    nova.config.onDidChange("eablokker.tabs-sidebar.always-show-parent-folder", (newVal, oldVal) => {
+        alwaysShowParentFolder = newVal;
+
+        treeView.reload();
+    });
+
+    nova.config.onDidChange("eablokker.tabs-sidebar.show-group-count", (newVal, oldVal) => {
+        showGroupCount = newVal;
+
+        tabDataProvider.sortRootItems();
+        treeView.reload();
+    });
 
     // Create the TreeView
     tabDataProvider = new TabDataProvider(nova.workspace.textDocuments);
@@ -107,9 +130,7 @@ exports.activate = function() {
     treeView.onDidChangeSelection((selection) => {
         console.log("New selection: " + selection[0].name);
 
-        const singleClick = nova.config.get("eablokker.tabs-sidebar.open-on-single-click", "boolean");
-
-        if (singleClick) {
+        if (openOnSingleClick) {
             nova.commands.invoke("tabs-sidebar.open", nova.workspace);
         }
     });
@@ -366,6 +387,7 @@ class TabItem {
         this.path = tab.path;
         this.uri = tab.uri;
         this.descriptiveText = tab.description || "";
+        this.parentPath = tab.parentPath;
         this.isRemote = tab.isRemote || false;
         this.isDirty = tab.isDirty || false;
         this.isUntitled = tab.isUntitled || false;
@@ -375,6 +397,7 @@ class TabItem {
         this.syntax = tab.syntax || "plaintext";
         this.extension = tab.extension || null;
         this.icon = tab.icon || null;
+        this.count = tab.count || null;
     }
 
     addChild(element) {
@@ -424,24 +447,25 @@ class TabDataProvider {
             }
 
             const tabName = this.basename(tab.path || "untitled");
-            let tabDescription = "";
+            let parentPath = "";
 
             const isUnique = this.isUniqueName(tab, documentTabs);
             if (!isUnique) {
-                const tabDir = nova.path.split(nova.path.dirname(tab.uri || ""));
-                tabDescription = "‹ " + decodeURI(tabDir[tabDir.length - 1]);
+                const tabDirArray = nova.path.split(nova.path.dirname(tab.path || ""));
+                parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
             }
 
             let element = new TabItem({
                 name: tabName,
                 path: tab.path,
                 uri: tab.uri,
-                description: tabDescription,
+                description: "",
                 isRemote: tab.isRemote,
                 isDirty: tab.isDirty,
                 isUntitled: tab.isUntitled,
                 contextValue: "tabItem",
-                syntax: tab.syntax
+                syntax: tab.syntax,
+                parentPath: parentPath
             });
 
             rootItems.push(element);
@@ -649,17 +673,22 @@ class TabDataProvider {
                         .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
                         .join(" ");
                     const extName = nova.path.extname(item.path).replace(/^\./, "");
-                    const count = this.rootItems.filter(f => {
-                        return f.syntax === item.syntax;
-                    }).length;
+
+                    let count = 0;
+                    if (showGroupCount) {
+                        count = this.rootItems.filter(f => {
+                            return f.syntax === item.syntax;
+                        }).length;
+                    }
 
                     return new TabItem({
                         name: syntaxnames[item.syntax] || titleCaseName,
                         path: "",
                         uri: "",
-                        //description: count ? count : "",
+                        description: "",
                         syntax: item.syntax,
-                        extension: extName
+                        extension: extName,
+                        count: count
                     });
                 });
 
@@ -752,7 +781,7 @@ class TabDataProvider {
         // Converts an element into its display (TreeItem) representation
         let item = new TreeItem((element.isDirty ? "● " : "") + element.name);
         if (element.children.length > 0) {
-            item.descriptiveText = element.descriptiveText;
+            item.descriptiveText = element.count ? "(" + element.count + ")" : "";
             item.collapsibleState = TreeItemCollapsibleState.Expanded;
             item.path = element.path;
             item.tooltip = "";
@@ -761,7 +790,18 @@ class TabDataProvider {
             item.image = element.extension ? "__filetype." + element.extension : "__filetype.txt";
         }
         else {
-            item.descriptiveText = (element.isRemote ? "☁️ " : "") + element.descriptiveText;
+            const tabDirArray = nova.path.split(nova.path.dirname(element.path || ""));
+            const parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
+
+            let description = element.isRemote ? "☁️ " : "";
+
+            if (alwaysShowParentFolder) {
+                description += "‹ " + parentPath;
+            } else if (element.parentPath) {
+                description += "‹ " + element.parentPath;
+            }
+
+            item.descriptiveText = description + element.descriptiveText;
             item.path = element.path;
             item.tooltip = element.path;
             item.command = "tabs-sidebar.doubleClick";
