@@ -17,6 +17,7 @@
     ],
 
     "entitlements": {
+        "clipboard": true,
         "process": true,
         "filesystem": "readonly"
     },

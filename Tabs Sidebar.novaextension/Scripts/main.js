@@ -420,6 +420,16 @@ nova.commands.register("tabs-sidebar.showInFinder", () => {
     //nova.fs.reveal(selection[0].path);
 });
 
+nova.commands.register("tabs-sidebar.copyPath", () => {
+    let selection = treeView.selection;
+    nova.clipboard.writeText(selection[0].path);
+});
+
+nova.commands.register("tabs-sidebar.copyRelativePath", workspace => {
+    let selection = treeView.selection;
+    nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+});
+
 class TabItem {
     constructor(tab) {
         this.name = tab.name;
