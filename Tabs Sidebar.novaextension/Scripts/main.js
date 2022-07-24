@@ -417,7 +417,7 @@ nova.commands.register("tabs-sidebar.showInFinder", () => {
 
     console.log(selection[0].path);
 
-    //nova.fs.reveal(selection[0].path);
+    nova.fs.reveal(selection[0].path);
 });
 
 nova.commands.register("tabs-sidebar.copyPath", () => {
