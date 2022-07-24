@@ -112,7 +112,7 @@ exports.activate = function() {
         reload.then(() => {
             // Focus tab in sidebar
             focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-            treeView.reveal(focusedTab);
+            treeView.reveal(focusedTab, { focus: true });
         });
 
         // Remove tab from sidebar when editor closed
@@ -134,7 +134,7 @@ exports.activate = function() {
                 reload.then(() => {
                     const document = nova.workspace.activeTextEditor.document;
                     focusedTab = tabDataProvider.getElementByUri(document.uri);
-                    treeView.reveal(focusedTab);
+                    treeView.reveal(focusedTab, { focus: true });
                 });
             }, 1);
         });
@@ -154,7 +154,7 @@ exports.activate = function() {
             tabDataProvider.setDirty(changedEditor);
 
             treeView.reload(focusedTab).then(() => {
-                treeView.reveal(focusedTab);
+                treeView.reveal(focusedTab, { focus: true });
             });
         });
 
@@ -166,7 +166,7 @@ exports.activate = function() {
             tabDataProvider.setDirty(savedEditor);
 
             treeView.reload(focusedTab).then(() => {
-                treeView.reveal(focusedTab);
+                treeView.reveal(focusedTab, { focus: true });
             });
         });
     });
@@ -233,7 +233,7 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
                         workspace.openFile(activeDocument.uri)
                             .then(editor => {
                                 focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-                                treeView.reveal(focusedTab);
+                                treeView.reveal(focusedTab, { focus: true });
                             });
                     })
                     .catch(err => {
@@ -257,7 +257,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
         workspace.openFile(selection[0].uri)
             .then(editor => {
                 focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-                treeView.reveal(focusedTab);
+                treeView.reveal(focusedTab, { focus: true });
             });
         return;
     }
@@ -321,7 +321,7 @@ nova.commands.register("tabs-sidebar.up", () => {
     // console.log("Move Up: " + selection.map((e) => e.name));
 
     tabDataProvider.moveTab(selection[0], -1).then(() => {
-        treeView.reveal(selection[0]);
+        treeView.reveal(selection[0], { focus: true });
     });
 });
 
@@ -333,7 +333,7 @@ nova.commands.register("tabs-sidebar.down", () => {
     // console.log("Move Down: " + selection.map((e) => e.name));
 
     tabDataProvider.moveTab(selection[0], 1).then(() => {
-        treeView.reveal(selection[0]);
+        treeView.reveal(selection[0], { focus: true });
     });
 });
 
@@ -348,7 +348,7 @@ nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
 
             focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
             treeView.reload().then(() => {
-                treeView.reveal(focusedTab);
+                treeView.reveal(focusedTab, { focus: true });
             });
         })
         .catch(err => {
@@ -361,7 +361,7 @@ nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
 
     tabDataProvider.cleanUpByAlpha();
     treeView.reload().then(() => {
-        treeView.reveal(focusedTab);
+        treeView.reveal(focusedTab, { focus: true });
     });
 });
 
@@ -370,7 +370,7 @@ nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
 
     tabDataProvider.cleanUpByKind();
     treeView.reload().then(() => {
-        treeView.reveal(focusedTab);
+        treeView.reveal(focusedTab, { focus: true });
     });
 });
 
