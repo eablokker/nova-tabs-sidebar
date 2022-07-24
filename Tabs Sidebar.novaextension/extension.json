@@ -168,7 +168,7 @@
     "config": [
         {
             "key": "eablokker.tabs-sidebar.open-on-single-click",
-            "title": "Open tab on single click",
+            "title": "Open tabs with a single click",
             "description": "Disabling will open tab on double click or context menu only.",
             "type": "boolean",
             "default": true
@@ -176,14 +176,14 @@
         {
             "key": "eablokker.tabs-sidebar.always-show-parent-folder",
             "title": "Always show parent folder next to file name",
-            "description": "Disabling will only show parent folder when there are multiple files with the same name.",
+            "description": "Disabling will only show parent folder when there are multiple files open with the same name.",
             "type": "boolean",
             "default": false
         },
         {
             "key": "eablokker.tabs-sidebar.show-group-count",
             "title": "Show files count when grouping by kind",
-            "description": "Whether to show the number of files in each group next to the group's name.",
+            "description": "Enable to show the number of files in each group next to the group's name.",
             "type": "boolean",
             "default": false
         },
