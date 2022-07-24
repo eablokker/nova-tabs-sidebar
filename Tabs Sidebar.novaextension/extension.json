@@ -2,7 +2,7 @@
     "identifier": "austenblokker.TabsSidebar",
     "name": "Tabs Sidebar",
     "organization": "Austen Blokker",
-    "description": "Manage open files from the sidebar.",
+    "description": "Manage open document tabs from the sidebar.",
     "version": "1.0",
     "categories": ["sidebars"],
     "license": "MIT",
