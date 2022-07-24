@@ -200,7 +200,7 @@ exports.deactivate = function() {
 };
 
 nova.commands.register("tabs-sidebar.close", (workspace) => {
-    console.log("Close Tab clicked");
+    // console.log("Close Tab clicked");
 
     let selection = treeView.selection;
     let activeDocument = workspace.activeTextEditor.document;
@@ -249,7 +249,7 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
 
 nova.commands.register("tabs-sidebar.open", (workspace) => {
     let selection = treeView.selection;
-    console.log("Selection: " + selection[0].name);
+    // console.log("Selection: " + selection[0].name);
 
     const isRemote = selection[0].isRemote;
 
@@ -295,7 +295,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
             tabDataProvider
                 .runProcess("/click_menu_item_by_number.sh", ["Window", menuPosition.toString()])
                 .then(result => {
-                    console.log("Menu item " + menuPosition + " of Window menu clicked");
+                    // console.log("Menu item " + menuPosition + " of Window menu clicked");
                 })
                 .catch(err => {
                     console.error(err);
@@ -317,9 +317,8 @@ nova.commands.register("tabs-sidebar.up", () => {
     // Invoked when the "Move Up" header button is clicked
     let selection = treeView.selection;
 
-    //console.log(JSON.stringify(selection[0]));
-
-    console.log("Move Up: " + selection.map((e) => e.name));
+    // console.log(JSON.stringify(selection[0]));
+    // console.log("Move Up: " + selection.map((e) => e.name));
 
     tabDataProvider.moveTab(selection[0], -1).then(() => {
         treeView.reveal(selection[0]);
@@ -330,9 +329,8 @@ nova.commands.register("tabs-sidebar.down", () => {
     // Invoked when the "Move Down" header button is clicked
     let selection = treeView.selection;
 
-    //console.log(JSON.stringify(selection[0]));
-
-    console.log("Move Down: " + selection.map((e) => e.name));
+    // console.log(JSON.stringify(selection[0]));
+    // console.log("Move Down: " + selection.map((e) => e.name));
 
     tabDataProvider.moveTab(selection[0], 1).then(() => {
         treeView.reveal(selection[0]);
@@ -415,7 +413,7 @@ nova.commands.register("tabs-sidebar.showInFilesSidebar", (workspace) => {
 nova.commands.register("tabs-sidebar.showInFinder", () => {
     let selection = treeView.selection;
 
-    console.log(selection[0].path);
+    // console.log(selection[0].path);
 
     nova.fs.reveal(selection[0].path);
 });
@@ -478,25 +476,25 @@ class TabDataProvider {
         }
 
         // Remove closed tabs
-        this.flatItems.forEach((item, i) => {
+        this.flatItems.forEach((item, i, self) => {
             const tabIsClosed = documentTabs.every(tab => tab.uri !== item.uri);
             if (tabIsClosed) {
                 // Remove from flat items
-                this.flatItems.splice(i, 1);
+                self.splice(i, 1);
                 // Remove from custom order
                 this.customOrder.splice(this.customOrder.indexOf(item.path, 1));
             }
         });
 
-        this.groupedItems.forEach((folder, i) => {
-            folder.children.forEach((child, i2) => {
+        this.groupedItems.forEach((folder, i, self) => {
+            folder.children.forEach((child, i2, self2) => {
                 const tabIsClosed = documentTabs.every(tab => tab.uri !== child.uri);
                 if (tabIsClosed) {
-                    folder.children.splice(i2, 1);
+                    self2.splice(i2, 1);
 
                     // Remove folder if now empty
                     if (!folder.children.length) {
-                        this.groupedItems.splice(i, 1);
+                        self.splice(i, 1);
                     }
                 }
             });
@@ -624,9 +622,36 @@ class TabDataProvider {
         return nova.workspace.textDocuments
             .filter(doc => doc.uri !== tab.uri)
             .every(doc => {
-                const basename = this.basename(doc.uri).toLowerCase();
-                return basename !== this.basename(tab.uri).toLowerCase();
+                const basename = this.basename(doc.uri);
+                return basename !== this.basename(tab.uri);
             });
+    }
+
+    getCommonBasePath(tab) {
+        const tabDirArray = nova.path.split(nova.path.dirname(tab.path || ""));
+        const similarTabs = nova.workspace.textDocuments
+            .filter(doc => this.basename(doc.uri) === this.basename(tab.uri));
+
+        let commonDirArray = [];
+        tabDirArray.every((dir, i) => {
+            const commonDir = similarTabs.every((tab2) => {
+                const tabDirArray2 = nova.path.split(nova.path.dirname(tab2.path || ""));
+                return tabDirArray2[i] === dir;
+            });
+
+            if (!commonDir) {
+                return false;
+            }
+
+            commonDirArray.push(dir);
+            return true;
+        });
+
+        if (commonDirArray.length === 1) {
+            return "/";
+        }
+
+        return commonDirArray.join("/");
     }
 
     moveTab(tab, distance) {
@@ -873,10 +898,28 @@ class TabDataProvider {
             // Calculate parent folder path for description
             let parentPath = "";
             const isUnique = this.isUniqueName(element);
-            if (alwaysShowParentFolder || !isUnique) {
+
+            if (alwaysShowParentFolder && !parentPath.length) {
                 const tabDirArray = nova.path.split(nova.path.dirname(element.path || ""));
                 parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
                 description += "‹ " + parentPath;
+            }
+
+            if (!isUnique) {
+                const commonBasePath = this.getCommonBasePath(element);
+                parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length))
+                    .split("/")
+                    .reverse();
+
+                parentPath
+                    .filter(dir => dir.length)
+                    .forEach((dir, i) => {
+                        if (i === 0) {
+                            description = "";
+                        }
+
+                        description += "‹ " + dir + " ";
+                    });
             }
 
             description = (element.isRemote ? "☁️ " : "") + description;
