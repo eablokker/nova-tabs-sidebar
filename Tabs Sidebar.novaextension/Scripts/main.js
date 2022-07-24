@@ -527,15 +527,7 @@ class TabDataProvider {
 
             // Add tab to flat items if new
             if (tabIsNew) {
-                // Calculate parent folder path for description
                 const tabName = this.basename(tab.path || "untitled");
-                let parentPath = "";
-                const isUnique = this.isUniqueName(tab, documentTabs);
-                if (!isUnique) {
-                    const tabDirArray = nova.path.split(nova.path.dirname(tab.path || ""));
-                    parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
-                }
-
                 const element = new TabItem({
                     name: tabName,
                     path: tab.path,
@@ -545,8 +537,7 @@ class TabDataProvider {
                     isDirty: tab.isDirty,
                     isUntitled: tab.isUntitled,
                     contextValue: "tabItem",
-                    syntax: tab.syntax,
-                    parentPath: parentPath
+                    syntax: tab.syntax
                 });
 
                 this.flatItems.push(element);
@@ -629,11 +620,11 @@ class TabDataProvider {
         return nova.path.basename(uri);
     }
 
-    isUniqueName(tab, documentTabs) {
-        return documentTabs
-            .filter(obj => obj.uri !== tab.uri)
-            .every(obj => {
-                const basename = this.basename(obj.uri).toLowerCase();
+    isUniqueName(tab) {
+        return nova.workspace.textDocuments
+            .filter(doc => doc.uri !== tab.uri)
+            .every(doc => {
+                const basename = this.basename(doc.uri).toLowerCase();
                 return basename !== this.basename(tab.uri).toLowerCase();
             });
     }
@@ -879,16 +870,16 @@ class TabDataProvider {
             item.syntax = element.syntax;
         }
         else {
-            const tabDirArray = nova.path.split(nova.path.dirname(element.path || ""));
-            const parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
-
-            description += element.isRemote ? "☁️ " : "";
-
-            if (alwaysShowParentFolder) {
+            // Calculate parent folder path for description
+            let parentPath = "";
+            const isUnique = this.isUniqueName(element);
+            if (alwaysShowParentFolder || !isUnique) {
+                const tabDirArray = nova.path.split(nova.path.dirname(element.path || ""));
+                parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
                 description += "‹ " + parentPath;
-            } else if (element.parentPath) {
-                description += "‹ " + element.parentPath;
             }
+
+            description = (element.isRemote ? "☁️ " : "") + description;
 
             item.descriptiveText = description;
             item.path = element.path;
