@@ -526,6 +526,7 @@ class TabDataProvider {
             // Add tab to flat items if new
             if (tabIsNew) {
                 const tabName = this.basename(tab.path || "untitled");
+                const extName = nova.path.extname(tab.path).replace(/^\./, "");
                 const element = new TabItem({
                     name: tabName,
                     path: tab.path,
@@ -535,7 +536,8 @@ class TabDataProvider {
                     isDirty: tab.isDirty,
                     isUntitled: tab.isUntitled,
                     contextValue: "tabItem",
-                    syntax: tab.syntax
+                    syntax: tab.syntax,
+                    extension: extName
                 });
 
                 this.flatItems.push(element);
@@ -557,7 +559,7 @@ class TabDataProvider {
                     const extName = nova.path.extname(tab.path).replace(/^\./, "");
 
                     const newFolder = new TabItem({
-                        name: syntaxnames[tab.syntax] || titleCaseName,
+                        name: syntaxnames[tabSyntax] || titleCaseName,
                         path: "",
                         uri: "",
                         description: "",
@@ -891,7 +893,7 @@ class TabDataProvider {
             item.tooltip = "";
             item.contextValue = "kindGroup";
             item.identifier = element.name;
-            item.image = element.extension ? "__filetype." + element.extension : "__filetype.txt";
+            item.image = element.extension ? "__filetype." + element.extension : element.syntax === "plaintext" ? "__filetype.txt" : "__filetype.blank";
             item.syntax = element.syntax;
         }
         else {
@@ -930,6 +932,8 @@ class TabDataProvider {
             item.command = "tabs-sidebar.doubleClick";
             item.contextValue = element.contextValue;
             item.identifier = element.uri;
+            item.image = element.extension ? "__filetype." + element.extension : "__filetype.blank";
+            item.syntax = element.syntax;
         }
         return item;
     }
