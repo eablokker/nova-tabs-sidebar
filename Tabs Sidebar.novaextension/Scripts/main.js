@@ -93,7 +93,7 @@ exports.activate = function() {
     });
 
     // Initially sort by tabs bar order
-    nova.commands.invoke("tabs-sidebar.cleanUpByTabBarOrder");
+    //nova.commands.invoke("tabs-sidebar.cleanUpByTabBarOrder");
 
     nova.workspace.onDidAddTextEditor(editor => {
         //console.log('Document opened');
@@ -253,6 +253,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
 
     const isRemote = selection[0].isRemote;
 
+    // Switch to tab for local file
     if (!isRemote) {
         workspace.openFile(selection[0].uri)
             .then(editor => {
@@ -262,6 +263,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
         return;
     }
 
+    // Switch to tab for remote file
     tabDataProvider
         .runProcess("/list_menu_items.sh", ["Window"])
         .then(result => {
