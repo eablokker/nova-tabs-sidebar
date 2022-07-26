@@ -139,9 +139,14 @@ exports.activate = function() {
             }, 1);
         });
 
-        // Focus tab in sidebar when editing document
-        editor.onDidChange(changedEditor => {
+        // Focus tab in sidebar when clicking in document
+        editor.onDidChangeSelection(changedEditor => {
             //console.log('Document changed');
+
+            // Highlight sidebar tab if tab changed or no focused tab yet or no treeview selection
+            if (focusedTab && treeView.selection[0] === changedEditor.document.uri && changedEditor.document.uri === focusedTab.uri) {
+                return;
+            }
 
             focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
             treeView.reveal(focusedTab);
