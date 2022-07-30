@@ -717,13 +717,34 @@ class TabDataProvider {
             .find(item => item.name === workspaceName);
 
         this.customOrder.sort((a, b) => {
-            if (currentWindow.tabs.indexOf(nova.path.basename(a)) < 0) {
+
+            const paths = [a, b].map(path => {
+                let basename = nova.path.basename(path);
+                let parentPath = "";
+                const element = tabDataProvider.getElementByPath(path);
+                const isUnique = tabDataProvider.isUniqueName(element);
+
+                if (isUnique) {
+                    return basename;
+                }
+
+                const commonBasePath = tabDataProvider.getCommonBasePath(element);
+                parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length));
+
+                if (parentPath.length) {
+                    basename += " – " + parentPath;
+                }
+
+                return basename;
+            });
+
+            if (currentWindow.tabs.indexOf(paths[0]) < 0) {
                 return 1;
             }
 
             return (
-                currentWindow.tabs.indexOf(nova.path.basename(a)) -
-                currentWindow.tabs.indexOf(nova.path.basename(b))
+                currentWindow.tabs.indexOf(paths[0]) -
+                currentWindow.tabs.indexOf(paths[1])
             );
         });
 
@@ -922,12 +943,14 @@ class TabDataProvider {
             let parentPath = "";
             const isUnique = this.isUniqueName(element);
 
+            // Always show parent folder if config setting is toggled on
             if (alwaysShowParentFolder && !parentPath.length) {
                 const tabDirArray = nova.path.split(nova.path.dirname(element.path || ""));
                 parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
                 description += "‹ " + parentPath;
             }
 
+            // Show parent path if filename is not unique
             if (!isUnique) {
                 const commonBasePath = this.getCommonBasePath(element);
                 parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length))
