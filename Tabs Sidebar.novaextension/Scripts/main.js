@@ -174,6 +174,16 @@ exports.activate = function() {
                 treeView.reveal(focusedTab, { focus: true });
             });
         });
+
+        const document = editor.document;
+        document.onDidChangePath((changedDocument, path) => {
+            console.log("editor.document.onDidChangePath", changedDocument.uri, path);
+
+        });
+        document.onDidChangeSyntax((changedDocument, newSyntax) => {
+            console.log("editor.document.onDidChangeSyntax", prevSyntax, newSyntax);
+
+        });
     });
 
     treeView.onDidChangeSelection((selection) => {
