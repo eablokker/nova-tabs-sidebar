@@ -256,6 +256,10 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
     let selection = treeView.selection;
     // console.log("Selection: " + selection[0].name);
 
+    if (!selection.length) {
+        return;
+    }
+
     const isRemote = selection[0].isRemote;
 
     // Switch to tab for local file
