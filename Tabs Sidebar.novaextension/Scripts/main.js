@@ -4,14 +4,15 @@ var tabDataProvider = null;
 var focusedTab = null;
 
 // Config vars
-let openOnSingleClick = nova.config.get("eablokker.tabs-sidebar.open-on-single-click", "boolean");
-let alwaysShowParentFolder = nova.config.get("eablokker.tabs-sidebar.always-show-parent-folder", "boolean");
-let showGroupCount = nova.config.get("eablokker.tabs-sidebar.show-group-count", "boolean");
+let openOnSingleClick = nova.config.get("eablokker.tabs-sidebar.open-on-single-click", "Boolean");
+let alwaysShowParentFolder = nova.config.get("eablokker.tabs-sidebar.always-show-parent-folder", "Boolean");
+let showGroupCount = nova.config.get("eablokker.tabs-sidebar.show-group-count", "Boolean");
 
-let unsavedSymbol = nova.config.get("eablokker.tabs-sidebar.unsaved-symbol", "string");
-let unsavedSymbolLocation = nova.config.get("eablokker.tabs-sidebar.unsaved-symbol-location", "string");
+let unsavedSymbol = nova.config.get("eablokker.tabs-sidebar.unsaved-symbol", "String");
+let unsavedSymbolLocation = nova.config.get("eablokker.tabs-sidebar.unsaved-symbol-location", "String");
 
-let groupByKind = nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "boolean");
+let groupByKind = nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "Boolean");
+let customTabOrder = nova.workspace.config.get("eablokker.tabsSidebar.config.customTabOrder", "Array");
 
 var syntaxnames = {
     "plaintext": "Plain Text",
@@ -479,7 +480,7 @@ class TabDataProvider {
     constructor(documentTabs) {
         this.flatItems = [];
         this.groupedItems = [];
-        this.customOrder = [];
+        this.customOrder = customTabOrder || [];
 
         this.sortAlpha = nova.workspace.config
             .get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
@@ -593,6 +594,7 @@ class TabDataProvider {
                 }
             }
         });
+        nova.workspace.config.set("eablokker.tabsSidebar.config.customTabOrder", this.customOrder);
 
         this.sortItems();
     }
@@ -687,6 +689,7 @@ class TabDataProvider {
 
         const item = this.customOrder.splice(fromIndex, 1)[0];
         this.customOrder.splice(toIndex, 0, item);
+        nova.workspace.config.set("eablokker.tabsSidebar.config.customTabOrder", this.customOrder);
 
         this.sortItems();
         return treeView.reload();
@@ -747,6 +750,7 @@ class TabDataProvider {
                 currentWindow.tabs.indexOf(paths[1])
             );
         });
+        nova.workspace.config.set("eablokker.tabsSidebar.config.customTabOrder", this.customOrder);
 
         this.sortItems();
     }
@@ -755,6 +759,7 @@ class TabDataProvider {
         this.customOrder.sort((a, b) => {
             return nova.path.basename(a).localeCompare(nova.path.basename(b));
         });
+        nova.workspace.config.set("eablokker.tabsSidebar.config.customTabOrder", this.customOrder);
 
         this.sortItems();
     }
@@ -770,6 +775,7 @@ class TabDataProvider {
 
             return aElement.syntax.localeCompare(bElement.syntax);
         });
+        nova.workspace.config.set("eablokker.tabsSidebar.config.customTabOrder", this.customOrder);
 
         this.sortItems();
     }
