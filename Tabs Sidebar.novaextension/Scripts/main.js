@@ -805,7 +805,12 @@ class TabDataProvider {
         // Sort custom ordered items by custom order
         this.flatItems.sort(this.byCustomOrder.bind(this));
 
-        //this.groupedItems.sort(this.byCustomOrder.bind(this));
+        // Sort folders alphabetically
+        this.groupedItems.sort((a, b) => {
+            return a.name.localeCompare(b.name);
+        });
+
+        // Sort folder children by custom order
         this.groupedItems.forEach(item => {
             item.children.sort(this.byCustomOrder.bind(this));
         });
