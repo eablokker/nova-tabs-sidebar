@@ -181,8 +181,9 @@ exports.activate = function() {
             console.log("editor.document.onDidChangePath", changedDocument.uri, path);
 
         });
+
         document.onDidChangeSyntax((changedDocument, newSyntax) => {
-            console.log("editor.document.onDidChangeSyntax", prevSyntax, newSyntax);
+            console.log("editor.document.onDidChangeSyntax", changedDocument.uri, newSyntax);
 
         });
     });
@@ -473,6 +474,7 @@ class TabItem {
         this.isRemote = tab.isRemote || false;
         this.isDirty = tab.isDirty || false;
         this.isUntitled = tab.isUntitled || false;
+        this.isTrashed = tab.isTrashed || false;
         this.children = [];
         this.parent = null;
         this.collapsibleState = TreeItemCollapsibleState.None;
@@ -562,6 +564,11 @@ class TabDataProvider {
             if (tabIsNew) {
                 const tabName = this.basename(tab.path || "untitled");
                 const extName = nova.path.extname(tab.path).replace(/^\./, "");
+
+                // Check if in .Trash folder
+                const trashRegex = new RegExp("^file:\/\/" + nova.path.expanduser("~") + "\/\.Trash\/");
+                const isTrashed = trashRegex.test(tab.uri);
+
                 const element = new TabItem({
                     name: tabName,
                     path: tab.path,
@@ -570,6 +577,7 @@ class TabDataProvider {
                     isRemote: tab.isRemote,
                     isDirty: tab.isDirty,
                     isUntitled: tab.isUntitled,
+                    isTrashed: isTrashed,
                     contextValue: "tabItem",
                     syntax: tab.syntax,
                     extension: extName
@@ -995,7 +1003,11 @@ class TabDataProvider {
                     });
             }
 
-            description = (element.isRemote ? "☁️ " : "") + description;
+            if (element.isTrashed) {
+                description = "‹ Trash 🗑" + description;
+            } else if (element.isRemote) {
+                description = "☁️" + description;
+            }
 
             item.descriptiveText = description;
             item.path = element.path;
