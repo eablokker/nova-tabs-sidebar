@@ -567,7 +567,9 @@ class TabDataProvider {
 
                 // Check if in .Trash folder
                 const trashRegex = new RegExp("^file:\/\/" + nova.path.expanduser("~") + "\/\.Trash\/");
-                const isTrashed = trashRegex.test(tab.uri);
+                const isTrashed = trashRegex.test(decodeURI(tab.uri));
+                
+                console.log(tab.uri, nova.path.expanduser("~"), isTrashed);
 
                 const element = new TabItem({
                     name: tabName,
