@@ -50,6 +50,46 @@ const syntaxnames = {
 exports.activate = function() {
     // Do work when the extension is activated
 
+    // Make shell scripts executable on activation
+    const shellScriptPaths = [
+        "/Scripts/click_menu_item.sh",
+        "/Scripts/click_menu_item_by_number.sh",
+        "/Scripts/list_menu_items.sh"
+    ];
+
+    if (nova.version[0] >= 9) {
+        shellScriptPaths.forEach(path => {
+            const scriptExists = nova.fs.access(nova.extension.path + path, nova.fs.constants.F_OK);
+
+            if (!scriptExists) {
+                console.error("Shell script not found", nova.extension.path + path);
+                return;
+            }
+
+            const scriptIsExecutable = nova.fs.access(nova.extension.path + path, nova.fs.constants.X_OK);
+
+            if (scriptExists && !scriptIsExecutable) {
+                nova.fs.chmod(nova.extension.path + path, 0o744);
+            }
+        });
+    } else {
+        const scriptsAreExecutable = shellScriptPaths.every(path => {
+            const scriptExists = nova.fs.access(nova.extension.path + path, nova.fs.constants.F_OK);
+
+            if (!scriptExists) {
+                console.error("Shell script not found", nova.extension.path + path);
+                return false;
+            }
+
+            return nova.fs.access(nova.extension.path + path, nova.fs.constants.X_OK);
+        });
+
+        if (!scriptsAreExecutable) {
+            console.error("Shell scripts need to be made executable in " + nova.extension.path + "/Scripts/");
+            //nova.workspace.showInformativeMessage("Shell scripts need to be made executable");
+        }
+    }
+
     // Watch for config changes
     nova.config.onDidChange("eablokker.tabs-sidebar.open-on-single-click", (newVal, oldVal) => {
         openOnSingleClick = newVal;

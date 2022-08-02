@@ -3,7 +3,7 @@
     "name": "Tabs Sidebar",
     "organization": "Austen Blokker",
     "description": "Manage open document tabs from the sidebar.",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "categories": ["sidebars"],
     "license": "MIT",
     "repository": "https://github.com/eablokker/nova-tabs-sidebar",
@@ -19,7 +19,7 @@
     "entitlements": {
         "clipboard": true,
         "process": true,
-        "filesystem": "readonly"
+        "filesystem": "readwrite"
     },
 
     "sidebars": [
