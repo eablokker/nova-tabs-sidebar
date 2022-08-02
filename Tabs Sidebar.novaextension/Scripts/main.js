@@ -289,7 +289,20 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
         .then(result => {
             const workspaceName = nova.workspace.config.get("workspace.name", "string") || nova.path.split(nova.workspace.path).pop();
             const resultArray = result.split(", ");
-            const baseName = nova.path.basename(selection[0].path);
+            const element = selection[0];
+            let basename = nova.path.basename(element.path);
+            let parentPath = "";
+            const isUnique = tabDataProvider.isUniqueName(element);
+
+            // Differentiate remote file by common parent path
+            if (!isUnique) {
+                const commonBasePath = tabDataProvider.getCommonBasePath(element);
+                parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length));
+            }
+
+            if (parentPath.length) {
+                basename += " – " + parentPath;
+            }
 
             let menuPosition = -1;
             let projectFound = false;
@@ -298,7 +311,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
                     projectFound = true;
                 }
 
-                if (menuItem.trim() === baseName) {
+                if (menuItem.trim() === basename) {
                     menuPosition = i + 1; // Zero-indexed to 1-indexed
                 }
 
@@ -655,7 +668,10 @@ class TabDataProvider {
     getCommonBasePath(tab) {
         const tabDirArray = nova.path.split(nova.path.dirname(tab.path || ""));
         const similarTabs = nova.workspace.textDocuments
-            .filter(doc => this.basename(doc.uri) === this.basename(tab.uri));
+            .filter(doc => {
+                // Differentiate between local and remote files with same name
+                return doc.isRemote === tab.isRemote && this.basename(doc.uri) === this.basename(tab.uri);
+            });
 
         let commonDirArray = [];
         tabDirArray.every((dir, i) => {
@@ -720,7 +736,7 @@ class TabDataProvider {
             .find(item => item.name === workspaceName);
 
         this.customOrder.sort((a, b) => {
-
+            // Sort by parent path if filename is not unique
             const paths = [a, b].map(path => {
                 let basename = nova.path.basename(path);
                 let parentPath = "";
