@@ -1,7 +1,7 @@
 
-var treeView = null;
-var tabDataProvider = null;
-var focusedTab = null;
+let treeView = null;
+let tabDataProvider = null;
+let focusedTab = null;
 
 // Config vars
 let openOnSingleClick = nova.config.get("eablokker.tabs-sidebar.open-on-single-click", "Boolean");
@@ -14,7 +14,7 @@ let unsavedSymbolLocation = nova.config.get("eablokker.tabs-sidebar.unsaved-symb
 let groupByKind = nova.workspace.config.get("eablokker.tabsSidebar.config.groupByKind", "Boolean");
 let customTabOrder = nova.workspace.config.get("eablokker.tabsSidebar.config.customTabOrder", "Array");
 
-var syntaxnames = {
+const syntaxnames = {
     "plaintext": "Plain Text",
     "coffeescript": "CoffeeScript",
     "css": "CSS",
