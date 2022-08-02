@@ -178,13 +178,11 @@ exports.activate = function() {
 
         const document = editor.document;
         document.onDidChangePath((changedDocument, path) => {
-            console.log("editor.document.onDidChangePath", changedDocument.uri, path);
-
+            if (nova.inDevMode()) console.log("editor.document.onDidChangePath", changedDocument.uri, path);
         });
 
         document.onDidChangeSyntax((changedDocument, newSyntax) => {
-            console.log("editor.document.onDidChangeSyntax", changedDocument.uri, newSyntax);
-
+            if (nova.inDevMode()) console.log("editor.document.onDidChangeSyntax", changedDocument.uri, newSyntax);
         });
     });
 
@@ -261,7 +259,7 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
         return;
     }
 
-    console.log("Close remote tab");
+    if (nova.inDevMode()) console.log("Close remote tab");
 });
 
 nova.commands.register("tabs-sidebar.open", (workspace) => {
@@ -393,7 +391,7 @@ nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
-    console.log("cleanUpByAlpha");
+    if (nova.inDevMode()) console.log("cleanUpByAlpha");
 
     tabDataProvider.cleanUpByAlpha();
     treeView.reload().then(() => {
@@ -402,7 +400,7 @@ nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
-    console.log("cleanUpByKind");
+    if (nova.inDevMode()) console.log("cleanUpByKind");
 
     tabDataProvider.cleanUpByKind();
     treeView.reload().then(() => {
@@ -411,7 +409,7 @@ nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
 });
 
 nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
-    console.log("Sort alphabetically");
+    if (nova.inDevMode()) console.log("Sort alphabetically");
 
     const sortAlpha = !workspace.config.get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
 
@@ -422,13 +420,13 @@ nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
 });
 
 nova.commands.register("tabs-sidebar.groupByKind", (workspace) => {
-    console.log("groupByKind");
+    if (nova.inDevMode()) console.log("groupByKind");
 
     workspace.config.set("eablokker.tabsSidebar.config.groupByKind", !groupByKind);
 });
 
 nova.commands.register("tabs-sidebar.showInFilesSidebar", (workspace) => {
-    console.log("Show in Files Sidebar");
+    if (nova.inDevMode()) console.log("Show in Files Sidebar");
 
     let selection = treeView.selection;
 
@@ -856,7 +854,7 @@ class TabDataProvider {
         //console.log("this.customOrder", this.customOrder);
 
         if (this.sortAlpha) {
-            console.log("Sorting by alpha");
+            if (nova.inDevMode()) console.log("Sorting by alpha");
 
             this.flatItems.sort((a, b) => {
                 return a.name.localeCompare(b.name);
@@ -864,7 +862,7 @@ class TabDataProvider {
         }
 
         if (this.groupByKind && this.sortAlpha) {
-            console.log("Sorting folders by alpha");
+            if (nova.inDevMode()) console.log("Sorting folders by alpha");
 
             this.groupedItems.sort((a, b) => {
                 return a.name.localeCompare(b.name);
