@@ -1,3 +1,7 @@
+## v1.1.4
+
+- Correct size for extension icon
+
 ## v1.1.3
 
 - Keep last document open when opening project
