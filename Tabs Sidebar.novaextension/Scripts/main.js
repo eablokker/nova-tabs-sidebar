@@ -152,8 +152,8 @@ exports.activate = function() {
 
         reload.then(() => {
             // Focus tab in sidebar
-            focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-            treeView.reveal(focusedTab, { focus: true });
+            //focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+            //treeView.reveal(focusedTab, { focus: true });
         });
 
         // Remove tab from sidebar when editor closed

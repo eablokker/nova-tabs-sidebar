@@ -1,3 +1,7 @@
+## v1.1.3
+
+- Keep last document open when opening project
+
 ## v1.1.2
 
 - Resolve rapid tab switching bug on launch
