@@ -50,45 +50,40 @@ const syntaxnames = {
 exports.activate = function() {
     // Do work when the extension is activated
 
+    // Create the TreeView
+    tabDataProvider = new TabDataProvider(nova.workspace.textDocuments);
+    treeView = new TreeView("tabs-sidebar", {
+        dataProvider: tabDataProvider
+    });
+
     // Make shell scripts executable on activation
     const shellScriptPaths = [
-        "/Scripts/click_menu_item.sh",
-        "/Scripts/click_menu_item_by_number.sh",
-        "/Scripts/list_menu_items.sh"
+        "/click_menu_item.sh",
+        "/click_menu_item_by_number.sh",
+        "/list_menu_items.sh"
     ];
 
-    if (nova.version[0] >= 9) {
-        shellScriptPaths.forEach(path => {
-            const scriptExists = nova.fs.access(nova.extension.path + path, nova.fs.constants.F_OK);
+    shellScriptPaths.forEach(path => {
+        const scriptExists = nova.fs.access(__dirname + path, nova.fs.constants.F_OK);
 
-            if (!scriptExists) {
-                console.error("Shell script not found", nova.extension.path + path);
-                return;
-            }
-
-            const scriptIsExecutable = nova.fs.access(nova.extension.path + path, nova.fs.constants.X_OK);
-
-            if (scriptExists && !scriptIsExecutable) {
-                nova.fs.chmod(nova.extension.path + path, 0o744);
-            }
-        });
-    } else {
-        const scriptsAreExecutable = shellScriptPaths.every(path => {
-            const scriptExists = nova.fs.access(nova.extension.path + path, nova.fs.constants.F_OK);
-
-            if (!scriptExists) {
-                console.error("Shell script not found", nova.extension.path + path);
-                return false;
-            }
-
-            return nova.fs.access(nova.extension.path + path, nova.fs.constants.X_OK);
-        });
-
-        if (!scriptsAreExecutable) {
-            console.error("Shell scripts need to be made executable in " + nova.extension.path + "/Scripts/");
-            //nova.workspace.showInformativeMessage("Shell scripts need to be made executable");
+        if (!scriptExists) {
+            console.error("Shell script not found", __dirname + path);
+            return;
         }
-    }
+
+        const scriptIsExecutable = nova.fs.access(__dirname + path, nova.fs.constants.X_OK);
+
+        if (scriptExists && !scriptIsExecutable) {
+            tabDataProvider
+                .runProcess("/bin/chmod", ["744", __dirname + path])
+                .then(result => {
+                    if (nova.inDevMode()) console.log("Shell script " + path + " changed to 744");
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+        }
+    });
 
     // Watch for config changes
     nova.config.onDidChange("eablokker.tabs-sidebar.open-on-single-click", (newVal, oldVal) => {
@@ -125,12 +120,6 @@ exports.activate = function() {
 
         tabDataProvider.setGroupByKind(groupByKind);
         treeView.reload();
-    });
-
-    // Create the TreeView
-    tabDataProvider = new TabDataProvider(nova.workspace.textDocuments);
-    treeView = new TreeView("tabs-sidebar", {
-        dataProvider: tabDataProvider
     });
 
     // Initially sort by tabs bar order
@@ -267,7 +256,7 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
             workspace.openFile(selection[0].uri)
                 .then(editor => {
                     tabDataProvider
-                        .runProcess("/click_menu_item.sh", ["File", "Close Tab"])
+                        .runProcess(__dirname + "/click_menu_item.sh", ["File", "Close Tab"])
                         .then(result => {
 
                         })
@@ -283,7 +272,7 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
         workspace.openFile(selection[0].uri)
             .then(editor => {
                 tabDataProvider
-                    .runProcess("/click_menu_item.sh", ["File", "Close Tab"])
+                    .runProcess(__dirname + "/click_menu_item.sh", ["File", "Close Tab"])
                     .then(result => {
                         workspace.openFile(activeDocument.uri)
                             .then(editor => {
@@ -324,7 +313,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
 
     // Switch to tab for remote file
     tabDataProvider
-        .runProcess("/list_menu_items.sh", ["Window"])
+        .runProcess(__dirname + "/list_menu_items.sh", ["Window"])
         .then(result => {
             const workspaceName = nova.workspace.config.get("workspace.name", "string") || nova.path.split(nova.workspace.path).pop();
             const resultArray = result.split(", ");
@@ -367,7 +356,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
             }
 
             tabDataProvider
-                .runProcess("/click_menu_item_by_number.sh", ["Window", menuPosition.toString()])
+                .runProcess(__dirname + "/click_menu_item_by_number.sh", ["Window", menuPosition.toString()])
                 .then(result => {
                     // console.log("Menu item " + menuPosition + " of Window menu clicked");
                 })
@@ -414,7 +403,7 @@ nova.commands.register("tabs-sidebar.down", () => {
 nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
     //console.log("Clean up by tab bar order clicked");
 
-    tabDataProvider.runProcess("/list_menu_items.sh", ["Window"])
+    tabDataProvider.runProcess(__dirname + "/list_menu_items.sh", ["Window"])
         .then(result => {
             //console.log(result);
 
@@ -474,7 +463,7 @@ nova.commands.register("tabs-sidebar.showInFilesSidebar", (workspace) => {
     workspace.openFile(selection[0].uri)
         .then(editor => {
             tabDataProvider
-                .runProcess("/click_menu_item.sh", ["File", "Show in Files Sidebar"])
+                .runProcess(__dirname + "/click_menu_item.sh", ["File", "Show in Files Sidebar"])
                 .then(result => {
 
                 })
@@ -658,12 +647,12 @@ class TabDataProvider {
         this.sortItems();
     }
 
-    runProcess(scriptName, args, timeout = 3000) {
+    runProcess(scriptPath, args, timeout = 3000) {
         return new Promise((resolve, reject) => {
             let outString = "";
             let errorString = "";
 
-            const process = new Process(__dirname + scriptName, { args: args });
+            const process = new Process(scriptPath, { args: args });
 
             process.onStdout(line => {
                 outString += line;

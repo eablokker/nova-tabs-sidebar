@@ -1,3 +1,7 @@
+## v1.1.5
+
+- Make shell scripts executable using Process instead of fs.chmod
+
 ## v1.1.4
 
 - Correct size for extension icon
