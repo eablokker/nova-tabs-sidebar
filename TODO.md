@@ -9,3 +9,5 @@
 - [ ] Update list when file is moved or syntax changed
 - [ ] Group by folder option
 - [ ] Show git status
+- [ ] Show shell script notification in version < 9
+- [ ] Localize text

@@ -1,3 +1,8 @@
+## v1.1.1
+
+- Added new logo
+- Updated TODO
+
 ## v1.1.0
 
 - Automatically make shell scripts executable if they are not already
