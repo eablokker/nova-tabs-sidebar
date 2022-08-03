@@ -216,9 +216,15 @@ exports.activate = function() {
     });
 
     treeView.onDidChangeSelection((selection) => {
-        //console.log("New selection: " + selection[0].name);
+        //console.log("New selection: " + selection.map((e) => e.name));
 
-        if (openOnSingleClick) {
+        if (!selection.length) {
+            return;
+        }
+
+        const activeDocument = nova.workspace.activeTextEditor.document;
+
+        if (openOnSingleClick && activeDocument.uri !== selection[0].uri) {
             nova.commands.invoke("tabs-sidebar.open", nova.workspace);
         }
     });

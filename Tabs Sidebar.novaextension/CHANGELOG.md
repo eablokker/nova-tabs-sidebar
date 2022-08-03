@@ -1,3 +1,7 @@
+## v1.1.6
+
+- Don't try to open document if it's already the one that's opened
+
 ## v1.1.5
 
 - Make shell scripts executable using Process instead of fs.chmod
