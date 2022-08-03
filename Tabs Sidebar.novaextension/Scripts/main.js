@@ -317,7 +317,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
         workspace.openFile(selection[0].uri)
             .then(editor => {
                 focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-                treeView.reveal(focusedTab, { focus: true });
+                //treeView.reveal(focusedTab, { focus: true });
             });
         return;
     }

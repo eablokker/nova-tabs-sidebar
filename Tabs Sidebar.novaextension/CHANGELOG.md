@@ -1,3 +1,7 @@
+## v1.1.2
+
+- Resolve rapid tab switching bug on launch
+
 ## v1.1.1
 
 - Added new logo
