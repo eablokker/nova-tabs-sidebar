@@ -749,7 +749,7 @@ class TabDataProvider {
         const toIndex = fromIndex + distance;
 
         if (toIndex < 0 || toIndex > this.customOrder.length) {
-            return;
+            return treeView.reload();
         }
 
         const item = this.customOrder.splice(fromIndex, 1)[0];

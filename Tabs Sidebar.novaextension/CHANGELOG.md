@@ -1,3 +1,7 @@
+## v1.1.8
+
+- Prevent error popup when attempting to move tabs too quickly past end
+
 ## v1.1.7
 
 - Prevent error popup when moving tabs up/down too quickly
