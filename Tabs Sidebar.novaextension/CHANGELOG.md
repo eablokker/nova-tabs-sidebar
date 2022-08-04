@@ -1,3 +1,7 @@
+## v1.1.7
+
+- Prevent error popup when moving tabs up/down too quickly
+
 ## v1.1.6
 
 - Don't try to open document if it's already the one that's opened

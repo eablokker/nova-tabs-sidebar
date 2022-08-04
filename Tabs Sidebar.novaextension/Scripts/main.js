@@ -386,6 +386,10 @@ nova.commands.register("tabs-sidebar.up", () => {
     // Invoked when the "Move Up" header button is clicked
     let selection = treeView.selection;
 
+    if (!selection.length) {
+        return;
+    }
+
     // console.log(JSON.stringify(selection[0]));
     // console.log("Move Up: " + selection.map((e) => e.name));
 
@@ -397,6 +401,10 @@ nova.commands.register("tabs-sidebar.up", () => {
 nova.commands.register("tabs-sidebar.down", () => {
     // Invoked when the "Move Down" header button is clicked
     let selection = treeView.selection;
+
+    if (!selection.length) {
+        return;
+    }
 
     // console.log(JSON.stringify(selection[0]));
     // console.log("Move Down: " + selection.map((e) => e.name));
