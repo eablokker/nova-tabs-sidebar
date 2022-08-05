@@ -1,3 +1,9 @@
+## v1.2.1 - 2022-08-05
+
+### Changed
+
+- Improved performance of load on activation
+
 ## v1.2.0 - 2022-08-05
 
 ### Added
