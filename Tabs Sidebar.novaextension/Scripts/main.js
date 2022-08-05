@@ -179,7 +179,7 @@ exports.activate = function() {
             }
 
             focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
-            treeView.reveal(focusedTab);
+            treeView.reveal(focusedTab, { focus: true });
         });
 
         editor.onDidStopChanging(changedEditor => {
@@ -793,7 +793,7 @@ class TabDataProvider {
         // Reload each item that got swapped
         Promise.all([treeView.reload(fromItem), treeView.reload(toItem)])
             .then(() => {
-                treeView.reveal(toItem);
+                treeView.reveal(toItem, { focus: true });
             })
             .catch(err => {
                 console.error(err);
