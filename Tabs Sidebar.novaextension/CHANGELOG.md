@@ -1,4 +1,19 @@
-## v1.1.8
+## v1.2.0 - 2022-08-05
+
+### Added
+
+- Refresh command for when file name/path or syntax changes
+
+### Changed
+
+- Greatly improved performance of moving tabs up/down by only refreshing moved items
+- Scroll tab into view when moving up/down or focusing in editor
+
+### Fixed
+
+- Error when trying to move tab past end rapidly
+
+## v1.1.8 - 2022-08-03
 
 - Prevent error popup when attempting to move tabs too quickly past end
 
@@ -31,11 +46,11 @@
 - Added new logo
 - Updated TODO
 
-## v1.1.0
+## v1.1.0 - 2022-08-02
 
 - Automatically make shell scripts executable if they are not already
 - Fixes certain commands not working
 
-## v1.0.0
+## v1.0.0 - 2022-08-02
 
 Initial release
