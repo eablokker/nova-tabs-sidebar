@@ -419,8 +419,8 @@ nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
 
             tabDataProvider.cleanUpByTabBarOrder(result);
 
-            focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
-            treeView.reload().then(() => {
+            tabDataProvider.reloadAllTabs().then(() => {
+                focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
                 treeView.reveal(focusedTab, { focus: true });
             });
         })
@@ -429,20 +429,22 @@ nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
         });
 });
 
-nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
+nova.commands.register("tabs-sidebar.cleanUpByAlpha", (workspace) => {
     if (nova.inDevMode()) console.log("cleanUpByAlpha");
 
     tabDataProvider.cleanUpByAlpha();
-    treeView.reload().then(() => {
+    tabDataProvider.reloadAllTabs().then(() => {
+        focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
         treeView.reveal(focusedTab, { focus: true });
     });
 });
 
-nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
+nova.commands.register("tabs-sidebar.cleanUpByKind", (workspace) => {
     if (nova.inDevMode()) console.log("cleanUpByKind");
 
     tabDataProvider.cleanUpByKind();
-    treeView.reload().then(() => {
+    tabDataProvider.reloadAllTabs().then(() => {
+        focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
         treeView.reveal(focusedTab, { focus: true });
     });
 });
@@ -455,7 +457,10 @@ nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
     workspace.config.set("eablokker.tabsSidebar.config.sortAlpha", sortAlpha);
 
     tabDataProvider.setSortAlpha(sortAlpha);
-    treeView.reload();
+    tabDataProvider.reloadAllTabs().then(() => {
+        focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
+        treeView.reveal(focusedTab, { focus: true });
+    });
 });
 
 nova.commands.register("tabs-sidebar.groupByKind", (workspace) => {
@@ -906,9 +911,29 @@ class TabDataProvider {
         return this.customOrder.indexOf(a.path) - this.customOrder.indexOf(b.path);
     }
 
+    copyDataToItem(fromItem, toItem) {
+        // Copy data to item
+        const keys = Object.keys(fromItem).concat(Object.keys(toItem));
+        keys
+            .filter((key, i, keys) => keys.indexOf(key) === i) // Remove duplicates
+            .forEach((key) => {
+                if (key === "contextValue") {
+                    return;
+                }
+
+                const newVal = fromItem[key] || null;
+                toItem[key] = newVal;
+            });
+    }
+
     sortItems() {
         // Sort custom ordered items by custom order
-        this.flatItems.sort(this.byCustomOrder.bind(this));
+        let clonedItems = JSON.parse(JSON.stringify(this.flatItems));
+        clonedItems.sort(this.byCustomOrder.bind(this));
+
+        clonedItems.forEach((fromItem, i) => {
+            this.copyDataToItem(fromItem, this.flatItems[i]);
+        });
 
         // Sort folders alphabetically
         this.groupedItems.sort((a, b) => {
@@ -936,11 +961,15 @@ class TabDataProvider {
 
         //console.log("this.customOrder", this.customOrder);
 
-        if (this.sortAlpha) {
+        if (!this.groupByKind && this.sortAlpha) {
             if (nova.inDevMode()) console.log("Sorting by alpha");
 
-            this.flatItems.sort((a, b) => {
+            clonedItems.sort((a, b) => {
                 return a.name.localeCompare(b.name);
+            });
+
+            clonedItems.forEach((fromItem, i) => {
+                this.copyDataToItem(fromItem, this.flatItems[i]);
             });
         }
 
@@ -1002,6 +1031,19 @@ class TabDataProvider {
 
     getFolderBySyntax(syntax) {
         return this.groupedItems.find(folder => folder.syntax === syntax);
+    }
+
+    reloadAllTabs() {
+        if (this.groupByKind) {
+            return treeView.reload();
+        }
+
+        const reloadPromises = [];
+        this.flatItems.forEach(item => {
+            reloadPromises.push(treeView.reload(item));
+        });
+
+        return Promise.all(reloadPromises);
     }
 
     getChildren(element) {
