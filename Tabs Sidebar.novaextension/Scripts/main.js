@@ -755,7 +755,7 @@ class TabDataProvider {
         const fromItemIndex = this.flatItems.findIndex(item => item.uri === uri);
         const toItemIndex = fromItemIndex + distance;
 
-        if (toItemIndex < 0 || toItemIndex > this.flatItems.length) {
+        if (toItemIndex < 0 || toItemIndex >= this.flatItems.length) {
             return;
         }
 
@@ -782,7 +782,7 @@ class TabDataProvider {
         const fromIndex = this.customOrder.indexOf(path);
         const toIndex = fromIndex + distance;
 
-        if (toIndex < 0 || toIndex > this.customOrder.length) {
+        if (toIndex < 0 || toIndex >= this.customOrder.length) {
             return;
         }
 
