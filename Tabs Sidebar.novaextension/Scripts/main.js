@@ -505,6 +505,12 @@ nova.commands.register("tabs-sidebar.copyRelativePath", workspace => {
     nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
 });
 
+nova.commands.register("tabs-sidebar.refresh", workspace => {
+    let selection = treeView.selection;
+    tabDataProvider.loadData(workspace.textDocuments, selection[0] || null);
+    treeView.reload();
+});
+
 class TabItem {
     constructor(tab) {
         this.name = tab.name;

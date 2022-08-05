@@ -86,6 +86,13 @@
                             "tooltip": "Group By Kind",
                             "command": "tabs-sidebar.groupByKind",
                             "state": "eablokker.tabsSidebar.config.groupByKind"
+                        },
+                        {"separator": true},
+                        {
+                            "title": "Refresh",
+                            "image": "__builtin.refresh",
+                            "tooltip": "Refresh",
+                            "command": "tabs-sidebar.refresh"
                         }
                     ],
                     "contextCommands": [
@@ -158,6 +165,11 @@
                             "title": "Group By Kind",
                             "command": "tabs-sidebar.groupByKind",
                             "state": "eablokker.tabsSidebar.config.groupByKind"
+                        },
+                        {"separator": true},
+                        {
+                            "title": "Refresh",
+                            "command": "tabs-sidebar.refresh"
                         }
                     ]
                 }
