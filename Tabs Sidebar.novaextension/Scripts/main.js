@@ -393,9 +393,7 @@ nova.commands.register("tabs-sidebar.up", () => {
     // console.log(JSON.stringify(selection[0]));
     // console.log("Move Up: " + selection.map((e) => e.name));
 
-    tabDataProvider.moveTab(selection[0], -1).then(() => {
-        treeView.reveal(selection[0], { focus: true });
-    });
+    tabDataProvider.moveTab(selection[0], -1);
 });
 
 nova.commands.register("tabs-sidebar.down", () => {
@@ -409,9 +407,7 @@ nova.commands.register("tabs-sidebar.down", () => {
     // console.log(JSON.stringify(selection[0]));
     // console.log("Move Down: " + selection.map((e) => e.name));
 
-    tabDataProvider.moveTab(selection[0], 1).then(() => {
-        treeView.reveal(selection[0], { focus: true });
-    });
+    tabDataProvider.moveTab(selection[0], 1);
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
@@ -751,19 +747,57 @@ class TabDataProvider {
     }
 
     moveTab(tab, distance) {
-        const fromIndex = this.customOrder.indexOf(tab.path);
+        // Original tab path
+        const uri = tab.uri;
+        const path = tab.path;
+
+        // Get item indexes
+        const fromItemIndex = this.flatItems.findIndex(item => item.uri === uri);
+        const toItemIndex = fromItemIndex + distance;
+
+        if (toItemIndex < 0 || toItemIndex > this.flatItems.length) {
+            return;
+        }
+
+        // Get items to swap
+        const fromItem = this.flatItems[fromItemIndex];
+        const toItem = this.flatItems[toItemIndex];
+
+        // Swap data between items
+        const keys = Object.keys(fromItem).concat(Object.keys(toItem));
+        keys
+            .filter((key, i, keys) => keys.indexOf(key) === i) // Remove duplicates
+            .forEach((key) => {
+                if (key === "contextValue") {
+                    return;
+                }
+
+                const newVal = fromItem[key] || null;
+                const oldVal = toItem[key] || null;
+                toItem[key] = newVal;
+                fromItem[key] = oldVal;
+            });
+
+        // Update custom order
+        const fromIndex = this.customOrder.indexOf(path);
         const toIndex = fromIndex + distance;
 
         if (toIndex < 0 || toIndex > this.customOrder.length) {
-            return treeView.reload();
+            return;
         }
 
         const item = this.customOrder.splice(fromIndex, 1)[0];
         this.customOrder.splice(toIndex, 0, item);
         nova.workspace.config.set("eablokker.tabsSidebar.config.customTabOrder", this.customOrder);
 
-        this.sortItems();
-        return treeView.reload();
+        // Reload each item that got swapped
+        Promise.all([treeView.reload(fromItem), treeView.reload(toItem)])
+            .then(() => {
+                treeView.reveal(toItem);
+            })
+            .catch(err => {
+                console.error(err);
+            });
     }
 
     cleanUpByTabBarOrder(result) {
