@@ -51,7 +51,7 @@ exports.activate = function() {
     // Do work when the extension is activated
 
     // Create the TreeView
-    tabDataProvider = new TabDataProvider(nova.workspace.textDocuments);
+    tabDataProvider = new TabDataProvider();
     treeView = new TreeView("tabs-sidebar", {
         dataProvider: tabDataProvider
     });
@@ -125,25 +125,31 @@ exports.activate = function() {
     // Initially sort by tabs bar order
     //nova.commands.invoke("tabs-sidebar.cleanUpByTabBarOrder");
 
+    // Prevent excessive reloading
+    let reloadTimeoutID = null;
+
     nova.workspace.onDidAddTextEditor(editor => {
         //console.log('Document opened');
 
-        let reload;
-        const folder = tabDataProvider.getFolderBySyntax(editor.document.syntax || "plaintext");
+        clearTimeout(reloadTimeoutID);
+        reloadTimeoutID = setTimeout(() => {
+            let reload;
+            const folder = tabDataProvider.getFolderBySyntax(editor.document.syntax || "plaintext");
 
-        tabDataProvider.loadData(nova.workspace.textDocuments, focusedTab);
+            tabDataProvider.loadData(nova.workspace.textDocuments, focusedTab);
 
-        if (folder && groupByKind) {
-            reload = treeView.reload(folder);
-        } else {
-            reload = treeView.reload();
-        }
+            if (folder && groupByKind) {
+                reload = treeView.reload(folder);
+            } else {
+                reload = treeView.reload();
+            }
 
-        reload.then(() => {
-            // Focus tab in sidebar
-            //focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-            //treeView.reveal(focusedTab, { focus: true });
-        });
+            reload.then(() => {
+                // Focus tab in sidebar
+                //focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+                //treeView.reveal(focusedTab, { focus: true });
+            });
+        }, 1);
 
         // Remove tab from sidebar when editor closed
         editor.onDidDestroy(destroyedEditor => {
@@ -535,7 +541,7 @@ class TabItem {
 
 
 class TabDataProvider {
-    constructor(documentTabs) {
+    constructor() {
         this.flatItems = [];
         this.groupedItems = [];
         this.customOrder = customTabOrder || [];
@@ -543,8 +549,6 @@ class TabDataProvider {
         this.sortAlpha = nova.workspace.config
             .get("eablokker.tabsSidebar.config.sortAlpha", "boolean");
         this.groupByKind = groupByKind;
-
-        this.loadData(documentTabs);
     }
 
     loadData(documentTabs, focusedTab) {
