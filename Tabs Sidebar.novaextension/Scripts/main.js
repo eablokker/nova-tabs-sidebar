@@ -100,7 +100,7 @@ const openRemoteTab = (element) => {
                         resolve(editor);
                     })
                     .catch(err => {
-                        reject(err);
+                        console.error("Could not click menu item by number.", err);
                     });
             })
             .catch(err => {
@@ -380,7 +380,7 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
                             });
                     })
                     .catch(err => {
-                        console.error(err);
+                        console.error("Could not click menu item.", err);
                     });
             })
             .catch(err => {
@@ -540,7 +540,7 @@ nova.commands.register("tabs-sidebar.showInFilesSidebar", (workspace) => {
 
                 })
                 .catch(err => {
-                    console.error(err);
+                    console.error("Could not click menu item.", err);
                 });
         })
         .catch(err => {
