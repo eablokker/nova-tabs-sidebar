@@ -47,21 +47,22 @@ const syntaxnames = {
     "yaml": "YAML"
 };
 
-const openRemoteTab = (element) => {
+const openRemoteTab = (uri) => {
     return new Promise((resolve, reject) => {
         tabDataProvider
             .runProcess(__dirname + "/list_menu_items.sh", ["Window"])
             .then(result => {
                 const workspaceName = nova.workspace.config.get("workspace.name", "string") || nova.path.split(nova.workspace.path).pop();
                 const resultArray = result.split(", ");
-                let basename = nova.path.basename(element.path);
+                const element = tabDataProvider.getElementByUri(uri);
+                let basename = nova.path.basename(element.uri);
                 let parentPath = "";
                 const isUnique = tabDataProvider.isUniqueName(element);
 
                 // Differentiate remote file by common parent path
                 if (!isUnique) {
                     const commonBasePath = tabDataProvider.getCommonBasePath(element);
-                    parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length));
+                    parentPath = decodeURI(nova.path.dirname(element.uri).substring(commonBasePath.length));
                 }
 
                 if (parentPath.length) {
@@ -342,42 +343,57 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
         return;
     }
 
-    const activeDocument = workspace.activeTextEditor.document;
-    const isRemote = selection[0].isRemote;
+    let activeDocument = workspace.activeTextEditor.document;
+    const activeDocumentIsRemote = activeDocument.isRemote;
+    const selectionIsRemote = selection[0].isRemote;
 
-    if (!isRemote) {
+    // Close currently active tab
+    if (selection[0].uri === activeDocument.uri) {
+        tabDataProvider
+            .runProcess(__dirname + "/click_menu_item.sh", ["File", "Close Tab"])
+            .then(result => {
+                activeDocument = workspace.activeTextEditor.document;
+                focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
+                treeView.reveal(focusedTab, { focus: true });
+            })
+            .catch(err => {
+                console.error("Could not click menu item.", err);
+            });
 
-        // Close currently active tab
-        if (selection[0].uri === activeDocument.uri) {
-            workspace.openFile(selection[0].uri)
-                .then(editor => {
-                    tabDataProvider
-                        .runProcess(__dirname + "/click_menu_item.sh", ["File", "Close Tab"])
-                        .then(result => {
+        return;
+    }
 
-                        })
-                        .catch(err => {
-                            console.error(err);
-                        });
-                });
-
-            return;
-        }
-
+    if (!selectionIsRemote) {
         // Close non currently active tab by switching to it and back
         workspace.openFile(selection[0].uri)
             .then(editor => {
                 tabDataProvider
                     .runProcess(__dirname + "/click_menu_item.sh", ["File", "Close Tab"])
                     .then(result => {
-                        workspace.openFile(activeDocument.uri)
+                        // Switch back to local tab after closing other local tab
+                        if (!activeDocumentIsRemote) {
+                            workspace.openFile(activeDocument.uri)
+                                .then(editor => {
+                                    focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+                                    treeView.reveal(focusedTab, { focus: true });
+                                })
+                                .catch(err => {
+                                    console.error("Could not open file.", err);
+                                });
+
+                            return;
+                        }
+
+                        // Switch back to remote tab after closing other local tab
+                        openRemoteTab(activeDocument.uri)
                             .then(editor => {
-                                focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+                                focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
                                 treeView.reveal(focusedTab, { focus: true });
                             })
                             .catch(err => {
-                                console.error("Could not open file.", err);
+                                console.error("Could not open remote tab.", err);
                             });
+
                     })
                     .catch(err => {
                         console.error("Could not click menu item.", err);
@@ -390,7 +406,43 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
         return;
     }
 
-    if (nova.inDevMode()) console.log("Close remote tab");
+    openRemoteTab(selection[0].uri)
+        .then(editor => {
+            tabDataProvider
+                .runProcess(__dirname + "/click_menu_item.sh", ["File", "Close Tab"])
+                .then(result => {
+                    // Switch back to local tab after closing other remote tab
+                    if (!activeDocumentIsRemote) {
+                        workspace.openFile(activeDocument.uri)
+                            .then(editor => {
+                                focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+                                treeView.reveal(focusedTab, { focus: true });
+                            })
+                            .catch(err => {
+                                console.error("Could not open file.", err);
+                            });
+
+                        return;
+                    }
+
+                    // Switch back to remote tab after closing other remote tab
+                    openRemoteTab(activeDocument.uri)
+                        .then(editor => {
+                            focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
+                            treeView.reveal(focusedTab, { focus: true });
+                        })
+                        .catch(err => {
+                            console.error("Could not open remote tab.", err);
+                        });
+
+                })
+                .catch(err => {
+                    console.error("Could not click menu item.", err);
+                });
+        })
+        .catch(err => {
+            console.error("Could not open remote tab.", err);
+        });
 });
 
 nova.commands.register("tabs-sidebar.open", (workspace) => {
@@ -417,7 +469,7 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
     }
 
     // Switch to tab for remote file
-    openRemoteTab(selection[0])
+    openRemoteTab(selection[0].uri)
         .then(editor => {
             focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
             //treeView.reveal(focusedTab, { focus: true });
