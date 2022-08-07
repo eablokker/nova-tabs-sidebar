@@ -210,7 +210,7 @@ exports.activate = function() {
             reload
                 .then(() => {
                     // Focus tab in sidebar
-                    //focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+                    focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
                     //treeView.reveal(focusedTab, { focus: true });
                 })
                 .catch(err => {
