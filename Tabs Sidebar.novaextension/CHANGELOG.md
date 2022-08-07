@@ -1,3 +1,18 @@
+## v1.3.0 - 2022-08-07
+
+### Added
+
+- Ability to close remote tabs from the context menu
+
+### Changed
+
+- Always activate extension no matter which documents are in workspace
+- Refactored opening remote tabs
+
+### Fixed
+
+- Newly opened tabs being placed in wrong order
+
 ## v1.2.1 - 2022-08-05
 
 ### Changed
