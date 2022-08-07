@@ -500,9 +500,6 @@ nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
     if (nova.inDevMode()) console.log("cleanUpByKind");
 
     tabDataProvider.cleanUpByKind();
-    treeView.reload().then(() => {
-        treeView.reveal(focusedTab, { focus: true });
-    });
     treeView.reload()
         .then(() => {
             treeView.reveal(focusedTab, { focus: true });
