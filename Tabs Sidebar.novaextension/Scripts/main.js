@@ -47,6 +47,68 @@ const syntaxnames = {
     "yaml": "YAML"
 };
 
+const openRemoteTab = (element) => {
+    return new Promise((resolve, reject) => {
+        tabDataProvider
+            .runProcess(__dirname + "/list_menu_items.sh", ["Window"])
+            .then(result => {
+                const workspaceName = nova.workspace.config.get("workspace.name", "string") || nova.path.split(nova.workspace.path).pop();
+                const resultArray = result.split(", ");
+                let basename = nova.path.basename(element.path);
+                let parentPath = "";
+                const isUnique = tabDataProvider.isUniqueName(element);
+
+                // Differentiate remote file by common parent path
+                if (!isUnique) {
+                    const commonBasePath = tabDataProvider.getCommonBasePath(element);
+                    parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length));
+                }
+
+                if (parentPath.length) {
+                    basename += " – " + parentPath;
+                }
+
+                let menuPosition = -1;
+                let projectFound = false;
+                resultArray.every((menuItem, i, self) => {
+                    if (menuItem.trim() === workspaceName && self[i - 1].trim() === "missing value") {
+                        projectFound = true;
+                    }
+
+                    if (menuItem.trim() === basename) {
+                        menuPosition = i + 1; // Zero-indexed to 1-indexed
+                    }
+
+                    // Exit early at end of project items
+                    if (projectFound && menuItem.trim() === "missing value") {
+                        return false;
+                    }
+
+                    return true;
+                });
+
+                if (menuPosition < 0) {
+                    reject();
+                    return;
+                }
+
+                tabDataProvider
+                    .runProcess(__dirname + "/click_menu_item_by_number.sh", ["Window", menuPosition.toString()])
+                    .then(() => {
+                        // console.log("Menu item " + menuPosition + " of Window menu clicked");
+                        const editor = nova.workspace.activeTextEditor;
+                        resolve(editor);
+                    })
+                    .catch(err => {
+                        reject(err);
+                    });
+            })
+            .catch(err => {
+                reject(err);
+            });
+    });
+};
+
 exports.activate = function() {
     // Do work when the extension is activated
 
@@ -76,7 +138,7 @@ exports.activate = function() {
         if (scriptExists && !scriptIsExecutable) {
             tabDataProvider
                 .runProcess("/bin/chmod", ["744", __dirname + path])
-                .then(result => {
+                .then(() => {
                     if (nova.inDevMode()) console.log("Shell script " + path + " changed to 744");
                 })
                 .catch(err => {
@@ -259,12 +321,18 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
     // console.log("Close Tab clicked");
 
     let selection = treeView.selection;
-    let activeDocument = workspace.activeTextEditor.document;
 
-    if (!selection[0].isRemote) {
+    if (!selection.length) {
+        return;
+    }
 
+    const activeDocument = workspace.activeTextEditor.document;
+    const isRemote = selection[0].isRemote;
+
+    if (!isRemote) {
+
+        // Close currently active tab
         if (selection[0].uri === activeDocument.uri) {
-            // Close currently active tab
             workspace.openFile(selection[0].uri)
                 .then(editor => {
                     tabDataProvider
@@ -324,63 +392,10 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
     }
 
     // Switch to tab for remote file
-    tabDataProvider
-        .runProcess(__dirname + "/list_menu_items.sh", ["Window"])
-        .then(result => {
-            const workspaceName = nova.workspace.config.get("workspace.name", "string") || nova.path.split(nova.workspace.path).pop();
-            const resultArray = result.split(", ");
-            const element = selection[0];
-            let basename = nova.path.basename(element.path);
-            let parentPath = "";
-            const isUnique = tabDataProvider.isUniqueName(element);
-
-            // Differentiate remote file by common parent path
-            if (!isUnique) {
-                const commonBasePath = tabDataProvider.getCommonBasePath(element);
-                parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length));
-            }
-
-            if (parentPath.length) {
-                basename += " – " + parentPath;
-            }
-
-            let menuPosition = -1;
-            let projectFound = false;
-            resultArray.every((menuItem, i, self) => {
-                if (menuItem.trim() === workspaceName && self[i - 1].trim() === "missing value") {
-                    projectFound = true;
-                }
-
-                if (menuItem.trim() === basename) {
-                    menuPosition = i + 1; // Zero-indexed to 1-indexed
-                }
-
-                // Exit early at end of project items
-                if (projectFound && menuItem.trim() === "missing value") {
-                    return false;
-                }
-
-                return true;
-            });
-
-            if (menuPosition < 0) {
-                return;
-            }
-
-            tabDataProvider
-                .runProcess(__dirname + "/click_menu_item_by_number.sh", ["Window", menuPosition.toString()])
-                .then(result => {
-                    // console.log("Menu item " + menuPosition + " of Window menu clicked");
-                })
-                .catch(err => {
-                    console.error(err);
-                });
-        })
-        .catch(err => {
-            console.error(err);
-        });
-
-
+    openRemoteTab(selection[0]).then(editor => {
+        focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+        //treeView.reveal(focusedTab, { focus: true });
+    });
 });
 
 nova.commands.register("tabs-sidebar.doubleClick", (workspace) => {
