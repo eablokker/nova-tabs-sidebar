@@ -206,11 +206,15 @@ exports.activate = function() {
                 reload = treeView.reload();
             }
 
-            reload.then(() => {
-                // Focus tab in sidebar
-                //focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-                //treeView.reveal(focusedTab, { focus: true });
-            });
+            reload
+                .then(() => {
+                    // Focus tab in sidebar
+                    //focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+                    //treeView.reveal(focusedTab, { focus: true });
+                })
+                .catch(err => {
+                    console.error("Could not reload treeView.", err);
+                });
         }, 1);
 
         // Remove tab from sidebar when editor closed
@@ -229,11 +233,15 @@ exports.activate = function() {
 
                 tabDataProvider.loadData(nova.workspace.textDocuments);
 
-                reload.then(() => {
-                    const document = nova.workspace.activeTextEditor.document;
-                    focusedTab = tabDataProvider.getElementByUri(document.uri);
-                    treeView.reveal(focusedTab, { focus: true });
-                });
+                reload
+                    .then(() => {
+                        const document = nova.workspace.activeTextEditor.document;
+                        focusedTab = tabDataProvider.getElementByUri(document.uri);
+                        treeView.reveal(focusedTab, { focus: true });
+                    })
+                    .catch(err => {
+                        console.error("Could not reload treeView.", err);
+                    });
             }, 1);
         });
 
@@ -256,9 +264,13 @@ exports.activate = function() {
             focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
             tabDataProvider.setDirty(changedEditor);
 
-            treeView.reload(focusedTab).then(() => {
-                treeView.reveal(focusedTab, { focus: true });
-            });
+            treeView.reload(focusedTab)
+                .then(() => {
+                    treeView.reveal(focusedTab, { focus: true });
+                })
+                .catch(err => {
+                    console.error("Could not reload treeView.", err);
+                });
         });
 
         // Focus tab in sidebar when saving document
@@ -268,9 +280,13 @@ exports.activate = function() {
             focusedTab = tabDataProvider.getElementByUri(savedEditor.document.uri);
             tabDataProvider.setDirty(savedEditor);
 
-            treeView.reload(focusedTab).then(() => {
-                treeView.reveal(focusedTab, { focus: true });
-            });
+            treeView.reload(focusedTab)
+                .then(() => {
+                    treeView.reveal(focusedTab, { focus: true });
+                })
+                .catch(err => {
+                    console.error("Could not reload treeView.", err);
+                });
         });
 
         const document = editor.document;
@@ -358,11 +374,17 @@ nova.commands.register("tabs-sidebar.close", (workspace) => {
                             .then(editor => {
                                 focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
                                 treeView.reveal(focusedTab, { focus: true });
+                            })
+                            .catch(err => {
+                                console.error("Could not open file.", err);
                             });
                     })
                     .catch(err => {
                         console.error(err);
                     });
+            })
+            .catch(err => {
+                console.error("Could not open file.", err);
             });
 
         return;
@@ -387,15 +409,22 @@ nova.commands.register("tabs-sidebar.open", (workspace) => {
             .then(editor => {
                 focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
                 //treeView.reveal(focusedTab, { focus: true });
+            })
+            .catch(err => {
+                console.error("Could not open file.", err);
             });
         return;
     }
 
     // Switch to tab for remote file
-    openRemoteTab(selection[0]).then(editor => {
-        focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-        //treeView.reveal(focusedTab, { focus: true });
-    });
+    openRemoteTab(selection[0])
+        .then(editor => {
+            focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
+            //treeView.reveal(focusedTab, { focus: true });
+        })
+        .catch(err => {
+            console.error("Could not open remote tab.", err);
+        });
 });
 
 nova.commands.register("tabs-sidebar.doubleClick", (workspace) => {
@@ -441,9 +470,13 @@ nova.commands.register("tabs-sidebar.cleanUpByTabBarOrder", (workspace) => {
             tabDataProvider.cleanUpByTabBarOrder(result);
 
             focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
-            treeView.reload().then(() => {
-                treeView.reveal(focusedTab, { focus: true });
-            });
+            treeView.reload()
+                .then(() => {
+                    treeView.reveal(focusedTab, { focus: true });
+                })
+                .catch(err => {
+                    console.error("Could not reload treeView.", err);
+                });
         })
         .catch(err => {
             console.error(err);
@@ -454,9 +487,13 @@ nova.commands.register("tabs-sidebar.cleanUpByAlpha", () => {
     if (nova.inDevMode()) console.log("cleanUpByAlpha");
 
     tabDataProvider.cleanUpByAlpha();
-    treeView.reload().then(() => {
-        treeView.reveal(focusedTab, { focus: true });
-    });
+    treeView.reload()
+        .then(() => {
+            treeView.reveal(focusedTab, { focus: true });
+        })
+        .catch(err => {
+            console.error("Could not reload treeView.", err);
+        });
 });
 
 nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
@@ -466,6 +503,13 @@ nova.commands.register("tabs-sidebar.cleanUpByKind", () => {
     treeView.reload().then(() => {
         treeView.reveal(focusedTab, { focus: true });
     });
+    treeView.reload()
+        .then(() => {
+            treeView.reveal(focusedTab, { focus: true });
+        })
+        .catch(err => {
+            console.error("Could not reload treeView.", err);
+        });
 });
 
 nova.commands.register("tabs-sidebar.sortByAlpha", (workspace) => {
@@ -501,6 +545,9 @@ nova.commands.register("tabs-sidebar.showInFilesSidebar", (workspace) => {
                 .catch(err => {
                     console.error(err);
                 });
+        })
+        .catch(err => {
+            console.error("Could not open file.", err);
         });
 });
 
