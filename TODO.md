@@ -5,7 +5,8 @@
 - [x] Show trash icon if tab is in trash
 - [ ] "Close Other Tabs" menu item ??
 - [ ] Custom ordering for grouped by kind
-- [ ] Ability to close remote tabs
+- [x] Ability to close remote tabs
+- [ ] When switching to remote tab with same name as local, check if active document is remote and switch to next one
 - [ ] Update list when file is moved or syntax changed
 - [ ] Group by folder option
 - [ ] Show git status

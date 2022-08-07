@@ -50,4 +50,4 @@ To configure global preferences, open **Extensions → Extension Library...** th
 - Tabs Sidebar cannot rearrange Nova's tab bar because there is currently no API, menu item, or keyboard shortcut for managing tabs order
 - Cannot differentiate between a local file and remote file with the same name, leading to inconsistent opening and sorting. This is due to the Window menu not indicating which files are remote.
 - Does not update list when document file path or syntax changes — coming soon
-- Cannot close remote files from the sidebar — coming soon
+- ~~Cannot close remote files from the sidebar — coming soon~~
