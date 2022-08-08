@@ -1,3 +1,9 @@
+## v1.3.1 - 2022-08-08
+
+### Fixed
+
+- Bug with timeoutId causing extension to fail to load
+
 ## v1.3.0 - 2022-08-07
 
 ### Added

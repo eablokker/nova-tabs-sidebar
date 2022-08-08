@@ -189,7 +189,7 @@ exports.activate = function() {
     //nova.commands.invoke("tabs-sidebar.cleanUpByTabBarOrder");
 
     // Prevent excessive reloading
-    let reloadTimeoutID = null;
+    let reloadTimeoutID = setTimeout(() => {});
 
     nova.workspace.onDidAddTextEditor(editor => {
         //console.log('Document opened');
