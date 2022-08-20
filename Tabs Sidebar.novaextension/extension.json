@@ -9,7 +9,7 @@
     "repository": "https://github.com/eablokker/nova-tabs-sidebar",
     "bugs": "https://github.com/eablokker/nova-tabs-sidebar/issues",
 
-    "main": "main.js",
+    "main": "main.dist.js",
     "min_runtime": "7.5",
 
     "activationEvents": [

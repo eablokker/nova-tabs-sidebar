@@ -1,14 +1,19 @@
 {
 	"root": true,
 	"env": {
-			"node": true,
-			"es2021": true
-	 },
-	"extends": "eslint:recommended",
+		"es6": true,
+		"node": true,
+		"nova/nova": true
+	},
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/eslint-recommended",
+		"prettier"
+	],
 	"rules": {
 			"indent": [
 				"warn",
-				4
+				"tab"
 			],
 			"linebreak-style": [
 				"error",
@@ -16,7 +21,7 @@
 			],
 			"quotes": [
 				"error",
-				"double"
+				"single"
 			],
 			"semi": [
 				"error",
@@ -26,14 +31,5 @@
 				"warn"
 			]
 	},
-	"globals": {
-			"nova": true,
-			"IssueCollection": true,
-			"Range": true,
-			"Process": true,
-			"IssueParser": true,
-			"TreeView": true,
-			"TreeItem": true,
-			"TreeItemCollapsibleState": true
-	}
+	"plugins": ["@typescript-eslint", "nova"]
 }
