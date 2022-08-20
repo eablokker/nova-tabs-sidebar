@@ -52,7 +52,8 @@ var openRemoteTab = function (uri) {
             var resultArray = result.split(', ');
             var element = tabDataProvider.getElementByUri(uri);
             if (!element) {
-                console.warn('No element found for uri ' + uri);
+                if (nova.inDevMode())
+                    console.warn('No element found for uri ' + uri);
                 return;
             }
             var basename = nova.path.basename(element.uri);

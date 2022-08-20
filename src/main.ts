@@ -56,7 +56,7 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 				const element = tabDataProvider.getElementByUri(uri);
 
 				if (!element) {
-					console.warn('No element found for uri ' + uri);
+					if (nova.inDevMode()) console.warn('No element found for uri ' + uri);;
 					return;
 				}
 
