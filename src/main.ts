@@ -1,18 +1,17 @@
-
-let treeView = null;
-let tabDataProvider = null;
-let focusedTab = null;
+let treeView: TreeView<TabItem | undefined>;
+let tabDataProvider: TabDataProvider;
+let focusedTab: TabItem | undefined;
 
 // Config vars
-let openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'Boolean');
-let alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'Boolean');
-let showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'Boolean');
+let openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
+let alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'boolean');
+let showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
 
-let unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'String');
-let unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'String');
+let unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
+let unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
 
-let groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', 'Boolean');
-let customTabOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'Array');
+let groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', 'boolean');
+const customTabOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array');
 
 const syntaxnames = {
 	'plaintext': 'Plain Text',
@@ -47,14 +46,20 @@ const syntaxnames = {
 	'yaml': 'YAML'
 };
 
-const openRemoteTab = (uri) => {
+const openRemoteTab = (uri: string): Promise<TextEditor> => {
 	return new Promise((resolve, reject) => {
 		tabDataProvider
 			.runProcess(__dirname + '/list_menu_items.sh', ['Window'])
-			.then(result => {
-				const workspaceName = nova.workspace.config.get('workspace.name', 'string') || nova.path.split(nova.workspace.path).pop();
+			.then((result) => {
+				const workspaceName = nova.workspace.config.get('workspace.name', 'string') || nova.path.split(nova.workspace.path || '').pop();
 				const resultArray = result.split(', ');
 				const element = tabDataProvider.getElementByUri(uri);
+
+				if (!element) {
+					console.warn('No element found for uri ' + uri);
+					return;
+				}
+
 				let basename = nova.path.basename(element.uri);
 				let parentPath = '';
 				const isUnique = tabDataProvider.isUniqueName(element);
@@ -71,7 +76,7 @@ const openRemoteTab = (uri) => {
 
 				let menuPosition = -1;
 				let projectFound = false;
-				resultArray.every((menuItem, i, self) => {
+				resultArray.every((menuItem: string, i: number, self: string[]) => {
 					if (menuItem.trim() === workspaceName && self[i - 1].trim() === 'missing value') {
 						projectFound = true;
 					}
@@ -149,36 +154,36 @@ exports.activate = function() {
 	});
 
 	// Watch for config changes
-	nova.config.onDidChange('eablokker.tabs-sidebar.open-on-single-click', (newVal, oldVal) => {
+	nova.config.onDidChange('eablokker.tabs-sidebar.open-on-single-click', (newVal: boolean, oldVal: boolean) => {
 		openOnSingleClick = newVal;
 	});
 
-	nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal, oldVal) => {
+	nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal: boolean, oldVal: boolean) => {
 		alwaysShowParentFolder = newVal;
 
 		treeView.reload();
 	});
 
-	nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', (newVal, oldVal) => {
+	nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', (newVal: boolean, oldVal: boolean) => {
 		showGroupCount = newVal;
 
 		tabDataProvider.sortItems();
 		treeView.reload();
 	});
 
-	nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol', (newVal, oldVal) => {
+	nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol', (newVal: string, oldVal: string) => {
 		unsavedSymbol = newVal;
 
 		treeView.reload();
 	});
 
-	nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol-location', (newVal, oldVal) => {
+	nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol-location', (newVal: string, oldVal: string) => {
 		unsavedSymbolLocation = newVal;
 
 		treeView.reload();
 	});
 
-	nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupByKind', (newVal, oldVal) => {
+	nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupByKind', (newVal: boolean, oldVal: boolean) => {
 		groupByKind = newVal;
 
 		tabDataProvider.setGroupByKind(groupByKind);
@@ -238,7 +243,7 @@ exports.activate = function() {
 					.then(() => {
 						const document = nova.workspace.activeTextEditor.document;
 						focusedTab = tabDataProvider.getElementByUri(document.uri);
-						treeView.reveal(focusedTab, { focus: true });
+						treeView.reveal(focusedTab || null, { focus: true });
 					})
 					.catch(err => {
 						console.error('Could not reload treeView.', err);
@@ -250,13 +255,17 @@ exports.activate = function() {
 		editor.onDidChangeSelection(changedEditor => {
 			//console.log('Document changed');
 
+			if (!treeView.selection[0]) {
+				return;
+			}
+
 			// Highlight sidebar tab if tab changed or no focused tab yet or no treeview selection
-			if (focusedTab && treeView.selection[0] === changedEditor.document.uri && changedEditor.document.uri === focusedTab.uri) {
+			if (focusedTab && treeView.selection[0].uri === changedEditor.document.uri && changedEditor.document.uri === focusedTab.uri) {
 				return;
 			}
 
 			focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
-			treeView.reveal(focusedTab, { focus: true });
+			treeView.reveal(focusedTab || null, { focus: true });
 		});
 
 		editor.onDidStopChanging(changedEditor => {
@@ -267,7 +276,7 @@ exports.activate = function() {
 
 			treeView.reload(focusedTab)
 				.then(() => {
-					treeView.reveal(focusedTab, { focus: true });
+					treeView.reveal(focusedTab || null, { focus: true });
 				})
 				.catch(err => {
 					console.error('Could not reload treeView.', err);
@@ -283,7 +292,7 @@ exports.activate = function() {
 
 			treeView.reload(focusedTab)
 				.then(() => {
-					treeView.reveal(focusedTab, { focus: true });
+					treeView.reveal(focusedTab || null, { focus: true });
 				})
 				.catch(err => {
 					console.error('Could not reload treeView.', err);
@@ -303,14 +312,14 @@ exports.activate = function() {
 	treeView.onDidChangeSelection((selection) => {
 		//console.log('New selection: ' + selection.map((e) => e.name));
 
-		if (!selection.length) {
+		if (!selection[0]) {
 			return;
 		}
 
 		const activeDocument = nova.workspace.activeTextEditor.document;
 
 		if (openOnSingleClick && activeDocument.uri !== selection[0].uri) {
-			nova.commands.invoke('tabs-sidebar.open', nova.workspace);
+			nova.commands.invoke('tabs-sidebar.open');
 		}
 	});
 
@@ -339,7 +348,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 
 	let selection = treeView.selection;
 
-	if (!selection.length) {
+	if (!selection[0]) {
 		return;
 	}
 
@@ -354,7 +363,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 			.then(result => {
 				activeDocument = workspace.activeTextEditor.document;
 				focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
-				treeView.reveal(focusedTab, { focus: true });
+				treeView.reveal(focusedTab || null, { focus: true });
 			})
 			.catch(err => {
 				console.error('Could not click menu item.', err);
@@ -366,18 +375,18 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 	if (!selectionIsRemote) {
 		// Close non currently active tab by switching to it and back
 		workspace.openFile(selection[0].uri)
-			.then(editor => {
+			.then((editor: TextEditor) => {
 				tabDataProvider
 					.runProcess(__dirname + '/click_menu_item.sh', ['File', 'Close Tab'])
 					.then(result => {
 						// Switch back to local tab after closing other local tab
 						if (!activeDocumentIsRemote) {
 							workspace.openFile(activeDocument.uri)
-								.then(editor => {
+								.then((editor: TextEditor) => {
 									focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-									treeView.reveal(focusedTab, { focus: true });
+									treeView.reveal(focusedTab || null, { focus: true });
 								})
-								.catch(err => {
+								.catch((err: string) => {
 									console.error('Could not open file.', err);
 								});
 
@@ -388,7 +397,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 						openRemoteTab(activeDocument.uri)
 							.then(editor => {
 								focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
-								treeView.reveal(focusedTab, { focus: true });
+								treeView.reveal(focusedTab || null, { focus: true });
 							})
 							.catch(err => {
 								console.error('Could not open remote tab.', err);
@@ -399,7 +408,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 						console.error('Could not click menu item.', err);
 					});
 			})
-			.catch(err => {
+			.catch((err: string) => {
 				console.error('Could not open file.', err);
 			});
 
@@ -414,11 +423,11 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 					// Switch back to local tab after closing other remote tab
 					if (!activeDocumentIsRemote) {
 						workspace.openFile(activeDocument.uri)
-							.then(editor => {
+							.then((editor: TextEditor) => {
 								focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-								treeView.reveal(focusedTab, { focus: true });
+								treeView.reveal(focusedTab || null, { focus: true });
 							})
-							.catch(err => {
+							.catch((err: string) => {
 								console.error('Could not open file.', err);
 							});
 
@@ -429,7 +438,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 					openRemoteTab(activeDocument.uri)
 						.then(editor => {
 							focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
-							treeView.reveal(focusedTab, { focus: true });
+							treeView.reveal(focusedTab || null, { focus: true });
 						})
 						.catch(err => {
 							console.error('Could not open remote tab.', err);
@@ -449,7 +458,7 @@ nova.commands.register('tabs-sidebar.open', (workspace) => {
 	let selection = treeView.selection;
 	// console.log('Selection: ' + selection[0].name);
 
-	if (!selection.length) {
+	if (!selection[0]) {
 		return;
 	}
 
@@ -458,11 +467,11 @@ nova.commands.register('tabs-sidebar.open', (workspace) => {
 	// Switch to tab for local file
 	if (!isRemote) {
 		workspace.openFile(selection[0].uri)
-			.then(editor => {
+			.then((editor: TextEditor) => {
 				focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
 				//treeView.reveal(focusedTab, { focus: true });
 			})
-			.catch(err => {
+			.catch((err: string) => {
 				console.error('Could not open file.', err);
 			});
 		return;
@@ -488,7 +497,7 @@ nova.commands.register('tabs-sidebar.up', () => {
 	// Invoked when the 'Move Up' header button is clicked
 	let selection = treeView.selection;
 
-	if (!selection.length) {
+	if (!selection[0]) {
 		return;
 	}
 
@@ -502,7 +511,7 @@ nova.commands.register('tabs-sidebar.down', () => {
 	// Invoked when the 'Move Down' header button is clicked
 	let selection = treeView.selection;
 
-	if (!selection.length) {
+	if (!selection[0]) {
 		return;
 	}
 
@@ -524,7 +533,7 @@ nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', (workspace) => {
 			focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
 			treeView.reload()
 				.then(() => {
-					treeView.reveal(focusedTab, { focus: true });
+					treeView.reveal(focusedTab || null, { focus: true });
 				})
 				.catch(err => {
 					console.error('Could not reload treeView.', err);
@@ -541,7 +550,7 @@ nova.commands.register('tabs-sidebar.cleanUpByAlpha', () => {
 	tabDataProvider.cleanUpByAlpha();
 	treeView.reload()
 		.then(() => {
-			treeView.reveal(focusedTab, { focus: true });
+			treeView.reveal(focusedTab || null, { focus: true });
 		})
 		.catch(err => {
 			console.error('Could not reload treeView.', err);
@@ -554,7 +563,7 @@ nova.commands.register('tabs-sidebar.cleanUpByKind', () => {
 	tabDataProvider.cleanUpByKind();
 	treeView.reload()
 		.then(() => {
-			treeView.reveal(focusedTab, { focus: true });
+			treeView.reveal(focusedTab || null, { focus: true });
 		})
 		.catch(err => {
 			console.error('Could not reload treeView.', err);
@@ -583,9 +592,13 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
 
 	let selection = treeView.selection;
 
+	if (!selection[0]) {
+		return;
+	}
+
 	// Need to open selected tab in order to invoke command
 	workspace.openFile(selection[0].uri)
-		.then(editor => {
+		.then((editor: TextEditor) => {
 			tabDataProvider
 				.runProcess(__dirname + '/click_menu_item.sh', ['File', 'Show in Files Sidebar'])
 				.then(result => {
@@ -595,7 +608,7 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
 					console.error('Could not click menu item.', err);
 				});
 		})
-		.catch(err => {
+		.catch((err: string) => {
 			console.error('Could not open file.', err);
 		});
 });
@@ -603,48 +616,101 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
 nova.commands.register('tabs-sidebar.showInFinder', () => {
 	let selection = treeView.selection;
 
-	// console.log(selection[0].path);
+	if (!selection[0]) {
+		return;
+	}
+
+	if (!selection[0].path) {
+		if (nova.inDevMode()) console.log('No path found for selection', selection[0].name);
+		return;
+	}
 
 	nova.fs.reveal(selection[0].path);
 });
 
 nova.commands.register('tabs-sidebar.copyPath', () => {
 	let selection = treeView.selection;
+
+	if (!selection[0]) {
+		return;
+	}
+
+	if (!selection[0].path) {
+		if (nova.inDevMode()) console.log('No path found for selection', selection[0].name);
+		return;
+	}
+
 	nova.clipboard.writeText(selection[0].path);
 });
 
 nova.commands.register('tabs-sidebar.copyRelativePath', workspace => {
 	let selection = treeView.selection;
+
+	if (!selection[0]) {
+		return;
+	}
+
+	if (!selection[0].path) {
+		if (nova.inDevMode()) console.log('No path found for selection', selection[0].name);
+		return;
+	}
+
 	nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
 });
 
 nova.commands.register('tabs-sidebar.refresh', workspace => {
 	let selection = treeView.selection;
-	tabDataProvider.loadData(workspace.textDocuments, selection[0] || null);
+
+	tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
 	treeView.reload();
 });
 
 class TabItem {
-	constructor(tab) {
-		this.name = tab.name;
-		this.path = tab.path;
+	name: string;
+	path: string | undefined;
+	uri: string;
+	descriptiveText: string;
+	parentPath: string;
+	isRemote: boolean;
+	isDirty: boolean;
+	isUntitled: boolean;
+	isTrashed: boolean;
+	children: TabItem[];
+	parent: TabItem | undefined;
+	collapsibleState: TreeItemCollapsibleState;
+	syntax: string;
+	extension: string | undefined;
+	icon: string | undefined
+	count: number | undefined;
+	contextValue: string;
+
+	constructor(name: string, tab: TextDocument) {
+		// Check if in .Trash folder
+		const trashRegex = new RegExp('^file:\/\/' + nova.path.expanduser('~') + '\/\.Trash\/');
+		const isTrashed = trashRegex.test(decodeURI(tab.uri));
+
+		const extName = nova.path.extname(tab.path || '').replace(/^\./, '');
+
+		this.name = name;
+		this.path = tab.path || undefined;
 		this.uri = tab.uri;
-		this.descriptiveText = tab.description || '';
-		this.parentPath = tab.parentPath;
+		this.descriptiveText = '';
+		this.parentPath = '';
 		this.isRemote = tab.isRemote || false;
 		this.isDirty = tab.isDirty || false;
 		this.isUntitled = tab.isUntitled || false;
-		this.isTrashed = tab.isTrashed || false;
+		this.isTrashed = isTrashed;
 		this.children = [];
-		this.parent = null;
+		this.parent = undefined;
 		this.collapsibleState = TreeItemCollapsibleState.None;
 		this.syntax = tab.syntax || 'plaintext';
-		this.extension = tab.extension || null;
-		this.icon = tab.icon || null;
-		this.count = tab.count || null;
+		this.extension = extName;
+		this.icon = undefined;
+		this.count = undefined;
+		this.contextValue = 'tabItem';
 	}
 
-	addChild(element) {
+	addChild(element: TabItem) {
 		element.parent = this;
 		this.children.push(element);
 	}
@@ -652,6 +718,12 @@ class TabItem {
 
 
 class TabDataProvider {
+	flatItems: TabItem[];
+	groupedItems: TabItem[];
+	customOrder: string[];
+	sortAlpha: boolean | null;
+	groupByKind: boolean | null;
+
 	constructor() {
 		this.flatItems = [];
 		this.groupedItems = [];
@@ -662,7 +734,7 @@ class TabDataProvider {
 		this.groupByKind = groupByKind;
 	}
 
-	loadData(documentTabs, focusedTab) {
+	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
 		// Remove extraneous from custom order
 		if (this.customOrder.length) {
 			this.customOrder = this.customOrder.filter(path => {
@@ -677,7 +749,7 @@ class TabDataProvider {
 				// Remove from flat items
 				self.splice(i, 1);
 				// Remove from custom order
-				this.customOrder.splice(this.customOrder.indexOf(item.path, 1));
+				this.customOrder.splice(this.customOrder.indexOf(item.path || '', 1));
 			}
 		});
 
@@ -698,7 +770,7 @@ class TabDataProvider {
 		// Add newly opened tabs
 		documentTabs.forEach(tab => {
 			// Hide untitled tabs
-			if (tab.isUntitled) {
+			if (tab.isUntitled || !tab.path) {
 				return;
 			}
 
@@ -721,25 +793,8 @@ class TabDataProvider {
 			// Add tab to flat items if new
 			if (tabIsNew) {
 				const tabName = this.basename(tab.path || 'untitled');
-				const extName = nova.path.extname(tab.path).replace(/^\./, '');
 
-				// Check if in .Trash folder
-				const trashRegex = new RegExp('^file:\/\/' + nova.path.expanduser('~') + '\/\.Trash\/');
-				const isTrashed = trashRegex.test(decodeURI(tab.uri));
-
-				const element = new TabItem({
-					name: tabName,
-					path: tab.path,
-					uri: tab.uri,
-					description: '',
-					isRemote: tab.isRemote,
-					isDirty: tab.isDirty,
-					isUntitled: tab.isUntitled,
-					isTrashed: isTrashed,
-					contextValue: 'tabItem',
-					syntax: tab.syntax,
-					extension: extName
-				});
+				const element = new TabItem(tabName, tab);
 
 				this.flatItems.push(element);
 
@@ -757,16 +812,8 @@ class TabDataProvider {
 						.split(' ')
 						.map((s) => s.charAt(0).toUpperCase() + s.substring(1))
 						.join(' ');
-					const extName = nova.path.extname(tab.path).replace(/^\./, '');
 
-					const newFolder = new TabItem({
-						name: syntaxnames[tabSyntax] || titleCaseName,
-						path: '',
-						uri: '',
-						description: '',
-						syntax: tab.syntax,
-						extension: extName
-					});
+					const newFolder = new TabItem(syntaxnames[tabSyntax as keyof typeof syntaxnames] || titleCaseName, tab);
 
 					newFolder.addChild(Object.assign({}, element));
 					this.groupedItems.push(newFolder);
@@ -778,7 +825,7 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
-	runProcess(scriptPath, args, timeout = 3000) {
+	runProcess(scriptPath: string, args: string[], timeout = 3000): Promise<string> {
 		return new Promise((resolve, reject) => {
 			let outString = '';
 			let errorString = '';
@@ -813,16 +860,19 @@ class TabDataProvider {
 		});
 	}
 
-	setDirty(editor) {
+	setDirty(editor: TextEditor) {
 		const element = this.getElementByUri(editor.document.uri);
-		element.isDirty = editor.document.isDirty;
+
+		if (element) {
+			element.isDirty = editor.document.isDirty;
+		}
 	}
 
-	basename(uri) {
+	basename(uri: string) {
 		return nova.path.basename(uri);
 	}
 
-	isUniqueName(tab) {
+	isUniqueName(tab: TabItem) {
 		return nova.workspace.textDocuments
 			.filter(doc => doc.uri !== tab.uri)
 			.every(doc => {
@@ -831,7 +881,7 @@ class TabDataProvider {
 			});
 	}
 
-	getCommonBasePath(tab) {
+	getCommonBasePath(tab: TabItem) {
 		const tabDirArray = nova.path.split(nova.path.dirname(tab.path || ''));
 		const similarTabs = nova.workspace.textDocuments
 			.filter(doc => {
@@ -839,7 +889,7 @@ class TabDataProvider {
 				return doc.isRemote === tab.isRemote && this.basename(doc.uri) === this.basename(tab.uri);
 			});
 
-		let commonDirArray = [];
+		let commonDirArray: string[] = [];
 		tabDirArray.every((dir, i) => {
 			const commonDir = similarTabs.every((tab2) => {
 				const tabDirArray2 = nova.path.split(nova.path.dirname(tab2.path || ''));
@@ -861,7 +911,7 @@ class TabDataProvider {
 		return commonDirArray.join('/');
 	}
 
-	moveTab(tab, distance) {
+	moveTab(tab: TabItem, distance: number) {
 		// Original tab path
 		const uri = tab.uri;
 		const path = tab.path;
@@ -883,18 +933,24 @@ class TabDataProvider {
 		keys
 			.filter((key, i, keys) => keys.indexOf(key) === i) // Remove duplicates
 			.forEach((key) => {
+				// Preserve context value
 				if (key === 'contextValue') {
 					return;
 				}
 
-				const newVal = fromItem[key] || null;
-				const oldVal = toItem[key] || null;
-				toItem[key] = newVal;
-				fromItem[key] = oldVal;
+				const tabItemKey = key as keyof TabItem;
+
+				const newVal = fromItem[tabItemKey];
+				const oldVal = toItem[tabItemKey];
+
+				// @ts-expect-error
+				toItem[tabItemKey] = newVal;
+				// @ts-expect-error
+				fromItem[tabItemKey] = oldVal;
 			});
 
 		// Update custom order
-		const fromIndex = this.customOrder.indexOf(path);
+		const fromIndex = this.customOrder.indexOf(path || '');
 		const toIndex = fromIndex + distance;
 
 		if (toIndex < 0 || toIndex >= this.customOrder.length) {
@@ -915,10 +971,10 @@ class TabDataProvider {
 			});
 	}
 
-	cleanUpByTabBarOrder(result) {
+	cleanUpByTabBarOrder(result: string) {
 		const workspaceName =
 			nova.workspace.config.get('workspace.name', 'string') ||
-			nova.path.split(nova.workspace.path).pop();
+			nova.path.split(nova.workspace.path || '').pop();
 
 		const menuGroups = result
 			.split(', missing value, ')
@@ -945,6 +1001,11 @@ class TabDataProvider {
 				let basename = nova.path.basename(path);
 				let parentPath = '';
 				const element = tabDataProvider.getElementByPath(path);
+
+				if (!element) {
+					return basename;
+				}
+
 				const isUnique = tabDataProvider.isUniqueName(element);
 
 				if (isUnique) {
@@ -952,7 +1013,7 @@ class TabDataProvider {
 				}
 
 				const commonBasePath = tabDataProvider.getCommonBasePath(element);
-				parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length));
+				parentPath = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length));
 
 				if (parentPath.length) {
 					basename += ' – ' + parentPath;
@@ -960,6 +1021,10 @@ class TabDataProvider {
 
 				return basename;
 			});
+
+			if (!currentWindow) {
+				return 0;
+			}
 
 			if (currentWindow.tabs.indexOf(paths[0]) < 0) {
 				return 1;
@@ -990,8 +1055,12 @@ class TabDataProvider {
 		});
 
 		this.customOrder.sort((a, b) => {
-			const aElement = elementArray.find(item => item.path === a);
-			const bElement = elementArray.find(item => item.path === b);
+			const aElement = elementArray.find(item => item?.path === a);
+			const bElement = elementArray.find(item => item?.path === b);
+
+			if (!aElement || !bElement) {
+				return 0;
+			}
 
 			return aElement.syntax.localeCompare(bElement.syntax);
 		});
@@ -1000,25 +1069,25 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
-	setSortAlpha(sortAlpha) {
+	setSortAlpha(sortAlpha: boolean) {
 		//console.log('Setting sort alpha', sortAlpha);
 		this.sortAlpha = sortAlpha;
 
 		this.sortItems();
 	}
 
-	setGroupByKind(groupByKind) {
+	setGroupByKind(groupByKind: boolean) {
 		//console.log('Setting sort by kind', groupByKind);
 		this.groupByKind = groupByKind;
 
 		this.sortItems();
 	}
 
-	byCustomOrder(a, b) {
-		if (this.customOrder.indexOf(a.path) < 0) {
+	byCustomOrder(a: TabItem, b: TabItem) {
+		if (this.customOrder.indexOf(a.path || '') < 0) {
 			return 1;
 		}
-		return this.customOrder.indexOf(a.path) - this.customOrder.indexOf(b.path);
+		return this.customOrder.indexOf(a.path || '') - this.customOrder.indexOf(b.path || '');
 	}
 
 	sortItems() {
@@ -1074,9 +1143,9 @@ class TabDataProvider {
 		}
 	}
 
-	getElementByUri(uri) {
+	getElementByUri(uri: string): TabItem | undefined {
 		if (this.groupByKind) {
-			let childElement = null;
+			let childElement: TabItem | undefined;
 			this.groupedItems.some(item => {
 				childElement = item.children.find(child => {
 					return child.uri === uri;
@@ -1094,7 +1163,7 @@ class TabDataProvider {
 
 	}
 
-	getElementByPath(path) {
+	getElementByPath(path: string) {
 		const element = this.flatItems.find(item => {
 			return item.path === path;
 		});
@@ -1115,11 +1184,11 @@ class TabDataProvider {
 		return childElement;
 	}
 
-	getFolderBySyntax(syntax) {
-		return this.groupedItems.find(folder => folder.syntax === syntax);
+	getFolderBySyntax(syntax: string) {
+		return this.groupedItems.find((folder: TabItem) => folder.syntax === syntax);
 	}
 
-	getChildren(element) {
+	getChildren(element: TabItem) {
 		// Requests the children of an element
 		if (!element) {
 			if (this.groupByKind) {
@@ -1133,12 +1202,12 @@ class TabDataProvider {
 		}
 	}
 
-	getParent(element) {
+	getParent(element: TabItem) {
 		// Requests the parent of an element, for use with the reveal() method
 		return element.parent;
 	}
 
-	getTreeItem(element) {
+	getTreeItem(element: TabItem) {
 		// Converts an element into its display (TreeItem) representation
 
 		let name = element.name;
@@ -1165,9 +1234,8 @@ class TabDataProvider {
 			item.path = element.path;
 			item.tooltip = '';
 			item.contextValue = 'kindGroup';
-			item.identifier = element.name;
+			item.identifier = element.syntax;
 			item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
-			item.syntax = element.syntax;
 		}
 		else {
 			// Calculate parent folder path for description
@@ -1184,11 +1252,11 @@ class TabDataProvider {
 			// Show parent path if filename is not unique
 			if (!isUnique) {
 				const commonBasePath = this.getCommonBasePath(element);
-				parentPath = decodeURI(nova.path.dirname(element.path).substring(commonBasePath.length))
+				const parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
 					.split('/')
 					.reverse();
 
-				parentPath
+				parentPathSplit
 					.filter(dir => dir.length)
 					.forEach((dir, i) => {
 						if (i === 0) {
@@ -1212,7 +1280,6 @@ class TabDataProvider {
 			item.contextValue = element.contextValue;
 			item.identifier = element.uri;
 			item.image = element.extension ? '__filetype.' + element.extension : '__filetype.blank';
-			item.syntax = element.syntax;
 		}
 		return item;
 	}

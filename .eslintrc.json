@@ -7,9 +7,12 @@
 	},
 	"extends": [
 		"eslint:recommended",
-		"plugin:@typescript-eslint/eslint-recommended",
-		"prettier"
+		"plugin:@typescript-eslint/eslint-recommended"
 	],
+	"parserOptions": {
+		"sourceType": "module",
+		"parser": "@typescript-eslint/parser"
+	},
 	"rules": {
 			"indent": [
 				"warn",
@@ -31,5 +34,7 @@
 				"warn"
 			]
 	},
-	"plugins": ["@typescript-eslint", "nova"]
+	"plugins": [
+
+	]
 }
