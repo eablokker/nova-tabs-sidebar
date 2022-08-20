@@ -1257,35 +1257,39 @@ class TabDataProvider {
 
 	getTreeItem(element: TabItem | FolderItem) {
 		// Converts an element into its display (TreeItem) representation
+		let item: TreeItem;
 
-		let name = element.name;
-		let description = '';
-
-		if (element.isDirty) {
-			switch (unsavedSymbolLocation) {
-			case 'never':
-				break;
-			case 'after-filename':
-				description = (unsavedSymbol || '●') + ' ' + description;
-				break;
-			case 'before-filename':
-			default:
-				name = (unsavedSymbol || '●') + ' ' + name;
-				break;
-			}
-		}
-
-		let item = new TreeItem(name);
 		if (element instanceof FolderItem) {
+			item = new TreeItem(element.name);
+
 			item.descriptiveText = showGroupCount ? '(' + element.children.length + ')' : '';
 			item.collapsibleState = TreeItemCollapsibleState.Expanded;
 			item.path = element.path;
 			item.tooltip = '';
-			item.contextValue = 'kindGroup';
+			item.contextValue = element.contextValue;
 			item.identifier = element.syntax;
 			item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
 		}
 		else {
+			let name = element.name;
+			let description = '';
+
+			if (element.isDirty) {
+				switch (unsavedSymbolLocation) {
+				case 'never':
+					break;
+				case 'after-filename':
+					description = (unsavedSymbol || '●') + ' ' + description;
+					break;
+				case 'before-filename':
+				default:
+					name = (unsavedSymbol || '●') + ' ' + name;
+					break;
+				}
+			}
+
+			item = new TreeItem(element.name);
+
 			// Calculate parent folder path for description
 			let parentPath = '';
 			const isUnique = this.isUniqueName(element);

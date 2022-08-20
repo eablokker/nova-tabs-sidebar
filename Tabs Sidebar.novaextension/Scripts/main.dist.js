@@ -1010,32 +1010,30 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.getTreeItem = function (element) {
         // Converts an element into its display (TreeItem) representation
-        var name = element.name;
-        var description = '';
-        if (element.isDirty) {
-            switch (unsavedSymbolLocation) {
-                case 'never':
-                    break;
-                case 'after-filename':
-                    description = (unsavedSymbol || '●') + ' ' + description;
-                    break;
-                case 'before-filename':
-                default:
-                    name = (unsavedSymbol || '●') + ' ' + name;
-                    break;
-            }
-        }
-        var item = new TreeItem(name);
+        var item;
         if (element instanceof FolderItem) {
+            item = new TreeItem(element.name);
             item.descriptiveText = showGroupCount ? '(' + element.children.length + ')' : '';
             item.collapsibleState = TreeItemCollapsibleState.Expanded;
             item.path = element.path;
             item.tooltip = '';
-            item.contextValue = 'kindGroup';
+            item.contextValue = element.contextValue;
             item.identifier = element.syntax;
             item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
         }
         else {
+            element.name;
+            var description_1 = '';
+            if (element.isDirty) {
+                switch (unsavedSymbolLocation) {
+                    case 'never':
+                        break;
+                    case 'after-filename':
+                        description_1 = (unsavedSymbol || '●') + ' ' + description_1;
+                        break;
+                }
+            }
+            item = new TreeItem(element.name);
             // Calculate parent folder path for description
             var parentPath = '';
             var isUnique = this.isUniqueName(element);
@@ -1043,7 +1041,7 @@ var TabDataProvider = /** @class */ (function () {
             if (alwaysShowParentFolder && !parentPath.length) {
                 var tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
                 parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
-                description += '‹ ' + parentPath;
+                description_1 += '‹ ' + parentPath;
             }
             // Show parent path if filename is not unique
             if (!isUnique) {
@@ -1055,18 +1053,18 @@ var TabDataProvider = /** @class */ (function () {
                     .filter(function (dir) { return dir.length; })
                     .forEach(function (dir, i) {
                     if (i === 0) {
-                        description = '';
+                        description_1 = '';
                     }
-                    description += '‹ ' + dir + ' ';
+                    description_1 += '‹ ' + dir + ' ';
                 });
             }
             if (element.isTrashed) {
-                description = '‹ Trash 🗑' + description;
+                description_1 = '‹ Trash 🗑' + description_1;
             }
             else if (element.isRemote) {
-                description = '☁️' + description;
+                description_1 = '☁️' + description_1;
             }
-            item.descriptiveText = description;
+            item.descriptiveText = description_1;
             item.path = element.path;
             item.tooltip = element.path;
             item.command = 'tabs-sidebar.doubleClick';
