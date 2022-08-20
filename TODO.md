@@ -11,3 +11,6 @@
 - [ ] Group by folder option
 - [ ] Show git status
 - [ ] Localize text
+- [ ] Rewrite in Typescript
+- [ ] Show loading indicator when AppleScript action is waiting to finish
+- [ ] Ability to move selected group of tabs up and down
