@@ -418,6 +418,9 @@ nova.commands.register('tabs-sidebar.up', function () {
     if (!selection[0]) {
         return;
     }
+    if (selection[0] instanceof FolderItem) {
+        return;
+    }
     // console.log(JSON.stringify(selection[0]));
     // console.log('Move Up: ' + selection.map((e) => e.name));
     tabDataProvider.moveTab(selection[0], -1);
@@ -426,6 +429,9 @@ nova.commands.register('tabs-sidebar.down', function () {
     // Invoked when the 'Move Down' header button is clicked
     var selection = treeView.selection;
     if (!selection[0]) {
+        return;
+    }
+    if (selection[0] instanceof FolderItem) {
         return;
     }
     // console.log(JSON.stringify(selection[0]));
@@ -548,7 +554,12 @@ nova.commands.register('tabs-sidebar.copyRelativePath', function (workspace) {
 });
 nova.commands.register('tabs-sidebar.refresh', function (workspace) {
     var selection = treeView.selection;
-    tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
+    if (selection[0] instanceof FolderItem) {
+        tabDataProvider.loadData(workspace.textDocuments);
+    }
+    else {
+        tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
+    }
     treeView.reload();
 });
 var TabItem = /** @class */ (function () {
@@ -561,25 +572,42 @@ var TabItem = /** @class */ (function () {
         this.path = tab.path || undefined;
         this.uri = tab.uri;
         this.descriptiveText = '';
-        this.parentPath = '';
         this.isRemote = tab.isRemote || false;
         this.isDirty = tab.isDirty || false;
         this.isUntitled = tab.isUntitled || false;
         this.isTrashed = isTrashed;
         this.children = [];
         this.parent = undefined;
-        this.collapsibleState = TreeItemCollapsibleState.None;
         this.syntax = tab.syntax || 'plaintext';
         this.extension = extName;
         this.icon = undefined;
         this.count = undefined;
         this.contextValue = 'tabItem';
     }
-    TabItem.prototype.addChild = function (element) {
+    return TabItem;
+}());
+var FolderItem = /** @class */ (function () {
+    function FolderItem(name, syntax, extName) {
+        this.name = name;
+        this.path = undefined;
+        this.uri = '';
+        this.descriptiveText = '';
+        this.isRemote = false;
+        this.isDirty = false;
+        this.children = [];
+        this.parent = undefined;
+        this.collapsibleState = TreeItemCollapsibleState.None;
+        this.syntax = syntax || 'plaintext';
+        this.extension = extName;
+        this.icon = undefined;
+        this.count = undefined;
+        this.contextValue = 'kindGroup';
+    }
+    FolderItem.prototype.addChild = function (element) {
         element.parent = this;
         this.children.push(element);
     };
-    return TabItem;
+    return FolderItem;
 }());
 var TabDataProvider = /** @class */ (function () {
     function TabDataProvider() {
@@ -659,7 +687,8 @@ var TabDataProvider = /** @class */ (function () {
                         .split(' ')
                         .map(function (s) { return s.charAt(0).toUpperCase() + s.substring(1); })
                         .join(' ');
-                    var newFolder = new TabItem(syntaxnames[tabSyntax_1] || titleCaseName, tab);
+                    var extName = nova.path.extname(tab.path || '').replace(/^\./, '');
+                    var newFolder = new FolderItem(syntaxnames[tabSyntax_1] || titleCaseName, tab.syntax, extName);
                     newFolder.addChild(Object.assign({}, element));
                     _this.groupedItems.push(newFolder);
                 }
@@ -949,7 +978,7 @@ var TabDataProvider = /** @class */ (function () {
         if (element) {
             return element;
         }
-        var childElement = null;
+        var childElement = undefined;
         this.flatItems.some(function (item) {
             childElement = item.children.find(function (child) {
                 return child.path === path;
@@ -997,7 +1026,7 @@ var TabDataProvider = /** @class */ (function () {
             }
         }
         var item = new TreeItem(name);
-        if (element.children.length > 0) {
+        if (element instanceof FolderItem) {
             item.descriptiveText = showGroupCount ? '(' + element.children.length + ')' : '';
             item.collapsibleState = TreeItemCollapsibleState.Expanded;
             item.path = element.path;

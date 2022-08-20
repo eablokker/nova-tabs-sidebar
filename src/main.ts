@@ -1,4 +1,4 @@
-let treeView: TreeView<TabItem | undefined>;
+let treeView: TreeView<TabItem | FolderItem | undefined>;
 let tabDataProvider: TabDataProvider;
 let focusedTab: TabItem | undefined;
 
@@ -501,6 +501,10 @@ nova.commands.register('tabs-sidebar.up', () => {
 		return;
 	}
 
+	if (selection[0] instanceof FolderItem) {
+		return;
+	}
+
 	// console.log(JSON.stringify(selection[0]));
 	// console.log('Move Up: ' + selection.map((e) => e.name));
 
@@ -512,6 +516,10 @@ nova.commands.register('tabs-sidebar.down', () => {
 	let selection = treeView.selection;
 
 	if (!selection[0]) {
+		return;
+	}
+
+	if (selection[0] instanceof FolderItem) {
 		return;
 	}
 
@@ -661,7 +669,12 @@ nova.commands.register('tabs-sidebar.copyRelativePath', workspace => {
 nova.commands.register('tabs-sidebar.refresh', workspace => {
 	let selection = treeView.selection;
 
-	tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
+	if (selection[0] instanceof FolderItem) {
+		tabDataProvider.loadData(workspace.textDocuments);
+	} else {
+		tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
+	}
+
 	treeView.reload();
 });
 
@@ -670,14 +683,12 @@ class TabItem {
 	path: string | undefined;
 	uri: string;
 	descriptiveText: string;
-	parentPath: string;
 	isRemote: boolean;
 	isDirty: boolean;
 	isUntitled: boolean;
 	isTrashed: boolean;
 	children: TabItem[];
-	parent: TabItem | undefined;
-	collapsibleState: TreeItemCollapsibleState;
+	parent: FolderItem | undefined;
 	syntax: string;
 	extension: string | undefined;
 	icon: string | undefined
@@ -695,19 +706,51 @@ class TabItem {
 		this.path = tab.path || undefined;
 		this.uri = tab.uri;
 		this.descriptiveText = '';
-		this.parentPath = '';
 		this.isRemote = tab.isRemote || false;
 		this.isDirty = tab.isDirty || false;
 		this.isUntitled = tab.isUntitled || false;
 		this.isTrashed = isTrashed;
 		this.children = [];
 		this.parent = undefined;
-		this.collapsibleState = TreeItemCollapsibleState.None;
 		this.syntax = tab.syntax || 'plaintext';
 		this.extension = extName;
 		this.icon = undefined;
 		this.count = undefined;
 		this.contextValue = 'tabItem';
+	}
+}
+
+class FolderItem {
+	name: string;
+	path: string | undefined;
+	uri: string;
+	descriptiveText: string;
+	isRemote: boolean;
+	isDirty: boolean;
+	children: TabItem[];
+	parent: TabItem | undefined;
+	collapsibleState: TreeItemCollapsibleState;
+	syntax: string;
+	extension: string | undefined;
+	icon: string | undefined
+	count: number | undefined;
+	contextValue: string;
+
+	constructor(name: string, syntax: string | null, extName: string) {
+		this.name = name;
+		this.path = undefined;
+		this.uri = '';
+		this.descriptiveText = '';
+		this.isRemote = false;
+		this.isDirty = false;
+		this.children = [];
+		this.parent = undefined;
+		this.collapsibleState = TreeItemCollapsibleState.None;
+		this.syntax = syntax || 'plaintext';
+		this.extension = extName;
+		this.icon = undefined;
+		this.count = undefined;
+		this.contextValue = 'kindGroup';
 	}
 
 	addChild(element: TabItem) {
@@ -716,10 +759,9 @@ class TabItem {
 	}
 }
 
-
 class TabDataProvider {
 	flatItems: TabItem[];
-	groupedItems: TabItem[];
+	groupedItems: FolderItem[];
 	customOrder: string[];
 	sortAlpha: boolean | null;
 	groupByKind: boolean | null;
@@ -813,7 +855,13 @@ class TabDataProvider {
 						.map((s) => s.charAt(0).toUpperCase() + s.substring(1))
 						.join(' ');
 
-					const newFolder = new TabItem(syntaxnames[tabSyntax as keyof typeof syntaxnames] || titleCaseName, tab);
+					const extName = nova.path.extname(tab.path || '').replace(/^\./, '');
+
+					const newFolder = new FolderItem(
+						syntaxnames[tabSyntax as keyof typeof syntaxnames] || titleCaseName,
+						tab.syntax,
+						extName
+					);
 
 					newFolder.addChild(Object.assign({}, element));
 					this.groupedItems.push(newFolder);
@@ -1163,7 +1211,7 @@ class TabDataProvider {
 
 	}
 
-	getElementByPath(path: string) {
+	getElementByPath(path: string): TabItem | undefined {
 		const element = this.flatItems.find(item => {
 			return item.path === path;
 		});
@@ -1172,7 +1220,7 @@ class TabDataProvider {
 			return element;
 		}
 
-		let childElement = null;
+		let childElement = undefined;
 		this.flatItems.some(item => {
 			childElement = item.children.find(child => {
 				return child.path === path;
@@ -1185,10 +1233,10 @@ class TabDataProvider {
 	}
 
 	getFolderBySyntax(syntax: string) {
-		return this.groupedItems.find((folder: TabItem) => folder.syntax === syntax);
+		return this.groupedItems.find((folder: FolderItem) => folder.syntax === syntax);
 	}
 
-	getChildren(element: TabItem) {
+	getChildren(element: TabItem | FolderItem) {
 		// Requests the children of an element
 		if (!element) {
 			if (this.groupByKind) {
@@ -1202,12 +1250,12 @@ class TabDataProvider {
 		}
 	}
 
-	getParent(element: TabItem) {
+	getParent(element: TabItem | FolderItem) {
 		// Requests the parent of an element, for use with the reveal() method
 		return element.parent;
 	}
 
-	getTreeItem(element: TabItem) {
+	getTreeItem(element: TabItem | FolderItem) {
 		// Converts an element into its display (TreeItem) representation
 
 		let name = element.name;
@@ -1228,7 +1276,7 @@ class TabDataProvider {
 		}
 
 		let item = new TreeItem(name);
-		if (element.children.length > 0) {
+		if (element instanceof FolderItem) {
 			item.descriptiveText = showGroupCount ? '(' + element.children.length + ')' : '';
 			item.collapsibleState = TreeItemCollapsibleState.Expanded;
 			item.path = element.path;
