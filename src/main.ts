@@ -397,7 +397,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 
 						// Switch back to remote tab after closing other local tab
 						openRemoteTab(activeDocument.uri)
-							.then(editor => {
+							.then((editor: TextEditor) => {
 								focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
 								treeView.reveal(focusedTab || null, { focus: true });
 							})
@@ -481,7 +481,7 @@ nova.commands.register('tabs-sidebar.open', (workspace) => {
 
 	// Switch to tab for remote file
 	openRemoteTab(selection[0].uri)
-		.then(editor => {
+		.then((editor: TextEditor) => {
 			focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
 			//treeView.reveal(focusedTab, { focus: true });
 		})
