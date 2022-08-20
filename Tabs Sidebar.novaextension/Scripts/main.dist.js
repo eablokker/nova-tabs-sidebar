@@ -1029,11 +1029,11 @@ var TabDataProvider = /** @class */ (function () {
                     case 'never':
                         break;
                     case 'after-filename':
-                        description_1 = (unsavedSymbol || '●') + ' ' + description_1;
+                        description_1 = (unsavedSymbol || '⚫︎') + ' ' + description_1;
                         break;
                     case 'before-filename':
                     default:
-                        name = (unsavedSymbol || '●') + ' ' + name;
+                        name = (unsavedSymbol || '⚫︎') + ' ' + name;
                         break;
                 }
             }

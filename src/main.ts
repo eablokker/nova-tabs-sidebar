@@ -1279,11 +1279,11 @@ class TabDataProvider {
 				case 'never':
 					break;
 				case 'after-filename':
-					description = (unsavedSymbol || '●') + ' ' + description;
+					description = (unsavedSymbol || '⚫︎') + ' ' + description;
 					break;
 				case 'before-filename':
 				default:
-					name = (unsavedSymbol || '●') + ' ' + name;
+					name = (unsavedSymbol || '⚫︎') + ' ' + name;
 					break;
 				}
 			}

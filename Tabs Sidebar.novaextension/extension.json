@@ -204,7 +204,7 @@
             "title": "Unsaved tab symbol",
             "description": "Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.",
             "type": "string",
-            "default": "●"
+            "default": "⚫︎"
         },
         {
             "key": "eablokker.tabs-sidebar.unsaved-symbol-location",
