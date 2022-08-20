@@ -1288,7 +1288,7 @@ class TabDataProvider {
 				}
 			}
 
-			item = new TreeItem(element.name);
+			item = new TreeItem(name);
 
 			// Calculate parent folder path for description
 			let parentPath = '';

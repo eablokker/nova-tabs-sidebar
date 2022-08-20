@@ -1022,7 +1022,7 @@ var TabDataProvider = /** @class */ (function () {
             item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
         }
         else {
-            element.name;
+            var name = element.name;
             var description_1 = '';
             if (element.isDirty) {
                 switch (unsavedSymbolLocation) {
@@ -1031,9 +1031,13 @@ var TabDataProvider = /** @class */ (function () {
                     case 'after-filename':
                         description_1 = (unsavedSymbol || '●') + ' ' + description_1;
                         break;
+                    case 'before-filename':
+                    default:
+                        name = (unsavedSymbol || '●') + ' ' + name;
+                        break;
                 }
             }
-            item = new TreeItem(element.name);
+            item = new TreeItem(name);
             // Calculate parent folder path for description
             var parentPath = '';
             var isUnique = this.isUniqueName(element);
