@@ -1,5 +1,6 @@
 {
 	"root": true,
+	"parser": "@typescript-eslint/parser",
 	"env": {
 		"es6": true,
 		"node": true,
@@ -7,12 +8,9 @@
 	},
 	"extends": [
 		"eslint:recommended",
-		"plugin:@typescript-eslint/eslint-recommended"
+		"plugin:@typescript-eslint/eslint-recommended",
+		"plugin:@typescript-eslint/recommended"
 	],
-	"parserOptions": {
-		"sourceType": "module",
-		"parser": "@typescript-eslint/parser"
-	},
 	"rules": {
 			"indent": [
 				"warn",
@@ -35,6 +33,7 @@
 			]
 	},
 	"plugins": [
-
+		"@typescript-eslint",
+		"nova"
 	]
 }

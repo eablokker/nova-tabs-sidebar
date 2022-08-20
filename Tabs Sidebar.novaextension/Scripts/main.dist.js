@@ -163,7 +163,9 @@ exports.activate = function () {
     // Initially sort by tabs bar order
     //nova.commands.invoke('tabs-sidebar.cleanUpByTabBarOrder');
     // Prevent excessive reloading
-    var reloadTimeoutID = setTimeout(function () { });
+    var reloadTimeoutID = setTimeout(function () {
+        //
+    });
     nova.workspace.onDidAddTextEditor(function (editor) {
         //console.log('Document opened');
         clearTimeout(reloadTimeoutID);
@@ -508,6 +510,7 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', function (workspace) {
         tabDataProvider
             .runProcess(__dirname + '/click_menu_item.sh', ['File', 'Show in Files Sidebar'])
             .then(function (result) {
+            //
         })
             .catch(function (err) {
             console.error('Could not click menu item.', err);
@@ -795,9 +798,9 @@ var TabDataProvider = /** @class */ (function () {
             var tabItemKey = key;
             var newVal = fromItem[tabItemKey];
             var oldVal = toItem[tabItemKey];
-            // @ts-expect-error
+            // @ts-expect-error Need to figure out how to swap values
             toItem[tabItemKey] = newVal;
-            // @ts-expect-error
+            // @ts-expect-error Need to figure out how to swap values
             fromItem[tabItemKey] = oldVal;
         });
         // Update custom order

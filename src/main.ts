@@ -56,7 +56,7 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 				const element = tabDataProvider.getElementByUri(uri);
 
 				if (!element) {
-					if (nova.inDevMode()) console.warn('No element found for uri ' + uri);;
+					if (nova.inDevMode()) console.warn('No element found for uri ' + uri);
 					return;
 				}
 
@@ -194,7 +194,9 @@ exports.activate = function() {
 	//nova.commands.invoke('tabs-sidebar.cleanUpByTabBarOrder');
 
 	// Prevent excessive reloading
-	let reloadTimeoutID = setTimeout(() => {});
+	let reloadTimeoutID = setTimeout(() => {
+		//
+	});
 
 	nova.workspace.onDidAddTextEditor(editor => {
 		//console.log('Document opened');
@@ -346,7 +348,7 @@ exports.deactivate = function() {
 nova.commands.register('tabs-sidebar.close', (workspace) => {
 	// console.log('Close Tab clicked');
 
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 
 	if (!selection[0]) {
 		return;
@@ -416,7 +418,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 	}
 
 	openRemoteTab(selection[0].uri)
-		.then(editor => {
+		.then((editor: TextEditor) => {
 			tabDataProvider
 				.runProcess(__dirname + '/click_menu_item.sh', ['File', 'Close Tab'])
 				.then(result => {
@@ -436,7 +438,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 
 					// Switch back to remote tab after closing other remote tab
 					openRemoteTab(activeDocument.uri)
-						.then(editor => {
+						.then((editor: TextEditor) => {
 							focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
 							treeView.reveal(focusedTab || null, { focus: true });
 						})
@@ -455,7 +457,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 });
 
 nova.commands.register('tabs-sidebar.open', (workspace) => {
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 	// console.log('Selection: ' + selection[0].name);
 
 	if (!selection[0]) {
@@ -495,7 +497,7 @@ nova.commands.register('tabs-sidebar.doubleClick', (workspace) => {
 
 nova.commands.register('tabs-sidebar.up', () => {
 	// Invoked when the 'Move Up' header button is clicked
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 
 	if (!selection[0]) {
 		return;
@@ -513,7 +515,7 @@ nova.commands.register('tabs-sidebar.up', () => {
 
 nova.commands.register('tabs-sidebar.down', () => {
 	// Invoked when the 'Move Down' header button is clicked
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 
 	if (!selection[0]) {
 		return;
@@ -598,7 +600,7 @@ nova.commands.register('tabs-sidebar.groupByKind', (workspace) => {
 nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
 	if (nova.inDevMode()) console.log('Show in Files Sidebar');
 
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 
 	if (!selection[0]) {
 		return;
@@ -610,7 +612,7 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
 			tabDataProvider
 				.runProcess(__dirname + '/click_menu_item.sh', ['File', 'Show in Files Sidebar'])
 				.then(result => {
-
+					//
 				})
 				.catch(err => {
 					console.error('Could not click menu item.', err);
@@ -622,7 +624,7 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
 });
 
 nova.commands.register('tabs-sidebar.showInFinder', () => {
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 
 	if (!selection[0]) {
 		return;
@@ -637,7 +639,7 @@ nova.commands.register('tabs-sidebar.showInFinder', () => {
 });
 
 nova.commands.register('tabs-sidebar.copyPath', () => {
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 
 	if (!selection[0]) {
 		return;
@@ -652,7 +654,7 @@ nova.commands.register('tabs-sidebar.copyPath', () => {
 });
 
 nova.commands.register('tabs-sidebar.copyRelativePath', workspace => {
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 
 	if (!selection[0]) {
 		return;
@@ -667,7 +669,7 @@ nova.commands.register('tabs-sidebar.copyRelativePath', workspace => {
 });
 
 nova.commands.register('tabs-sidebar.refresh', workspace => {
-	let selection = treeView.selection;
+	const selection = treeView.selection;
 
 	if (selection[0] instanceof FolderItem) {
 		tabDataProvider.loadData(workspace.textDocuments);
@@ -691,7 +693,7 @@ class TabItem {
 	parent: FolderItem | undefined;
 	syntax: string;
 	extension: string | undefined;
-	icon: string | undefined
+	icon: string | undefined;
 	count: number | undefined;
 	contextValue: string;
 
@@ -732,7 +734,7 @@ class FolderItem {
 	collapsibleState: TreeItemCollapsibleState;
 	syntax: string;
 	extension: string | undefined;
-	icon: string | undefined
+	icon: string | undefined;
 	count: number | undefined;
 	contextValue: string;
 
@@ -888,7 +890,7 @@ class TabDataProvider {
 				errorString += line;
 			});
 
-			let timeoutID = setTimeout(() => {
+			const timeoutID = setTimeout(() => {
 				// Ensure the process terminates in a timely fashion
 				reject('The process did not respond in a timely manner.');
 				process.terminate();
@@ -937,7 +939,7 @@ class TabDataProvider {
 				return doc.isRemote === tab.isRemote && this.basename(doc.uri) === this.basename(tab.uri);
 			});
 
-		let commonDirArray: string[] = [];
+		const commonDirArray: string[] = [];
 		tabDirArray.every((dir, i) => {
 			const commonDir = similarTabs.every((tab2) => {
 				const tabDirArray2 = nova.path.split(nova.path.dirname(tab2.path || ''));
@@ -991,9 +993,9 @@ class TabDataProvider {
 				const newVal = fromItem[tabItemKey];
 				const oldVal = toItem[tabItemKey];
 
-				// @ts-expect-error
+				// @ts-expect-error Need to figure out how to swap values
 				toItem[tabItemKey] = newVal;
-				// @ts-expect-error
+				// @ts-expect-error Need to figure out how to swap values
 				fromItem[tabItemKey] = oldVal;
 			});
 
