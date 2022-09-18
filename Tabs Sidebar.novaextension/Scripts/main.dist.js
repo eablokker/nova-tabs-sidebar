@@ -3,6 +3,7 @@
 var treeView;
 var tabDataProvider;
 var focusedTab;
+var openTabWhenFocusSidebar = true;
 // Config vars
 var openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
 var alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'boolean');
@@ -215,15 +216,16 @@ exports.activate = function () {
         });
         // Focus tab in sidebar when clicking in document
         editor.onDidChangeSelection(function (changedEditor) {
-            //console.log('Document changed');
-            if (!treeView.selection[0]) {
-                return;
-            }
-            // Highlight sidebar tab if tab changed or no focused tab yet or no treeview selection
-            if (focusedTab && treeView.selection[0].uri === changedEditor.document.uri && changedEditor.document.uri === focusedTab.uri) {
+            if (nova.inDevMode())
+                console.log('editor.onDidChangeSelection');
+            var selection = treeView.selection[0];
+            var document = changedEditor.document;
+            // Don't reveal in treeview if it's already selected
+            if (selection && selection.uri === document.uri) {
                 return;
             }
             focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
+            openTabWhenFocusSidebar = false;
             treeView.reveal(focusedTab || null, { focus: true });
         });
         editor.onDidStopChanging(function (changedEditor) {
@@ -262,8 +264,15 @@ exports.activate = function () {
         });
     });
     treeView.onDidChangeSelection(function (selection) {
+        if (nova.inDevMode())
+            console.log('treeView.onDidChangeSelection');
         //console.log('New selection: ' + selection.map((e) => e.name));
         if (!selection[0]) {
+            return;
+        }
+        // Prevent tab opening when editor selection changes
+        if (openTabWhenFocusSidebar === false) {
+            openTabWhenFocusSidebar = true;
             return;
         }
         var activeDocument = nova.workspace.activeTextEditor.document;
@@ -581,7 +590,7 @@ var TabItem = /** @class */ (function () {
         this.isUntitled = tab.isUntitled || false;
         this.isTrashed = isTrashed;
         this.children = [];
-        this.parent = undefined;
+        this.parent = null;
         this.syntax = tab.syntax || 'plaintext';
         this.extension = extName;
         this.icon = undefined;
@@ -599,7 +608,7 @@ var FolderItem = /** @class */ (function () {
         this.isRemote = false;
         this.isDirty = false;
         this.children = [];
-        this.parent = undefined;
+        this.parent = null;
         this.collapsibleState = TreeItemCollapsibleState.None;
         this.syntax = syntax || 'plaintext';
         this.extension = extName;
@@ -1010,6 +1019,11 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.getParent = function (element) {
         // Requests the parent of an element, for use with the reveal() method
+        if (nova.inDevMode())
+            console.log('getParent');
+        if (element === null) {
+            return null;
+        }
         return element.parent;
     };
     TabDataProvider.prototype.getTreeItem = function (element) {

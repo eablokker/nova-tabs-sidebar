@@ -1,4 +1,4 @@
-let treeView: TreeView<TabItem | FolderItem | undefined>;
+let treeView: TreeView<TabItem | FolderItem | null>;
 let tabDataProvider: TabDataProvider;
 let focusedTab: TabItem | undefined;
 
@@ -690,7 +690,7 @@ class TabItem {
 	isUntitled: boolean;
 	isTrashed: boolean;
 	children: TabItem[];
-	parent: FolderItem | undefined;
+	parent: FolderItem | null;
 	syntax: string;
 	extension: string | undefined;
 	icon: string | undefined;
@@ -713,7 +713,7 @@ class TabItem {
 		this.isUntitled = tab.isUntitled || false;
 		this.isTrashed = isTrashed;
 		this.children = [];
-		this.parent = undefined;
+		this.parent = null;
 		this.syntax = tab.syntax || 'plaintext';
 		this.extension = extName;
 		this.icon = undefined;
@@ -730,7 +730,7 @@ class FolderItem {
 	isRemote: boolean;
 	isDirty: boolean;
 	children: TabItem[];
-	parent: TabItem | undefined;
+	parent: FolderItem | null;
 	collapsibleState: TreeItemCollapsibleState;
 	syntax: string;
 	extension: string | undefined;
@@ -746,7 +746,7 @@ class FolderItem {
 		this.isRemote = false;
 		this.isDirty = false;
 		this.children = [];
-		this.parent = undefined;
+		this.parent = null;
 		this.collapsibleState = TreeItemCollapsibleState.None;
 		this.syntax = syntax || 'plaintext';
 		this.extension = extName;
@@ -1254,6 +1254,13 @@ class TabDataProvider {
 
 	getParent(element: TabItem | FolderItem) {
 		// Requests the parent of an element, for use with the reveal() method
+
+		if (nova.inDevMode()) console.log('getParent');
+
+		if (element === null) {
+			return null;
+		}
+
 		return element.parent;
 	}
 
