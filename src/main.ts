@@ -1,6 +1,7 @@
 let treeView: TreeView<TabItem | FolderItem | null>;
 let tabDataProvider: TabDataProvider;
 let focusedTab: TabItem | undefined;
+let openTabWhenFocusSidebar = true;
 
 // Config vars
 let openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
@@ -255,18 +256,18 @@ exports.activate = function() {
 
 		// Focus tab in sidebar when clicking in document
 		editor.onDidChangeSelection(changedEditor => {
-			//console.log('Document changed');
+			if (nova.inDevMode()) console.log('editor.onDidChangeSelection');
 
-			if (!treeView.selection[0]) {
-				return;
-			}
+			const selection = treeView.selection[0];
+			const document = changedEditor.document;
 
-			// Highlight sidebar tab if tab changed or no focused tab yet or no treeview selection
-			if (focusedTab && treeView.selection[0].uri === changedEditor.document.uri && changedEditor.document.uri === focusedTab.uri) {
+			// Don't reveal in treeview if it's already selected
+			if (selection && selection.uri === document.uri) {
 				return;
 			}
 
 			focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
+			openTabWhenFocusSidebar = false;
 			treeView.reveal(focusedTab || null, { focus: true });
 		});
 
@@ -312,9 +313,16 @@ exports.activate = function() {
 	});
 
 	treeView.onDidChangeSelection((selection) => {
+		if (nova.inDevMode()) console.log('treeView.onDidChangeSelection');
 		//console.log('New selection: ' + selection.map((e) => e.name));
 
 		if (!selection[0]) {
+			return;
+		}
+
+		// Prevent tab opening when editor selection changes
+		if (openTabWhenFocusSidebar === false) {
+			openTabWhenFocusSidebar = true;
 			return;
 		}
 
