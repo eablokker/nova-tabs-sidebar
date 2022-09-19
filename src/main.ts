@@ -1337,7 +1337,8 @@ class TabDataProvider {
 			}
 
 			if (element.isTrashed) {
-				description = '‹ Trash 🗑' + description;
+				const trashString = nova.localize('Trash');
+				description = '‹ ' + trashString + ' 🗑';
 			} else if (element.isRemote) {
 				description = '☁️' + description;
 			}
