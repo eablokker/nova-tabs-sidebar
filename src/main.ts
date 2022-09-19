@@ -15,7 +15,7 @@ let groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupB
 const customTabOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array');
 
 const syntaxnames = {
-	'plaintext': 'Plain Text',
+	'plaintext': nova.localize('Plain Text'),
 	'coffeescript': 'CoffeeScript',
 	'css': 'CSS',
 	'diff': 'Diff',
@@ -50,7 +50,7 @@ const syntaxnames = {
 const openRemoteTab = (uri: string): Promise<TextEditor> => {
 	return new Promise((resolve, reject) => {
 		tabDataProvider
-			.runProcess(__dirname + '/list_menu_items.sh', ['Window'])
+			.runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
 			.then((result) => {
 				const workspaceName = nova.workspace.config.get('workspace.name', 'string') || nova.path.split(nova.workspace.path || '').pop();
 				const resultArray = result.split(', ');
@@ -78,7 +78,7 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 				let menuPosition = -1;
 				let projectFound = false;
 				resultArray.every((menuItem: string, i: number, self: string[]) => {
-					if (menuItem.trim() === workspaceName && self[i - 1].trim() === 'missing value') {
+					if (menuItem.trim() === workspaceName && self[i - 1].trim() === nova.localize('missing value')) {
 						projectFound = true;
 					}
 
@@ -87,7 +87,7 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 					}
 
 					// Exit early at end of project items
-					if (projectFound && menuItem.trim() === 'missing value') {
+					if (projectFound && menuItem.trim() === nova.localize('missing value')) {
 						return false;
 					}
 
@@ -100,7 +100,7 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 				}
 
 				tabDataProvider
-					.runProcess(__dirname + '/click_menu_item_by_number.sh', ['Window', menuPosition.toString()])
+					.runProcess(__dirname + '/click_menu_item_by_number.sh', [nova.localize('Window'), menuPosition.toString()])
 					.then(() => {
 						// console.log('Menu item ' + menuPosition + ' of Window menu clicked');
 						const editor = nova.workspace.activeTextEditor;
@@ -256,7 +256,7 @@ exports.activate = function() {
 
 		// Focus tab in sidebar when clicking in document
 		editor.onDidChangeSelection(changedEditor => {
-			if (nova.inDevMode()) console.log('editor.onDidChangeSelection');
+			// if (nova.inDevMode()) console.log('editor.onDidChangeSelection');
 
 			const selection = treeView.selection[0];
 			const document = changedEditor.document;
@@ -369,7 +369,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 	// Close currently active tab
 	if (selection[0].uri === activeDocument.uri) {
 		tabDataProvider
-			.runProcess(__dirname + '/click_menu_item.sh', ['File', 'Close Tab'])
+			.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
 			.then(result => {
 				activeDocument = workspace.activeTextEditor.document;
 				focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
@@ -387,7 +387,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 		workspace.openFile(selection[0].uri)
 			.then((editor: TextEditor) => {
 				tabDataProvider
-					.runProcess(__dirname + '/click_menu_item.sh', ['File', 'Close Tab'])
+					.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
 					.then(result => {
 						// Switch back to local tab after closing other local tab
 						if (!activeDocumentIsRemote) {
@@ -428,7 +428,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 	openRemoteTab(selection[0].uri)
 		.then((editor: TextEditor) => {
 			tabDataProvider
-				.runProcess(__dirname + '/click_menu_item.sh', ['File', 'Close Tab'])
+				.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
 				.then(result => {
 					// Switch back to local tab after closing other remote tab
 					if (!activeDocumentIsRemote) {
@@ -542,7 +542,7 @@ nova.commands.register('tabs-sidebar.down', () => {
 nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', (workspace) => {
 	//console.log('Clean up by tab bar order clicked');
 
-	tabDataProvider.runProcess(__dirname + '/list_menu_items.sh', ['Window'])
+	tabDataProvider.runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
 		.then(result => {
 			//console.log(result);
 
@@ -618,7 +618,7 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
 	workspace.openFile(selection[0].uri)
 		.then((editor: TextEditor) => {
 			tabDataProvider
-				.runProcess(__dirname + '/click_menu_item.sh', ['File', 'Show in Files Sidebar'])
+				.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Show in Files Sidebar')])
 				.then(result => {
 					//
 				})

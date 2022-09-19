@@ -13,7 +13,7 @@ var unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symb
 var groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', 'boolean');
 var customTabOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array');
 var syntaxnames = {
-    'plaintext': 'Plain Text',
+    'plaintext': nova.localize('Plain Text'),
     'coffeescript': 'CoffeeScript',
     'css': 'CSS',
     'diff': 'Diff',
@@ -47,7 +47,7 @@ var syntaxnames = {
 var openRemoteTab = function (uri) {
     return new Promise(function (resolve, reject) {
         tabDataProvider
-            .runProcess(__dirname + '/list_menu_items.sh', ['Window'])
+            .runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
             .then(function (result) {
             var workspaceName = nova.workspace.config.get('workspace.name', 'string') || nova.path.split(nova.workspace.path || '').pop();
             var resultArray = result.split(', ');
@@ -71,14 +71,14 @@ var openRemoteTab = function (uri) {
             var menuPosition = -1;
             var projectFound = false;
             resultArray.every(function (menuItem, i, self) {
-                if (menuItem.trim() === workspaceName && self[i - 1].trim() === 'missing value') {
+                if (menuItem.trim() === workspaceName && self[i - 1].trim() === nova.localize('missing value')) {
                     projectFound = true;
                 }
                 if (menuItem.trim() === basename) {
                     menuPosition = i + 1; // Zero-indexed to 1-indexed
                 }
                 // Exit early at end of project items
-                if (projectFound && menuItem.trim() === 'missing value') {
+                if (projectFound && menuItem.trim() === nova.localize('missing value')) {
                     return false;
                 }
                 return true;
@@ -88,7 +88,7 @@ var openRemoteTab = function (uri) {
                 return;
             }
             tabDataProvider
-                .runProcess(__dirname + '/click_menu_item_by_number.sh', ['Window', menuPosition.toString()])
+                .runProcess(__dirname + '/click_menu_item_by_number.sh', [nova.localize('Window'), menuPosition.toString()])
                 .then(function () {
                 // console.log('Menu item ' + menuPosition + ' of Window menu clicked');
                 var editor = nova.workspace.activeTextEditor;
@@ -216,8 +216,7 @@ exports.activate = function () {
         });
         // Focus tab in sidebar when clicking in document
         editor.onDidChangeSelection(function (changedEditor) {
-            if (nova.inDevMode())
-                console.log('editor.onDidChangeSelection');
+            // if (nova.inDevMode()) console.log('editor.onDidChangeSelection');
             var selection = treeView.selection[0];
             var document = changedEditor.document;
             // Don't reveal in treeview if it's already selected
@@ -307,7 +306,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
     // Close currently active tab
     if (selection[0].uri === activeDocument.uri) {
         tabDataProvider
-            .runProcess(__dirname + '/click_menu_item.sh', ['File', 'Close Tab'])
+            .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
             .then(function (result) {
             activeDocument = workspace.activeTextEditor.document;
             focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
@@ -323,7 +322,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
         workspace.openFile(selection[0].uri)
             .then(function (editor) {
             tabDataProvider
-                .runProcess(__dirname + '/click_menu_item.sh', ['File', 'Close Tab'])
+                .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
                 .then(function (result) {
                 // Switch back to local tab after closing other local tab
                 if (!activeDocumentIsRemote) {
@@ -359,7 +358,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
     openRemoteTab(selection[0].uri)
         .then(function (editor) {
         tabDataProvider
-            .runProcess(__dirname + '/click_menu_item.sh', ['File', 'Close Tab'])
+            .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
             .then(function (result) {
             // Switch back to local tab after closing other remote tab
             if (!activeDocumentIsRemote) {
@@ -452,7 +451,7 @@ nova.commands.register('tabs-sidebar.down', function () {
 });
 nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', function (workspace) {
     //console.log('Clean up by tab bar order clicked');
-    tabDataProvider.runProcess(__dirname + '/list_menu_items.sh', ['Window'])
+    tabDataProvider.runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
         .then(function (result) {
         //console.log(result);
         tabDataProvider.cleanUpByTabBarOrder(result);
@@ -517,7 +516,7 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', function (workspace) {
     workspace.openFile(selection[0].uri)
         .then(function (editor) {
         tabDataProvider
-            .runProcess(__dirname + '/click_menu_item.sh', ['File', 'Show in Files Sidebar'])
+            .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Show in Files Sidebar')])
             .then(function (result) {
             //
         })
@@ -1081,7 +1080,8 @@ var TabDataProvider = /** @class */ (function () {
                 });
             }
             if (element.isTrashed) {
-                description_1 = '‹ Trash 🗑' + description_1;
+                var trashString = nova.localize('Trash');
+                description_1 = '‹ ' + trashString + ' 🗑';
             }
             else if (element.isRemote) {
                 description_1 = '☁️' + description_1;
