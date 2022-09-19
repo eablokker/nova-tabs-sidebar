@@ -1,0 +1,46 @@
+{
+	"Tabs Sidebar": "签页侧边栏",
+	"Tabs": "签页",
+	"Open Files": "打开的文件",
+	"No files are open yet.": "尚未打开任何文件。",
+
+	"Open": "打开",
+	"Close Tab": "关闭标签页",
+	"Move Tab Up": "上移签页",
+	"Move Tab Down": "下移签页",
+	"Show in Files Sidebar": "在文件边栏中显示",
+	"Show in Finder": "在 Finder 中显示",
+	"Copy Path": "拷贝路径",
+	"Copy Relative Path": "拷贝相对路径",
+	"Clean Up By Tab Bar Order": "按签页栏顺序清理",
+	"Clean Up Alphabetically": "按字母顺序清理y",
+	"Clean Up By Kind": "按种类清理",
+	"Sort Alphabetically": "按字母顺序排序",
+	"Group By Kind": "按种类分组",
+	"Refresh": "刷新",
+
+	"Open tabs with a single click": "一键打开签页",
+	"When disabled, tabs will only open on double-click or context menu.": "禁用时，选项卡只会在双击或上下文菜单中打开。",
+
+	"Always show parent folder next to file name": "始终在文件名旁边显示父文件夹",
+	"When disabled, parent folder will only be shown if multiple files with the same name are opened.": "禁用时，仅当打开多个同名文件时才会显示父文件夹。",
+
+	"Show files count when grouping by kind": "按种类分组时显示文件数",
+	"Enable to show the number of files in each group next to the group's name.": "启用以在组名称旁边显示每个组中的文件数。",
+
+	"Unsaved tab symbol": "未保存的签页符号",
+	"Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.": "未保存更改的选项卡中显示的符号。你可以使用表情符号！ 😃 默认留空。",
+
+	"Show unsaved tab symbol": "显示未保存的签页符号",
+	"Before file name": "文件名前",
+	"After file name, before folder name": "文件名之后，文件夹名之前",
+	"Never": "绝不",
+
+	"Plain Text": "纯文本",
+
+	"File": "文件",
+	"Window": "窗口",
+	"Trash": "废纸篓",
+
+	"missing value": "missing value"
+}

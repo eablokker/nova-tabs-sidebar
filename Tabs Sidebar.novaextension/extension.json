@@ -9,7 +9,7 @@
     "repository": "https://github.com/eablokker/nova-tabs-sidebar",
     "bugs": "https://github.com/eablokker/nova-tabs-sidebar/issues",
 
-    "main": "main.js",
+    "main": "main.dist.js",
     "min_runtime": "7.5",
 
     "activationEvents": [
@@ -181,14 +181,14 @@
         {
             "key": "eablokker.tabs-sidebar.open-on-single-click",
             "title": "Open tabs with a single click",
-            "description": "Disabling will open tab on double click or context menu only.",
+            "description": "When disabled, tabs will only open on double-click or context menu.",
             "type": "boolean",
             "default": true
         },
         {
             "key": "eablokker.tabs-sidebar.always-show-parent-folder",
             "title": "Always show parent folder next to file name",
-            "description": "Disabling will only show parent folder when there are multiple files open with the same name.",
+            "description": "When disabled, parent folder will only be shown if multiple files with the same name are opened.",
             "type": "boolean",
             "default": false
         },
@@ -204,7 +204,7 @@
             "title": "Unsaved tab symbol",
             "description": "Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.",
             "type": "string",
-            "default": "●"
+            "default": "⚫︎"
         },
         {
             "key": "eablokker.tabs-sidebar.unsaved-symbol-location",

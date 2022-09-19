@@ -1,0 +1,46 @@
+{
+	"Tabs Sidebar": "タブ サイドバー",
+	"Tabs": "タブ",
+	"Open Files": "開いているファイル",
+	"No files are open yet.": "まだ開いているファイルはありません。",
+
+	"Open": "開く",
+	"Close Tab": "タブを閉じる",
+	"Move Tab Up": "タブを上に移動",
+	"Move Tab Down": "タブを下に移動",
+	"Show in Files Sidebar": "ファイルサイドバーで表示",
+	"Show in Finder": "Finderに表示",
+	"Copy Path": "パスをコピー",
+	"Copy Relative Path": "相対パスをコピー",
+	"Clean Up By Tab Bar Order": "タブバーの順序でクリーンアップ",
+	"Clean Up Alphabetically": "アルファベット順にクリーンアップ",
+	"Clean Up By Kind": "種類ごとにクリーンアップ",
+	"Sort Alphabetically": "アルファベット順に並べ替え",
+	"Group By Kind": "種類別にグループ化",
+	"Refresh": "リフレッシュ",
+
+	"Open tabs with a single click": "ワンクリックでタブを開く",
+	"When disabled, tabs will only open on double-click or context menu.": "無効にすると、ダブルクリックまたはコンテキスト メニューでのみタブが開きます。",
+
+	"Always show parent folder next to file name": "ファイル名の横に常に親フォルダーを表示する",
+	"When disabled, parent folder will only be shown if multiple files with the same name are opened.": "無効にすると、同じ名前の複数のファイルが開かれている場合にのみ、親フォルダーが表示されます。",
+
+	"Show files count when grouping by kind": "種類別にグループ化するときにファイル数を表示する",
+	"Enable to show the number of files in each group next to the group's name.": "グループ名の横に各グループのファイル数を表示できるようにします。",
+
+	"Unsaved tab symbol": "未保存のタブ記号",
+	"Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.": "変更が保存されていないタブに表示するシンボル。絵文字が使える！ 😃 デフォルトでは空白のままにします。",
+
+	"Show unsaved tab symbol": "保存されていないタブ記号を表示",
+	"Before file name": "ファイル名の前",
+	"After file name, before folder name": "ファイル名の後、フォルダ名の前",
+	"Never": "一度もない",
+
+	"Plain Text": "標準テキスト",
+
+	"File": "ファイル",
+	"Window": "ウインドウ",
+	"Trash": "ごみ箱",
+
+	"missing value": "missing value"
+}

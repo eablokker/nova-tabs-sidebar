@@ -1,0 +1,46 @@
+{
+	"Tabs Sidebar": "Tabs Seitenleiste",
+	"Tabs": "Tabs",
+	"Open Files": "Geöffneten Dateien",
+	"No files are open yet.": "Es sind noch keine Dateien geöffnet.",
+
+	"Open": "Öffnen",
+	"Close Tab": "Tab schließen",
+	"Move Tab Up": "Tab nach oben verschieben",
+	"Move Tab Down": "Tab nach unten verschieben",
+	"Show in Files Sidebar": "In der Dateien-Seitenleiste anzeigen",
+	"Show in Finder": "Im Finder anzeigen",
+	"Copy Path": "Pfad kopieren",
+	"Copy Relative Path": "Relativen Pfad kopieren",
+	"Clean Up By Tab Bar Order": "Aufräumen nach Tab-Leisten-Reihenfolge",
+	"Clean Up Alphabetically": "Alphabetisch aufräumen",
+	"Clean Up By Kind": "Aufräumen nach Art",
+	"Sort Alphabetically": "Alphabetisch sortieren",
+	"Group By Kind": "Nach Art gruppieren",
+	"Refresh": "Aktualisierung",
+
+	"Open tabs with a single click": "Öffnen Sie Tabs mit einem einzigen Klick",
+	"When disabled, tabs will only open on double-click or context menu.": "Wenn deaktiviert, öffnen sich Registerkarten nur per Doppelklick oder Kontextmenü.",
+
+	"Always show parent folder next to file name": "Übergeordneten Ordner immer neben dem Dateinamen anzeigen",
+	"When disabled, parent folder will only be shown if multiple files with the same name are opened.": "Wenn deaktiviert, wird der übergeordnete Ordner nur angezeigt, wenn mehrere Dateien mit demselben Namen geöffnet sind.",
+
+	"Show files count when grouping by kind": "Anzahl der Dateien anzeigen, wenn nach Art gruppiert wird",
+	"Enable to show the number of files in each group next to the group's name.": "Aktivieren Sie diese Option, um die Anzahl der Dateien in jeder Gruppe neben dem Gruppennamen anzuzeigen.",
+
+	"Unsaved tab symbol": "Nicht gespeichertes Tab-Symbol",
+	"Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.": "Symbol zur Anzeige in Registerkarten mit nicht gespeicherten Änderungen. Sie können Emojis verwenden! 😃 Standardmäßig leer lassen.",
+
+	"Show unsaved tab symbol": "Nicht gespeichertes Tab-Symbol anzeigen",
+	"Before file name": "Vor dem Dateinamen",
+	"After file name, before folder name": "Nach Dateiname, vor Ordnername",
+	"Never": "noch nie",
+
+	"Plain Text": "Reiner Text",
+
+	"File": "Datei",
+	"Window": "Fenster",
+	"Trash": "Papierkorb",
+
+	"missing value": "missing value"
+}

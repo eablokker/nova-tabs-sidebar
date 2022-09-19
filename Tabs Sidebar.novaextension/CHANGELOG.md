@@ -1,3 +1,20 @@
+## v1.4.0 - 2022-09-18
+
+### Added
+
+- Localized in French, German, Chinese, Japanese
+
+### Changed
+
+- Rewritten with Typescript
+- Slightly smaller default unsaved tab symbol
+
+### Fixed
+
+- Prevent externally changed files from having their tabs inadvertently opened
+- Fixes tabs switching when discarding git changes
+- Fix error with getting parent of null element
+
 ## v1.3.1 - 2022-08-08
 
 ### Fixed
