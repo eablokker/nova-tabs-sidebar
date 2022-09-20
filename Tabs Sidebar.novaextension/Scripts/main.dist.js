@@ -51,7 +51,6 @@ var openRemoteTab = function (uri) {
             .then(function (result) {
             var windowList = result.split(', ');
             var element = tabDataProvider.getElementByUri(uri);
-            var windowListOffset = 19;
             if (!element) {
                 console.warn('No tab element found for uri ' + uri);
                 return;
@@ -67,9 +66,6 @@ var openRemoteTab = function (uri) {
             if (parentPath.length) {
                 basename += ' – ' + parentPath;
             }
-            // Remove standard items from Window menu
-            windowList.splice(0, windowListOffset);
-            // console.log('windowList', windowList);
             var menuPosition = -1;
             var projectFound = false;
             windowList.every(function (menuItem, i) {
@@ -78,7 +74,7 @@ var openRemoteTab = function (uri) {
                     return true;
                 }
                 if (projectFound && menuItem.trim() === basename) {
-                    menuPosition = i + windowListOffset + 1; // Zero-indexed to 1-indexed
+                    menuPosition = i + 1; // Zero-indexed to 1-indexed
                     // Exit after finding first matching item in first matching project
                     return false;
                 }
@@ -859,9 +855,6 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.cleanUpByTabBarOrder = function (result) {
         var windowList = result.split(', ');
-        var windowListOffset = 19;
-        windowList.splice(0, windowListOffset);
-        // console.log('windowList', windowList);
         var currentWindow = [];
         var projectFound = false;
         windowList.every(function (menuItem) {

@@ -54,7 +54,6 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 			.then((result) => {
 				const windowList = result.split(', ');
 				const element = tabDataProvider.getElementByUri(uri);
-				const windowListOffset = 19;
 
 				if (!element) {
 					console.warn('No tab element found for uri ' + uri);
@@ -75,10 +74,6 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 					basename += ' – ' + parentPath;
 				}
 
-				// Remove standard items from Window menu
-				windowList.splice(0, windowListOffset);
-				// console.log('windowList', windowList);
-
 				let menuPosition = -1;
 				let projectFound = false;
 				windowList.every((menuItem: string, i: number) => {
@@ -88,7 +83,7 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 					}
 
 					if (projectFound && menuItem.trim() === basename) {
-						menuPosition = i + windowListOffset + 1; // Zero-indexed to 1-indexed
+						menuPosition = i + 1; // Zero-indexed to 1-indexed
 
 						// Exit after finding first matching item in first matching project
 						return false;
@@ -1064,12 +1059,8 @@ class TabDataProvider {
 
 	cleanUpByTabBarOrder(result: string) {
 		const windowList = result.split(', ');
-		const windowListOffset = 19;
-
-		windowList.splice(0, windowListOffset);
-		// console.log('windowList', windowList);
-
 		const currentWindow: string[] = [];
+
 		let projectFound = false;
 		windowList.every((menuItem: string) => {
 			if (menuItem.trim() === '✓') {
