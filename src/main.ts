@@ -248,9 +248,12 @@ exports.activate = function() {
 
 				reload
 					.then(() => {
-						const document = nova.workspace.activeTextEditor.document;
-						focusedTab = tabDataProvider.getElementByUri(document.uri);
-						treeView.reveal(focusedTab || null, { focus: true });
+						const document = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
+
+						if (document) {
+							focusedTab = tabDataProvider.getElementByUri(document.uri);
+							treeView.reveal(focusedTab || null, { focus: true });
+						}
 					})
 					.catch(err => {
 						console.error('Could not reload treeView.', err);
@@ -330,9 +333,9 @@ exports.activate = function() {
 			return;
 		}
 
-		const activeDocument = nova.workspace.activeTextEditor.document;
+		const activeDocument = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
 
-		if (openOnSingleClick && activeDocument.uri !== selection[0].uri) {
+		if (openOnSingleClick && (!activeDocument || activeDocument.uri !== selection[0].uri)) {
 			nova.commands.invoke('tabs-sidebar.open');
 		}
 	});
@@ -357,7 +360,7 @@ exports.deactivate = function() {
 	// Clean up state before the extension is deactivated
 };
 
-nova.commands.register('tabs-sidebar.close', (workspace) => {
+nova.commands.register('tabs-sidebar.close', (workspace: Workspace) => {
 	// console.log('Close Tab clicked');
 
 	const selection = treeView.selection;
@@ -366,18 +369,21 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 		return;
 	}
 
-	let activeDocument = workspace.activeTextEditor.document;
-	const activeDocumentIsRemote = activeDocument.isRemote;
+	let activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
+	const activeDocumentIsRemote = activeDocument ? activeDocument.isRemote : false;
 	const selectionIsRemote = selection[0].isRemote;
 
 	// Close currently active tab
-	if (selection[0].uri === activeDocument.uri) {
+	if (activeDocument && selection[0].uri === activeDocument.uri) {
 		tabDataProvider
 			.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
 			.then(result => {
-				activeDocument = workspace.activeTextEditor.document;
-				focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
-				treeView.reveal(focusedTab || null, { focus: true });
+				activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
+
+				if (activeDocument) {
+					focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
+					treeView.reveal(focusedTab || null, { focus: true });
+				}
 			})
 			.catch(err => {
 				console.error('Could not click menu item.', err);
@@ -389,16 +395,22 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 	if (!selectionIsRemote) {
 		// Close non currently active tab by switching to it and back
 		workspace.openFile(selection[0].uri)
-			.then((editor: TextEditor) => {
+			.then(() => {
 				tabDataProvider
 					.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-					.then(result => {
+					.then(() => {
+						if (!activeDocument) {
+							return;
+						}
+
 						// Switch back to local tab after closing other local tab
 						if (!activeDocumentIsRemote) {
 							workspace.openFile(activeDocument.uri)
-								.then((editor: TextEditor) => {
-									focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-									treeView.reveal(focusedTab || null, { focus: true });
+								.then(value => {
+									if (value) {
+										focusedTab = tabDataProvider.getElementByUri(value.document.uri);
+										treeView.reveal(focusedTab || null, { focus: true });
+									}
 								})
 								.catch((err: string) => {
 									console.error('Could not open file.', err);
@@ -409,9 +421,11 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 
 						// Switch back to remote tab after closing other local tab
 						openRemoteTab(activeDocument.uri)
-							.then((editor: TextEditor) => {
-								focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
-								treeView.reveal(focusedTab || null, { focus: true });
+							.then(() => {
+								if (activeDocument) {
+									focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
+									treeView.reveal(focusedTab || null, { focus: true });
+								}
 							})
 							.catch(err => {
 								console.error('Could not open remote tab.', err);
@@ -430,16 +444,22 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 	}
 
 	openRemoteTab(selection[0].uri)
-		.then((editor: TextEditor) => {
+		.then(() => {
 			tabDataProvider
 				.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-				.then(result => {
+				.then(() => {
+					if (!activeDocument) {
+						return;
+					}
+
 					// Switch back to local tab after closing other remote tab
 					if (!activeDocumentIsRemote) {
 						workspace.openFile(activeDocument.uri)
-							.then((editor: TextEditor) => {
-								focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-								treeView.reveal(focusedTab || null, { focus: true });
+							.then(value => {
+								if (value) {
+									focusedTab = tabDataProvider.getElementByUri(value.document.uri);
+									treeView.reveal(focusedTab || null, { focus: true });
+								}
 							})
 							.catch((err: string) => {
 								console.error('Could not open file.', err);
@@ -450,9 +470,11 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 
 					// Switch back to remote tab after closing other remote tab
 					openRemoteTab(activeDocument.uri)
-						.then((editor: TextEditor) => {
-							focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
-							treeView.reveal(focusedTab || null, { focus: true });
+						.then(value => {
+							if (value) {
+								focusedTab = tabDataProvider.getElementByUri(value.document.uri);
+								treeView.reveal(focusedTab || null, { focus: true });
+							}
 						})
 						.catch(err => {
 							console.error('Could not open remote tab.', err);
@@ -468,7 +490,7 @@ nova.commands.register('tabs-sidebar.close', (workspace) => {
 		});
 });
 
-nova.commands.register('tabs-sidebar.open', (workspace) => {
+nova.commands.register('tabs-sidebar.open', (workspace: Workspace) => {
 	const selection = treeView.selection;
 	// console.log('Selection: ' + selection[0].name);
 
@@ -481,9 +503,11 @@ nova.commands.register('tabs-sidebar.open', (workspace) => {
 	// Switch to tab for local file
 	if (!isRemote) {
 		workspace.openFile(selection[0].uri)
-			.then((editor: TextEditor) => {
-				focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-				//treeView.reveal(focusedTab, { focus: true });
+			.then(value => {
+				if (value) {
+					focusedTab = tabDataProvider.getElementByUri(value.document.uri);
+					//treeView.reveal(focusedTab, { focus: true });
+				}
 			})
 			.catch((err: string) => {
 				console.error('Could not open file.', err);
@@ -502,9 +526,9 @@ nova.commands.register('tabs-sidebar.open', (workspace) => {
 		});
 });
 
-nova.commands.register('tabs-sidebar.doubleClick', (workspace) => {
+nova.commands.register('tabs-sidebar.doubleClick', () => {
 	// Invoked when an item is double-clicked
-	nova.commands.invoke('tabs-sidebar.open', workspace);
+	nova.commands.invoke('tabs-sidebar.open');
 });
 
 nova.commands.register('tabs-sidebar.up', () => {
@@ -543,7 +567,7 @@ nova.commands.register('tabs-sidebar.down', () => {
 	tabDataProvider.moveTab(selection[0], 1);
 });
 
-nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', (workspace) => {
+nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', (workspace: Workspace) => {
 	//console.log('Clean up by tab bar order clicked');
 
 	tabDataProvider.runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
@@ -552,7 +576,7 @@ nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', (workspace) => {
 
 			tabDataProvider.cleanUpByTabBarOrder(result);
 
-			focusedTab = tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri);
+			focusedTab = workspace.activeTextEditor ? tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri) : undefined;
 			treeView.reload()
 				.then(() => {
 					treeView.reveal(focusedTab || null, { focus: true });
@@ -592,7 +616,7 @@ nova.commands.register('tabs-sidebar.cleanUpByKind', () => {
 		});
 });
 
-nova.commands.register('tabs-sidebar.sortByAlpha', (workspace) => {
+nova.commands.register('tabs-sidebar.sortByAlpha', (workspace: Workspace) => {
 	if (nova.inDevMode()) console.log('Sort alphabetically');
 
 	const sortAlpha = !workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
@@ -603,13 +627,13 @@ nova.commands.register('tabs-sidebar.sortByAlpha', (workspace) => {
 	treeView.reload();
 });
 
-nova.commands.register('tabs-sidebar.groupByKind', (workspace) => {
+nova.commands.register('tabs-sidebar.groupByKind', (workspace: Workspace) => {
 	if (nova.inDevMode()) console.log('groupByKind');
 
 	workspace.config.set('eablokker.tabsSidebar.config.groupByKind', !groupByKind);
 });
 
-nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
+nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace: Workspace) => {
 	if (nova.inDevMode()) console.log('Show in Files Sidebar');
 
 	const selection = treeView.selection;
@@ -620,10 +644,10 @@ nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace) => {
 
 	// Need to open selected tab in order to invoke command
 	workspace.openFile(selection[0].uri)
-		.then((editor: TextEditor) => {
+		.then(() => {
 			tabDataProvider
 				.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Show in Files Sidebar')])
-				.then(result => {
+				.then(() => {
 					//
 				})
 				.catch(err => {
@@ -665,7 +689,7 @@ nova.commands.register('tabs-sidebar.copyPath', () => {
 	nova.clipboard.writeText(selection[0].path);
 });
 
-nova.commands.register('tabs-sidebar.copyRelativePath', workspace => {
+nova.commands.register('tabs-sidebar.copyRelativePath', (workspace: Workspace) => {
 	const selection = treeView.selection;
 
 	if (!selection[0]) {
@@ -677,10 +701,14 @@ nova.commands.register('tabs-sidebar.copyRelativePath', workspace => {
 		return;
 	}
 
-	nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+	if (workspace.path) {
+		nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+	} else {
+		nova.clipboard.writeText(selection[0].path);
+	}
 });
 
-nova.commands.register('tabs-sidebar.refresh', workspace => {
+nova.commands.register('tabs-sidebar.refresh', (workspace: Workspace) => {
 	const selection = treeView.selection;
 
 	if (selection[0] instanceof FolderItem) {
