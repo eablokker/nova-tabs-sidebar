@@ -1,3 +1,10 @@
+## v1.4.1 - 2022-09-20
+
+### Fixed
+
+- Opening, closing, sorting remote tabs when workspace has no path
+- Opening, closing, sorting tabs when file browser or terminal tab is currently active
+
 ## v1.4.0 - 2022-09-18
 
 ### Added
