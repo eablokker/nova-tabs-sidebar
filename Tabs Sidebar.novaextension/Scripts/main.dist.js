@@ -49,12 +49,11 @@ var openRemoteTab = function (uri) {
         tabDataProvider
             .runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
             .then(function (result) {
-            var workspaceName = nova.workspace.config.get('workspace.name', 'string') || nova.path.split(nova.workspace.path || '').pop();
-            var resultArray = result.split(', ');
+            var windowList = result.split(', ');
             var element = tabDataProvider.getElementByUri(uri);
+            var windowListOffset = 19;
             if (!element) {
-                if (nova.inDevMode())
-                    console.warn('No element found for uri ' + uri);
+                console.warn('No tab element found for uri ' + uri);
                 return;
             }
             var basename = nova.path.basename(element.uri);
@@ -68,23 +67,26 @@ var openRemoteTab = function (uri) {
             if (parentPath.length) {
                 basename += ' – ' + parentPath;
             }
+            // Remove standard items from Window menu
+            windowList.splice(0, windowListOffset);
+            // console.log('windowList', windowList);
             var menuPosition = -1;
             var projectFound = false;
-            resultArray.every(function (menuItem, i, self) {
-                if (menuItem.trim() === workspaceName && self[i - 1].trim() === nova.localize('missing value')) {
+            windowList.every(function (menuItem, i) {
+                if (menuItem.trim() === '✓') {
                     projectFound = true;
+                    return true;
                 }
-                if (menuItem.trim() === basename) {
-                    menuPosition = i + 1; // Zero-indexed to 1-indexed
-                }
-                // Exit early at end of project items
-                if (projectFound && menuItem.trim() === nova.localize('missing value')) {
+                if (projectFound && menuItem.trim() === basename) {
+                    menuPosition = i + windowListOffset + 1; // Zero-indexed to 1-indexed
+                    // Exit after finding first matching item in first matching project
                     return false;
                 }
+                // Keep loop running if nothing found
                 return true;
             });
             if (menuPosition < 0) {
-                reject();
+                reject('Filename not found in Window menu');
                 return;
             }
             tabDataProvider
@@ -830,25 +832,27 @@ var TabDataProvider = /** @class */ (function () {
         });
     };
     TabDataProvider.prototype.cleanUpByTabBarOrder = function (result) {
-        var workspaceName = nova.workspace.config.get('workspace.name', 'string') ||
-            nova.path.split(nova.workspace.path || '').pop();
-        var menuGroups = result
-            .split(', missing value, ')
-            .map(function (group) {
-            var items = group.split(',')
-                .map(function (item) { return item.trim(); })
-                .filter(function (item) { return item !== 'missing value'; });
-            var name = items.shift();
-            return {
-                name: name,
-                tabs: items
-            };
+        var windowList = result.split(', ');
+        var windowListOffset = 19;
+        windowList.splice(0, windowListOffset);
+        // console.log('windowList', windowList);
+        var currentWindow = [];
+        var projectFound = false;
+        windowList.every(function (menuItem) {
+            if (menuItem.trim() === '✓') {
+                projectFound = true;
+                return true;
+            }
+            // Stop at end of current project list
+            if (projectFound && menuItem.trim() === nova.localize('missing value')) {
+                projectFound = false;
+                return false;
+            }
+            if (projectFound) {
+                currentWindow.push(menuItem.trim());
+            }
+            return true;
         });
-        var lastWindowMenuItemIndex = menuGroups
-            .findIndex(function (item) { return item.name === 'Bring All to Front'; });
-        menuGroups.splice(0, lastWindowMenuItemIndex + 1);
-        var currentWindow = menuGroups
-            .find(function (item) { return item.name === workspaceName; });
         this.customOrder.sort(function (a, b) {
             // Sort by parent path if filename is not unique
             var paths = [a, b].map(function (path) {
@@ -869,14 +873,14 @@ var TabDataProvider = /** @class */ (function () {
                 }
                 return basename;
             });
-            if (!currentWindow) {
+            if (!currentWindow.length) {
                 return 0;
             }
-            if (currentWindow.tabs.indexOf(paths[0]) < 0) {
+            if (currentWindow.indexOf(paths[0]) < 0) {
                 return 1;
             }
-            return (currentWindow.tabs.indexOf(paths[0]) -
-                currentWindow.tabs.indexOf(paths[1]));
+            return (currentWindow.indexOf(paths[0]) -
+                currentWindow.indexOf(paths[1]));
         });
         nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
         this.sortItems();
@@ -1039,7 +1043,7 @@ var TabDataProvider = /** @class */ (function () {
             item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
         }
         else {
-            var name = element.name;
+            var name_1 = element.name;
             var description_1 = '';
             if (element.isDirty) {
                 switch (unsavedSymbolLocation) {
@@ -1050,11 +1054,11 @@ var TabDataProvider = /** @class */ (function () {
                         break;
                     case 'before-filename':
                     default:
-                        name = (unsavedSymbol || '⚫︎') + ' ' + name;
+                        name_1 = (unsavedSymbol || '⚫︎') + ' ' + name_1;
                         break;
                 }
             }
-            item = new TreeItem(name);
+            item = new TreeItem(name_1);
             // Calculate parent folder path for description
             var parentPath = '';
             var isUnique = this.isUniqueName(element);

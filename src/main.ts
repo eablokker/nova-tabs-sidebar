@@ -52,12 +52,12 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 		tabDataProvider
 			.runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
 			.then((result) => {
-				const workspaceName = nova.workspace.config.get('workspace.name', 'string') || nova.path.split(nova.workspace.path || '').pop();
-				const resultArray = result.split(', ');
+				const windowList = result.split(', ');
 				const element = tabDataProvider.getElementByUri(uri);
+				const windowListOffset = 19;
 
 				if (!element) {
-					if (nova.inDevMode()) console.warn('No element found for uri ' + uri);
+					console.warn('No tab element found for uri ' + uri);
 					return;
 				}
 
@@ -75,27 +75,31 @@ const openRemoteTab = (uri: string): Promise<TextEditor> => {
 					basename += ' – ' + parentPath;
 				}
 
+				// Remove standard items from Window menu
+				windowList.splice(0, windowListOffset);
+				// console.log('windowList', windowList);
+
 				let menuPosition = -1;
 				let projectFound = false;
-				resultArray.every((menuItem: string, i: number, self: string[]) => {
-					if (menuItem.trim() === workspaceName && self[i - 1].trim() === nova.localize('missing value')) {
+				windowList.every((menuItem: string, i: number) => {
+					if (menuItem.trim() === '✓') {
 						projectFound = true;
+						return true;
 					}
 
-					if (menuItem.trim() === basename) {
-						menuPosition = i + 1; // Zero-indexed to 1-indexed
-					}
+					if (projectFound && menuItem.trim() === basename) {
+						menuPosition = i + windowListOffset + 1; // Zero-indexed to 1-indexed
 
-					// Exit early at end of project items
-					if (projectFound && menuItem.trim() === nova.localize('missing value')) {
+						// Exit after finding first matching item in first matching project
 						return false;
 					}
 
+					// Keep loop running if nothing found
 					return true;
 				});
 
 				if (menuPosition < 0) {
-					reject();
+					reject('Filename not found in Window menu');
 					return;
 				}
 
@@ -1030,28 +1034,32 @@ class TabDataProvider {
 	}
 
 	cleanUpByTabBarOrder(result: string) {
-		const workspaceName =
-			nova.workspace.config.get('workspace.name', 'string') ||
-			nova.path.split(nova.workspace.path || '').pop();
+		const windowList = result.split(', ');
+		const windowListOffset = 19;
 
-		const menuGroups = result
-			.split(', missing value, ')
-			.map((group) => {
-				const items = group.split(',')
-					.map(item => item.trim())
-					.filter(item => item !== 'missing value');
-				const name = items.shift();
-				return {
-					name: name,
-					tabs: items
-				};
-			});
+		windowList.splice(0, windowListOffset);
+		// console.log('windowList', windowList);
 
-		const lastWindowMenuItemIndex = menuGroups
-			.findIndex(item => item.name === 'Bring All to Front');
-		menuGroups.splice(0, lastWindowMenuItemIndex + 1);
-		const currentWindow = menuGroups
-			.find(item => item.name === workspaceName);
+		const currentWindow: string[] = [];
+		let projectFound = false;
+		windowList.every((menuItem: string) => {
+			if (menuItem.trim() === '✓') {
+				projectFound = true;
+				return true;
+			}
+
+			// Stop at end of current project list
+			if (projectFound && menuItem.trim() === nova.localize('missing value')) {
+				projectFound = false;
+				return false;
+			}
+
+			if (projectFound) {
+				currentWindow.push(menuItem.trim());
+			}
+
+			return true;
+		});
 
 		this.customOrder.sort((a, b) => {
 			// Sort by parent path if filename is not unique
@@ -1080,17 +1088,17 @@ class TabDataProvider {
 				return basename;
 			});
 
-			if (!currentWindow) {
+			if (!currentWindow.length) {
 				return 0;
 			}
 
-			if (currentWindow.tabs.indexOf(paths[0]) < 0) {
+			if (currentWindow.indexOf(paths[0]) < 0) {
 				return 1;
 			}
 
 			return (
-				currentWindow.tabs.indexOf(paths[0]) -
-				currentWindow.tabs.indexOf(paths[1])
+				currentWindow.indexOf(paths[0]) -
+				currentWindow.indexOf(paths[1])
 			);
 		});
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
