@@ -850,6 +850,7 @@ var TabDataProvider = /** @class */ (function () {
         // Reload each item that got swapped
         Promise.all([treeView.reload(fromItem), treeView.reload(toItem)])
             .then(function () {
+            openTabWhenFocusSidebar = false;
             treeView.reveal(toItem, { focus: true });
         })
             .catch(function (err) {

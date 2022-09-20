@@ -1054,6 +1054,7 @@ class TabDataProvider {
 		// Reload each item that got swapped
 		Promise.all([treeView.reload(fromItem), treeView.reload(toItem)])
 			.then(() => {
+				openTabWhenFocusSidebar = false;
 				treeView.reveal(toItem, { focus: true });
 			})
 			.catch(err => {
