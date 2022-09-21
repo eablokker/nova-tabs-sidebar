@@ -46,57 +46,31 @@ var syntaxnames = {
 };
 var openRemoteTab = function (uri) {
     return new Promise(function (resolve, reject) {
+        var element = tabDataProvider.getElementByUri(uri);
+        if (!element) {
+            console.warn('No tab element found for uri ' + uri);
+            return;
+        }
+        var basename = nova.path.basename(element.uri);
+        var parentPath = '';
+        var isUnique = tabDataProvider.isUniqueName(element);
+        // Differentiate remote file by common parent path
+        if (!isUnique) {
+            var commonBasePath = tabDataProvider.getCommonBasePath(element);
+            parentPath = decodeURI(nova.path.dirname(element.uri).substring(commonBasePath.length));
+        }
+        if (parentPath.length) {
+            basename += ' – ' + parentPath;
+        }
         tabDataProvider
-            .runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
-            .then(function (result) {
-            var windowList = result.split(', ');
-            var element = tabDataProvider.getElementByUri(uri);
-            if (!element) {
-                console.warn('No tab element found for uri ' + uri);
-                return;
-            }
-            var basename = nova.path.basename(element.uri);
-            var parentPath = '';
-            var isUnique = tabDataProvider.isUniqueName(element);
-            // Differentiate remote file by common parent path
-            if (!isUnique) {
-                var commonBasePath = tabDataProvider.getCommonBasePath(element);
-                parentPath = decodeURI(nova.path.dirname(element.uri).substring(commonBasePath.length));
-            }
-            if (parentPath.length) {
-                basename += ' – ' + parentPath;
-            }
-            var menuPosition = -1;
-            var projectFound = false;
-            windowList.every(function (menuItem, i) {
-                if (menuItem.trim() === '✓') {
-                    projectFound = true;
-                    return true;
-                }
-                if (projectFound && menuItem.trim() === basename) {
-                    menuPosition = i + 1; // Zero-indexed to 1-indexed
-                    // Exit after finding first matching item in first matching project
-                    return false;
-                }
-                // Keep loop running if nothing found
-                return true;
-            });
-            if (menuPosition < 0) {
-                reject('Filename not found in Window menu');
-                return;
-            }
-            tabDataProvider
-                .runProcess(__dirname + '/click_menu_item_by_number.sh', [nova.localize('Window'), menuPosition.toString()])
-                .then(function () {
-                // console.log('Menu item ' + menuPosition + ' of Window menu clicked');
-                var editor = nova.workspace.activeTextEditor;
-                resolve(editor);
-            })
-                .catch(function (err) {
-                console.error('Could not click menu item by number.', err);
-            });
+            .runProcess(__dirname + '/click_project_item_by_name.sh', [nova.localize('Window'), basename])
+            .then(function () {
+            // console.log('Menu item ' + basename + ' of Window menu clicked');
+            var editor = nova.workspace.activeTextEditor;
+            resolve(editor);
         })
             .catch(function (err) {
+            console.error('Could not click project item by filename.', err);
             reject(err);
         });
     });
@@ -111,7 +85,7 @@ exports.activate = function () {
     // Make shell scripts executable on activation
     var shellScriptPaths = [
         '/click_menu_item.sh',
-        '/click_menu_item_by_number.sh',
+        '/click_project_item_by_name.sh',
         '/list_menu_items.sh'
     ];
     shellScriptPaths.forEach(function (path) {

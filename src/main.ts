@@ -49,67 +49,36 @@ const syntaxnames = {
 
 const openRemoteTab = (uri: string): Promise<TextEditor> => {
 	return new Promise((resolve, reject) => {
+		const element = tabDataProvider.getElementByUri(uri);
+
+		if (!element) {
+			console.warn('No tab element found for uri ' + uri);
+			return;
+		}
+
+		let basename = nova.path.basename(element.uri);
+		let parentPath = '';
+		const isUnique = tabDataProvider.isUniqueName(element);
+
+		// Differentiate remote file by common parent path
+		if (!isUnique) {
+			const commonBasePath = tabDataProvider.getCommonBasePath(element);
+			parentPath = decodeURI(nova.path.dirname(element.uri).substring(commonBasePath.length));
+		}
+
+		if (parentPath.length) {
+			basename += ' – ' + parentPath;
+		}
+
 		tabDataProvider
-			.runProcess(__dirname + '/list_menu_items.sh', [nova.localize('Window')])
-			.then((result) => {
-				const windowList = result.split(', ');
-				const element = tabDataProvider.getElementByUri(uri);
-
-				if (!element) {
-					console.warn('No tab element found for uri ' + uri);
-					return;
-				}
-
-				let basename = nova.path.basename(element.uri);
-				let parentPath = '';
-				const isUnique = tabDataProvider.isUniqueName(element);
-
-				// Differentiate remote file by common parent path
-				if (!isUnique) {
-					const commonBasePath = tabDataProvider.getCommonBasePath(element);
-					parentPath = decodeURI(nova.path.dirname(element.uri).substring(commonBasePath.length));
-				}
-
-				if (parentPath.length) {
-					basename += ' – ' + parentPath;
-				}
-
-				let menuPosition = -1;
-				let projectFound = false;
-				windowList.every((menuItem: string, i: number) => {
-					if (menuItem.trim() === '✓') {
-						projectFound = true;
-						return true;
-					}
-
-					if (projectFound && menuItem.trim() === basename) {
-						menuPosition = i + 1; // Zero-indexed to 1-indexed
-
-						// Exit after finding first matching item in first matching project
-						return false;
-					}
-
-					// Keep loop running if nothing found
-					return true;
-				});
-
-				if (menuPosition < 0) {
-					reject('Filename not found in Window menu');
-					return;
-				}
-
-				tabDataProvider
-					.runProcess(__dirname + '/click_menu_item_by_number.sh', [nova.localize('Window'), menuPosition.toString()])
-					.then(() => {
-						// console.log('Menu item ' + menuPosition + ' of Window menu clicked');
-						const editor = nova.workspace.activeTextEditor;
-						resolve(editor);
-					})
-					.catch(err => {
-						console.error('Could not click menu item by number.', err);
-					});
+			.runProcess(__dirname + '/click_project_item_by_name.sh', [nova.localize('Window'), basename])
+			.then(() => {
+				// console.log('Menu item ' + basename + ' of Window menu clicked');
+				const editor = nova.workspace.activeTextEditor;
+				resolve(editor);
 			})
 			.catch(err => {
+				console.error('Could not click project item by filename.', err);
 				reject(err);
 			});
 	});
@@ -127,7 +96,7 @@ exports.activate = function() {
 	// Make shell scripts executable on activation
 	const shellScriptPaths = [
 		'/click_menu_item.sh',
-		'/click_menu_item_by_number.sh',
+		'/click_project_item_by_name.sh',
 		'/list_menu_items.sh'
 	];
 
