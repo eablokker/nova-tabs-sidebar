@@ -591,7 +591,7 @@ var TabItem = /** @class */ (function () {
         this.extension = extName;
         this.icon = undefined;
         this.count = undefined;
-        this.contextValue = 'tabItem';
+        this.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
     }
     return TabItem;
 }());
@@ -932,16 +932,16 @@ var TabDataProvider = /** @class */ (function () {
         var length = this.flatItems.length;
         this.flatItems.forEach(function (tab, i) {
             if (length === 1) {
-                tab.contextValue = 'only';
+                tab.contextValue = tab.isRemote ? 'remote-only' : 'only';
             }
             else if (i === 0) {
-                tab.contextValue = 'first';
+                tab.contextValue = tab.isRemote ? 'remote-first' : 'first';
             }
             else if (i === length - 1) {
-                tab.contextValue = 'last';
+                tab.contextValue = tab.isRemote ? 'remote-last' : 'last';
             }
             else {
-                tab.contextValue = 'tab';
+                tab.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
             }
         });
         //console.log('this.customOrder', this.customOrder);
