@@ -1,3 +1,14 @@
+## v1.4.2 - 2022-09-20
+
+### Changed
+
+- Improved performance of switching remote tabs by combining applescripts into one script
+- Disable unavailable context menu items for remote tabs (Show in Finder, Copy Relative Path)
+
+### Fixed
+
+- Some remote tabs not opening on macOS < 11
+
 ## v1.4.1 - 2022-09-20
 
 ### Fixed
