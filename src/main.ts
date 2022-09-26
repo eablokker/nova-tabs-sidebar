@@ -462,6 +462,11 @@ nova.commands.register('tabs-sidebar.open', (workspace: Workspace) => {
 		return;
 	}
 
+	// Don't do anything with folders
+	if (selection[0].contextValue === 'kindGroup') {
+		return;
+	}
+
 	const isRemote = selection[0].isRemote;
 
 	// Switch to tab for local file
