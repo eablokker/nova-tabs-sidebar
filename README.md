@@ -24,6 +24,7 @@ It was inspired by the [Tab List](https://extensions.panic.com/extensions/gerard
 - Option to open tab on single click or double click
 - Option to show or hide parent folder names
 - Option to show file count when grouping by kind
+- Localized in French, German, Chinese, and Japanese
 
 ## Requirements
 
