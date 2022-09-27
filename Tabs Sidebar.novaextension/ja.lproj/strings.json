@@ -28,13 +28,18 @@
 	"Show files count when grouping by kind": "種類別にグループ化するときにファイル数を表示する",
 	"Enable to show the number of files in each group next to the group's name.": "グループ名の横に各グループのファイル数を表示できるようにします。",
 
+	"Show Git status": "Git ステータスを表示",
+	"As Icon": "アイコンとして",
+	"As Text": "テキストとして",
+	"As Icon & Text": "アイコンとテキストとして",
+	"Never": "一度もない",
+
 	"Unsaved tab symbol": "未保存のタブ記号",
 	"Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.": "変更が保存されていないタブに表示するシンボル。絵文字が使える！ 😃 デフォルトでは空白のままにします。",
 
 	"Show unsaved tab symbol": "保存されていないタブ記号を表示",
 	"Before file name": "ファイル名の前",
 	"After file name, before folder name": "ファイル名の後、フォルダ名の前",
-	"Never": "一度もない",
 
 	"Plain Text": "標準テキスト",
 

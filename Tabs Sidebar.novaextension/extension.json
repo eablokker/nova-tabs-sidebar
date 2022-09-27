@@ -200,6 +200,18 @@
             "default": false
         },
         {
+            "key": "eablokker.tabs-sidebar.show-git-status",
+            "title": "Show Git status",
+            "type": "enum",
+            "values": [
+                ["icon", "As Icon"],
+                ["text", "As Text"],
+                ["both", "As Icon & Text"],
+                ["never", "Never"]
+            ],
+            "default": "icon"
+        },
+        {
             "key": "eablokker.tabs-sidebar.unsaved-symbol",
             "title": "Unsaved tab symbol",
             "description": "Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.",
