@@ -1,3 +1,8 @@
+type GitStatus = {
+	status: string;
+	path: string;
+};
+
 let treeView: TreeView<TabItem | FolderItem | null>;
 let tabDataProvider: TabDataProvider;
 let focusedTab: TabItem | undefined;
@@ -5,6 +10,8 @@ let openTabWhenFocusSidebar = true;
 
 // Config vars
 let openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
+let showGitStatus = nova.config.get('eablokker.tabs-sidebar.show-git-status', 'string');
+
 let alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'boolean');
 let showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
 
@@ -13,6 +20,8 @@ let unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symb
 
 let groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', 'boolean');
 const customTabOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array');
+
+let watcher: FileSystemWatcher;
 
 const syntaxnames = {
 	'plaintext': nova.localize('Plain Text'),
@@ -127,6 +136,12 @@ exports.activate = function() {
 		openOnSingleClick = newVal;
 	});
 
+	nova.config.onDidChange('eablokker.tabs-sidebar.show-git-status', (newVal: string, oldVal: string) => {
+		showGitStatus = newVal;
+
+		treeView.reload();
+	});
+
 	nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal: boolean, oldVal: boolean) => {
 		alwaysShowParentFolder = newVal;
 
@@ -158,9 +173,6 @@ exports.activate = function() {
 		tabDataProvider.setGroupByKind(groupByKind);
 		treeView.reload();
 	});
-
-	// Initially sort by tabs bar order
-	//nova.commands.invoke('tabs-sidebar.cleanUpByTabBarOrder');
 
 	// Prevent excessive reloading
 	let reloadTimeoutID = setTimeout(() => {
@@ -318,6 +330,50 @@ exports.activate = function() {
 
 	// TreeView implements the Disposable interface
 	nova.subscriptions.add(treeView);
+
+	// Prevent excessive watch events
+	let watchTimeoutID = setTimeout(() => {
+		//
+	});
+
+	// Don't watch files if workspace is not bound to folder
+	if (showGitStatus !== 'never' && nova.workspace.path) {
+		watcher = nova.fs.watch(null, path => {
+			clearTimeout(watchTimeoutID);
+			watchTimeoutID = setTimeout(() => {
+				console.log('File changed', path);
+
+				tabDataProvider.updateGitStatus()
+					.then(gitStatuses => {
+						gitStatuses.forEach(gitStatus => {
+							const path = nova.path.join(nova.workspace.path || '', gitStatus.path);
+
+							console.log('gitStatus.path', path);
+
+							const element = tabDataProvider.getElementByPath(path);
+
+							console.log('element', element);
+
+							// Don't reload treeview if that file is not open in workspace
+							if (!element) {
+								return;
+							}
+
+							treeView.reload(element)
+								.then(() => {
+									// treeView.reveal(element || null);
+								})
+								.catch(err => {
+									console.error('Could not reload treeView.', err);
+								});
+						});
+					})
+					.catch((err: Error) => {
+						console.error('Could not update git statuses', err);
+					});
+			}, 100);
+		});
+	}
 };
 
 exports.deactivate = function() {
@@ -689,11 +745,20 @@ nova.commands.register('tabs-sidebar.refresh', (workspace: Workspace) => {
 	treeView.reload();
 });
 
-class TabItem {
+class ListItem {
 	name: string;
+	descriptiveText: string | undefined;
+	icon: string | undefined;
+	contextValue: string | undefined;
+
+	constructor(name: string) {
+		this.name = name;
+	}
+}
+
+class TabItem extends ListItem {
 	path: string | undefined;
 	uri: string;
-	descriptiveText: string;
 	isRemote: boolean;
 	isDirty: boolean;
 	isUntitled: boolean;
@@ -702,13 +767,12 @@ class TabItem {
 	parent: FolderItem | null;
 	syntax: string;
 	extension: string | undefined;
-	icon: string | undefined;
 	count: number | undefined;
-	contextValue: string;
 
 	constructor(name: string, tab: TextDocument) {
+		super(name);
 		// Check if in .Trash folder
-		const trashRegex = new RegExp('^file:\/\/' + nova.path.expanduser('~') + '\/\.Trash\/');
+		const trashRegex = new RegExp('^file://' + nova.path.expanduser('~') + '/.Trash/');
 		const isTrashed = trashRegex.test(decodeURI(tab.uri));
 
 		const extName = nova.path.extname(tab.path || '').replace(/^\./, '');
@@ -731,11 +795,9 @@ class TabItem {
 	}
 }
 
-class FolderItem {
-	name: string;
+class FolderItem extends ListItem {
 	path: string | undefined;
 	uri: string;
-	descriptiveText: string;
 	isRemote: boolean;
 	isDirty: boolean;
 	children: TabItem[];
@@ -743,12 +805,10 @@ class FolderItem {
 	collapsibleState: TreeItemCollapsibleState;
 	syntax: string;
 	extension: string | undefined;
-	icon: string | undefined;
 	count: number | undefined;
-	contextValue: string;
 
 	constructor(name: string, syntax: string | null, extName: string) {
-		this.name = name;
+		super(name);
 		this.path = undefined;
 		this.uri = '';
 		this.descriptiveText = '';
@@ -774,6 +834,7 @@ class TabDataProvider {
 	flatItems: TabItem[];
 	groupedItems: FolderItem[];
 	customOrder: string[];
+	gitStatuses: GitStatus[];
 	sortAlpha: boolean | null;
 	groupByKind: boolean | null;
 
@@ -781,6 +842,7 @@ class TabDataProvider {
 		this.flatItems = [];
 		this.groupedItems = [];
 		this.customOrder = customTabOrder || [];
+		this.gitStatuses = [];
 
 		this.sortAlpha = nova.workspace.config
 			.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
@@ -788,6 +850,8 @@ class TabDataProvider {
 	}
 
 	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
+		this.updateGitStatus();
+
 		// Remove extraneous from custom order
 		if (this.customOrder.length) {
 			this.customOrder = this.customOrder.filter(path => {
@@ -884,12 +948,12 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
-	runProcess(scriptPath: string, args: string[], timeout = 3000): Promise<string> {
+	runProcess(scriptPath: string, args: string[], cwd?: string, timeout = 3000): Promise<string> {
 		return new Promise((resolve, reject) => {
 			let outString = '';
 			let errorString = '';
 
-			const process = new Process(scriptPath, { args: args });
+			const process = new Process(scriptPath, { args: args, cwd: cwd });
 
 			process.onStdout(line => {
 				outString += line;
@@ -1143,6 +1207,55 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
+	updateGitStatus(): Promise<GitStatus[]> {
+		console.log('updateGitStatus()');
+
+		return new Promise((resolve, reject) => {
+			const projectPath = nova.workspace.path;
+
+			if (!projectPath) {
+				return;
+			}
+
+			// '--no-optional-locks' git option to prevent watching changes on .git/index.lock
+			this
+				.runProcess('/usr/bin/git', ['--no-optional-locks', 'status', '--porcelain'], projectPath)
+				.then(result => {
+					const gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z_. /-]+) ?-?>? ?([0-9a-zA-Z_. /-]*)', 'gm');
+					let matches = gitStatusRegex.exec(result);
+
+					// Reset statuses
+					this.gitStatuses.forEach(status => {
+						status.status = '';
+					});
+
+					while (matches != null) {
+						const newStatus = {
+							status: matches[1],
+							path: matches[3] || matches[2]
+						};
+
+						const i = this.gitStatuses.findIndex(status => status.path === newStatus.path);
+						if (i > -1) {
+							this.gitStatuses[i].status = newStatus.status;
+						} else {
+							this.gitStatuses.push(newStatus);
+						}
+
+						matches = gitStatusRegex.exec(result);
+					}
+
+					// console.log(this.gitStatuses);
+
+					//treeView.reload();
+					resolve(this.gitStatuses);
+				})
+				.catch((err: Error) => {
+					reject(err);
+				});
+		});
+	};
+
 	byCustomOrder(a: TabItem, b: TabItem) {
 		if (this.customOrder.indexOf(a.path || '') < 0) {
 			return 1;
@@ -1265,7 +1378,7 @@ class TabDataProvider {
 	getParent(element: TabItem | FolderItem) {
 		// Requests the parent of an element, for use with the reveal() method
 
-		if (nova.inDevMode()) console.log('getParent');
+		// if (nova.inDevMode()) console.log('getParent');
 
 		if (element === null) {
 			return null;
@@ -1298,7 +1411,7 @@ class TabDataProvider {
 				case 'never':
 					break;
 				case 'after-filename':
-					description = (unsavedSymbol || '⚫︎') + ' ' + description;
+					description = (unsavedSymbol || '⚫︎') + ' ';
 					break;
 				case 'before-filename':
 				default:
@@ -1308,6 +1421,50 @@ class TabDataProvider {
 			}
 
 			item = new TreeItem(name);
+
+			item.image = element.extension ? '__filetype.' + element.extension : '__filetype.blank';
+			// item.image = 'blank';
+			item.tooltip = element.path ? element.path.replace(nova.path.expanduser('~'), '~') : '';
+
+			if (element.isTrashed) {
+				const trashString = nova.localize('Trash');
+				description = '‹ ' + trashString + ' 🗑';
+			} else if (element.isRemote) {
+				description += '☁️ ';
+			} else {
+				const relativePath = (element.path + '').replace(nova.workspace.path + '/', '');
+				// console.log('relativePath', relativePath);
+
+				const foundStatus = this.gitStatuses.find(status => status.path === relativePath);
+
+				if (foundStatus) {
+					console.log('status', foundStatus.status);
+
+					if (foundStatus.status.length && (showGitStatus === 'text' || showGitStatus === 'both')) {
+						description += '[' + foundStatus.status.trim() + '] ';
+					}
+
+					if (showGitStatus === 'icon' || showGitStatus === 'both') {
+						switch (foundStatus.status) {
+						case ' M':
+						case 'M ':
+						case 'MM':
+							item.image = 'git-modified';
+							break;
+						case 'A ':
+						case 'AM':
+							item.image = 'git-added';
+							break;
+						case 'R ':
+							item.image = 'git-renamed';
+							break;
+						case '??':
+							item.image = 'git-untracked';
+							break;
+						}
+					}
+				}
+			}
 
 			// Calculate parent folder path for description
 			let parentPath = '';
@@ -1338,20 +1495,11 @@ class TabDataProvider {
 					});
 			}
 
-			if (element.isTrashed) {
-				const trashString = nova.localize('Trash');
-				description = '‹ ' + trashString + ' 🗑';
-			} else if (element.isRemote) {
-				description = '☁️' + description;
-			}
-
 			item.descriptiveText = description;
 			item.path = element.path;
-			item.tooltip = element.path;
 			item.command = 'tabs-sidebar.doubleClick';
 			item.contextValue = element.contextValue;
 			item.identifier = element.uri;
-			item.image = element.extension ? '__filetype.' + element.extension : '__filetype.blank';
 		}
 		return item;
 	}

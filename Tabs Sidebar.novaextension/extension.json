@@ -186,6 +186,18 @@
             "default": true
         },
         {
+            "key": "eablokker.tabs-sidebar.show-git-status",
+            "title": "Show Git status",
+            "type": "enum",
+            "values": [
+                ["icon", "As Icon"],
+                ["text", "As Text"],
+                ["both", "As Icon & Text"],
+                ["never", "Never"]
+            ],
+            "default": "icon"
+        },
+        {
             "key": "eablokker.tabs-sidebar.always-show-parent-folder",
             "title": "Always show parent folder next to file name",
             "description": "When disabled, parent folder will only be shown if multiple files with the same name are opened.",
@@ -198,18 +210,6 @@
             "description": "Enable to show the number of files in each group next to the group's name.",
             "type": "boolean",
             "default": false
-        },
-        {
-            "key": "eablokker.tabs-sidebar.show-git-status",
-            "title": "Show Git status",
-            "type": "enum",
-            "values": [
-                ["icon", "As Icon"],
-                ["text", "As Text"],
-                ["both", "As Icon & Text"],
-                ["never", "Never"]
-            ],
-            "default": "icon"
         },
         {
             "key": "eablokker.tabs-sidebar.unsaved-symbol",

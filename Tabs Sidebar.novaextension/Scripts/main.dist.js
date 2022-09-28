@@ -1,11 +1,27 @@
 'use strict';
 
+var __extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var treeView;
 var tabDataProvider;
 var focusedTab;
 var openTabWhenFocusSidebar = true;
 // Config vars
 var openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
+var showGitStatus = nova.config.get('eablokker.tabs-sidebar.show-git-status', 'string');
 var alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'boolean');
 var showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
 var unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
@@ -111,6 +127,10 @@ exports.activate = function () {
     nova.config.onDidChange('eablokker.tabs-sidebar.open-on-single-click', function (newVal, oldVal) {
         openOnSingleClick = newVal;
     });
+    nova.config.onDidChange('eablokker.tabs-sidebar.show-git-status', function (newVal, oldVal) {
+        showGitStatus = newVal;
+        treeView.reload();
+    });
     nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', function (newVal, oldVal) {
         alwaysShowParentFolder = newVal;
         treeView.reload();
@@ -133,8 +153,6 @@ exports.activate = function () {
         tabDataProvider.setGroupByKind(groupByKind);
         treeView.reload();
     });
-    // Initially sort by tabs bar order
-    //nova.commands.invoke('tabs-sidebar.cleanUpByTabBarOrder');
     // Prevent excessive reloading
     var reloadTimeoutID = setTimeout(function () {
         //
@@ -264,6 +282,42 @@ exports.activate = function () {
     });
     // TreeView implements the Disposable interface
     nova.subscriptions.add(treeView);
+    // Prevent excessive watch events
+    var watchTimeoutID = setTimeout(function () {
+        //
+    });
+    // Don't watch files if workspace is not bound to folder
+    if (showGitStatus !== 'never' && nova.workspace.path) {
+        nova.fs.watch(null, function (path) {
+            clearTimeout(watchTimeoutID);
+            watchTimeoutID = setTimeout(function () {
+                console.log('File changed', path);
+                tabDataProvider.updateGitStatus()
+                    .then(function (gitStatuses) {
+                    gitStatuses.forEach(function (gitStatus) {
+                        var path = nova.path.join(nova.workspace.path || '', gitStatus.path);
+                        console.log('gitStatus.path', path);
+                        var element = tabDataProvider.getElementByPath(path);
+                        console.log('element', element);
+                        // Don't reload treeview if that file is not open in workspace
+                        if (!element) {
+                            return;
+                        }
+                        treeView.reload(element)
+                            .then(function () {
+                            // treeView.reveal(element || null);
+                        })
+                            .catch(function (err) {
+                            console.error('Could not reload treeView.', err);
+                        });
+                    });
+                })
+                    .catch(function (err) {
+                    console.error('Could not update git statuses', err);
+                });
+            }, 100);
+        });
+    }
 };
 exports.deactivate = function () {
     // Clean up state before the extension is deactivated
@@ -575,64 +629,77 @@ nova.commands.register('tabs-sidebar.refresh', function (workspace) {
     }
     treeView.reload();
 });
-var TabItem = /** @class */ (function () {
+var ListItem = /** @class */ (function () {
+    function ListItem(name) {
+        this.name = name;
+    }
+    return ListItem;
+}());
+var TabItem = /** @class */ (function (_super) {
+    __extends(TabItem, _super);
     function TabItem(name, tab) {
+        var _this = _super.call(this, name) || this;
         // Check if in .Trash folder
-        var trashRegex = new RegExp('^file:\/\/' + nova.path.expanduser('~') + '\/\.Trash\/');
+        var trashRegex = new RegExp('^file://' + nova.path.expanduser('~') + '/.Trash/');
         var isTrashed = trashRegex.test(decodeURI(tab.uri));
         var extName = nova.path.extname(tab.path || '').replace(/^\./, '');
-        this.name = name;
-        this.path = tab.path || undefined;
-        this.uri = tab.uri;
-        this.descriptiveText = '';
-        this.isRemote = tab.isRemote || false;
-        this.isDirty = tab.isDirty || false;
-        this.isUntitled = tab.isUntitled || false;
-        this.isTrashed = isTrashed;
-        this.children = [];
-        this.parent = null;
-        this.syntax = tab.syntax || 'plaintext';
-        this.extension = extName;
-        this.icon = undefined;
-        this.count = undefined;
-        this.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
+        _this.name = name;
+        _this.path = tab.path || undefined;
+        _this.uri = tab.uri;
+        _this.descriptiveText = '';
+        _this.isRemote = tab.isRemote || false;
+        _this.isDirty = tab.isDirty || false;
+        _this.isUntitled = tab.isUntitled || false;
+        _this.isTrashed = isTrashed;
+        _this.children = [];
+        _this.parent = null;
+        _this.syntax = tab.syntax || 'plaintext';
+        _this.extension = extName;
+        _this.icon = undefined;
+        _this.count = undefined;
+        _this.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
+        return _this;
     }
     return TabItem;
-}());
-var FolderItem = /** @class */ (function () {
+}(ListItem));
+var FolderItem = /** @class */ (function (_super) {
+    __extends(FolderItem, _super);
     function FolderItem(name, syntax, extName) {
-        this.name = name;
-        this.path = undefined;
-        this.uri = '';
-        this.descriptiveText = '';
-        this.isRemote = false;
-        this.isDirty = false;
-        this.children = [];
-        this.parent = null;
-        this.collapsibleState = TreeItemCollapsibleState.None;
-        this.syntax = syntax || 'plaintext';
-        this.extension = extName;
-        this.icon = undefined;
-        this.count = undefined;
-        this.contextValue = 'kindGroup';
+        var _this = _super.call(this, name) || this;
+        _this.path = undefined;
+        _this.uri = '';
+        _this.descriptiveText = '';
+        _this.isRemote = false;
+        _this.isDirty = false;
+        _this.children = [];
+        _this.parent = null;
+        _this.collapsibleState = TreeItemCollapsibleState.None;
+        _this.syntax = syntax || 'plaintext';
+        _this.extension = extName;
+        _this.icon = undefined;
+        _this.count = undefined;
+        _this.contextValue = 'kindGroup';
+        return _this;
     }
     FolderItem.prototype.addChild = function (element) {
         element.parent = this;
         this.children.push(element);
     };
     return FolderItem;
-}());
+}(ListItem));
 var TabDataProvider = /** @class */ (function () {
     function TabDataProvider() {
         this.flatItems = [];
         this.groupedItems = [];
         this.customOrder = customTabOrder || [];
+        this.gitStatuses = [];
         this.sortAlpha = nova.workspace.config
             .get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
         this.groupByKind = groupByKind;
     }
     TabDataProvider.prototype.loadData = function (documentTabs, focusedTab) {
         var _this = this;
+        this.updateGitStatus();
         // Remove extraneous from custom order
         if (this.customOrder.length) {
             this.customOrder = this.customOrder.filter(function (path) {
@@ -710,12 +777,12 @@ var TabDataProvider = /** @class */ (function () {
         nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
         this.sortItems();
     };
-    TabDataProvider.prototype.runProcess = function (scriptPath, args, timeout) {
+    TabDataProvider.prototype.runProcess = function (scriptPath, args, cwd, timeout) {
         if (timeout === void 0) { timeout = 3000; }
         return new Promise(function (resolve, reject) {
             var outString = '';
             var errorString = '';
-            var process = new Process(scriptPath, { args: args });
+            var process = new Process(scriptPath, { args: args, cwd: cwd });
             process.onStdout(function (line) {
                 outString += line;
             });
@@ -914,6 +981,50 @@ var TabDataProvider = /** @class */ (function () {
         this.groupByKind = groupByKind;
         this.sortItems();
     };
+    TabDataProvider.prototype.updateGitStatus = function () {
+        var _this = this;
+        console.log('updateGitStatus()');
+        return new Promise(function (resolve, reject) {
+            var projectPath = nova.workspace.path;
+            if (!projectPath) {
+                return;
+            }
+            // '--no-optional-locks' git option to prevent watching changes on .git/index.lock
+            _this
+                .runProcess('/usr/bin/git', ['--no-optional-locks', 'status', '--porcelain'], projectPath)
+                .then(function (result) {
+                var gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z_. /-]+) ?-?>? ?([0-9a-zA-Z_. /-]*)', 'gm');
+                var matches = gitStatusRegex.exec(result);
+                // Reset statuses
+                _this.gitStatuses.forEach(function (status) {
+                    status.status = '';
+                });
+                var _loop_1 = function () {
+                    var newStatus = {
+                        status: matches[1],
+                        path: matches[3] || matches[2]
+                    };
+                    var i = _this.gitStatuses.findIndex(function (status) { return status.path === newStatus.path; });
+                    if (i > -1) {
+                        _this.gitStatuses[i].status = newStatus.status;
+                    }
+                    else {
+                        _this.gitStatuses.push(newStatus);
+                    }
+                    matches = gitStatusRegex.exec(result);
+                };
+                while (matches != null) {
+                    _loop_1();
+                }
+                // console.log(this.gitStatuses);
+                //treeView.reload();
+                resolve(_this.gitStatuses);
+            })
+                .catch(function (err) {
+                reject(err);
+            });
+        });
+    };
     TabDataProvider.prototype.byCustomOrder = function (a, b) {
         if (this.customOrder.indexOf(a.path || '') < 0) {
             return 1;
@@ -1019,8 +1130,7 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.getParent = function (element) {
         // Requests the parent of an element, for use with the reveal() method
-        if (nova.inDevMode())
-            console.log('getParent');
+        // if (nova.inDevMode()) console.log('getParent');
         if (element === null) {
             return null;
         }
@@ -1047,7 +1157,7 @@ var TabDataProvider = /** @class */ (function () {
                     case 'never':
                         break;
                     case 'after-filename':
-                        description_1 = (unsavedSymbol || '⚫︎') + ' ' + description_1;
+                        description_1 = (unsavedSymbol || '⚫︎') + ' ';
                         break;
                     case 'before-filename':
                     default:
@@ -1056,6 +1166,46 @@ var TabDataProvider = /** @class */ (function () {
                 }
             }
             item = new TreeItem(name_1);
+            item.image = element.extension ? '__filetype.' + element.extension : '__filetype.blank';
+            // item.image = 'blank';
+            item.tooltip = element.path ? element.path.replace(nova.path.expanduser('~'), '~') : '';
+            if (element.isTrashed) {
+                var trashString = nova.localize('Trash');
+                description_1 = '‹ ' + trashString + ' 🗑';
+            }
+            else if (element.isRemote) {
+                description_1 += '☁️ ';
+            }
+            else {
+                var relativePath_1 = (element.path + '').replace(nova.workspace.path + '/', '');
+                // console.log('relativePath', relativePath);
+                var foundStatus = this.gitStatuses.find(function (status) { return status.path === relativePath_1; });
+                if (foundStatus) {
+                    console.log('status', foundStatus.status);
+                    if (foundStatus.status.length && (showGitStatus === 'text' || showGitStatus === 'both')) {
+                        description_1 += '[' + foundStatus.status.trim() + '] ';
+                    }
+                    if (showGitStatus === 'icon' || showGitStatus === 'both') {
+                        switch (foundStatus.status) {
+                            case ' M':
+                            case 'M ':
+                            case 'MM':
+                                item.image = 'git-modified';
+                                break;
+                            case 'A ':
+                            case 'AM':
+                                item.image = 'git-added';
+                                break;
+                            case 'R ':
+                                item.image = 'git-renamed';
+                                break;
+                            case '??':
+                                item.image = 'git-untracked';
+                                break;
+                        }
+                    }
+                }
+            }
             // Calculate parent folder path for description
             var parentPath = '';
             var isUnique = this.isUniqueName(element);
@@ -1080,20 +1230,11 @@ var TabDataProvider = /** @class */ (function () {
                     description_1 += '‹ ' + dir + ' ';
                 });
             }
-            if (element.isTrashed) {
-                var trashString = nova.localize('Trash');
-                description_1 = '‹ ' + trashString + ' 🗑';
-            }
-            else if (element.isRemote) {
-                description_1 = '☁️' + description_1;
-            }
             item.descriptiveText = description_1;
             item.path = element.path;
-            item.tooltip = element.path;
             item.command = 'tabs-sidebar.doubleClick';
             item.contextValue = element.contextValue;
             item.identifier = element.uri;
-            item.image = element.extension ? '__filetype.' + element.extension : '__filetype.blank';
         }
         return item;
     };
