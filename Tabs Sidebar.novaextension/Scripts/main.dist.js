@@ -28,6 +28,7 @@ var unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'st
 var unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
 var groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', 'boolean');
 var customTabOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array');
+var watcher;
 var syntaxnames = {
     'plaintext': nova.localize('Plain Text'),
     'coffeescript': 'CoffeeScript',
@@ -288,7 +289,8 @@ exports.activate = function () {
     });
     // Don't watch files if workspace is not bound to folder
     if (showGitStatus !== 'never' && nova.workspace.path) {
-        nova.fs.watch(null, function (path) {
+        watcher = nova.fs.watch(null, function () { });
+        watcher.onDidChange(function (path) {
             clearTimeout(watchTimeoutID);
             watchTimeoutID = setTimeout(function () {
                 console.log('File changed', path);
@@ -296,9 +298,9 @@ exports.activate = function () {
                     .then(function (gitStatuses) {
                     gitStatuses.forEach(function (gitStatus) {
                         var path = nova.path.join(nova.workspace.path || '', gitStatus.path);
-                        console.log('gitStatus.path', path);
+                        // console.log('gitStatus.path', path);
                         var element = tabDataProvider.getElementByPath(path);
-                        console.log('element', element);
+                        // console.log('element', element);
                         // Don't reload treeview if that file is not open in workspace
                         if (!element) {
                             return;
@@ -698,8 +700,8 @@ var TabDataProvider = /** @class */ (function () {
         this.groupByKind = groupByKind;
     }
     TabDataProvider.prototype.loadData = function (documentTabs, focusedTab) {
+        // this.updateGitStatus();
         var _this = this;
-        this.updateGitStatus();
         // Remove extraneous from custom order
         if (this.customOrder.length) {
             this.customOrder = this.customOrder.filter(function (path) {
@@ -1016,8 +1018,7 @@ var TabDataProvider = /** @class */ (function () {
                 while (matches != null) {
                     _loop_1();
                 }
-                // console.log(this.gitStatuses);
-                //treeView.reload();
+                console.log(_this.gitStatuses);
                 resolve(_this.gitStatuses);
             })
                 .catch(function (err) {

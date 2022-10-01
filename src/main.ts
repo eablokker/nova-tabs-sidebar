@@ -338,7 +338,9 @@ exports.activate = function() {
 
 	// Don't watch files if workspace is not bound to folder
 	if (showGitStatus !== 'never' && nova.workspace.path) {
-		watcher = nova.fs.watch(null, path => {
+		watcher = nova.fs.watch(null, () => { /**/ });
+
+		watcher.onDidChange(path => {
 			clearTimeout(watchTimeoutID);
 			watchTimeoutID = setTimeout(() => {
 				console.log('File changed', path);
@@ -348,11 +350,11 @@ exports.activate = function() {
 						gitStatuses.forEach(gitStatus => {
 							const path = nova.path.join(nova.workspace.path || '', gitStatus.path);
 
-							console.log('gitStatus.path', path);
+							// console.log('gitStatus.path', path);
 
 							const element = tabDataProvider.getElementByPath(path);
 
-							console.log('element', element);
+							// console.log('element', element);
 
 							// Don't reload treeview if that file is not open in workspace
 							if (!element) {
@@ -850,7 +852,7 @@ class TabDataProvider {
 	}
 
 	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
-		this.updateGitStatus();
+		// this.updateGitStatus();
 
 		// Remove extraneous from custom order
 		if (this.customOrder.length) {
@@ -1245,16 +1247,15 @@ class TabDataProvider {
 						matches = gitStatusRegex.exec(result);
 					}
 
-					// console.log(this.gitStatuses);
+					console.log(this.gitStatuses);
 
-					//treeView.reload();
 					resolve(this.gitStatuses);
 				})
 				.catch((err: Error) => {
 					reject(err);
 				});
 		});
-	};
+	}
 
 	byCustomOrder(a: TabItem, b: TabItem) {
 		if (this.customOrder.indexOf(a.path || '') < 0) {
