@@ -634,6 +634,9 @@ nova.commands.register('tabs-sidebar.refresh', function (workspace) {
 var ListItem = /** @class */ (function () {
     function ListItem(name) {
         this.name = name;
+        this.path = '';
+        this.uri = '';
+        this.isRemote = false;
     }
     return ListItem;
 }());
@@ -643,22 +646,17 @@ var TabItem = /** @class */ (function (_super) {
         var _this = _super.call(this, name) || this;
         // Check if in .Trash folder
         var trashRegex = new RegExp('^file://' + nova.path.expanduser('~') + '/.Trash/');
-        var isTrashed = trashRegex.test(decodeURI(tab.uri));
-        var extName = nova.path.extname(tab.path || '').replace(/^\./, '');
         _this.name = name;
         _this.path = tab.path || undefined;
         _this.uri = tab.uri;
-        _this.descriptiveText = '';
-        _this.isRemote = tab.isRemote || false;
-        _this.isDirty = tab.isDirty || false;
-        _this.isUntitled = tab.isUntitled || false;
-        _this.isTrashed = isTrashed;
+        _this.isRemote = tab.isRemote;
+        _this.isDirty = tab.isDirty;
+        _this.isUntitled = tab.isUntitled;
+        _this.isTrashed = trashRegex.test(decodeURI(tab.uri));
         _this.children = [];
         _this.parent = null;
         _this.syntax = tab.syntax || 'plaintext';
-        _this.extension = extName;
-        _this.icon = undefined;
-        _this.count = undefined;
+        _this.extension = nova.path.extname(tab.path || '').replace(/^\./, '');
         _this.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
         return _this;
     }
@@ -668,19 +666,13 @@ var FolderItem = /** @class */ (function (_super) {
     __extends(FolderItem, _super);
     function FolderItem(name, syntax, extName) {
         var _this = _super.call(this, name) || this;
-        _this.path = undefined;
-        _this.uri = '';
-        _this.descriptiveText = '';
-        _this.isRemote = false;
-        _this.isDirty = false;
+        _this.syntax = syntax || 'plaintext';
+        _this.extension = extName;
+        _this.contextValue = 'kindGroup';
         _this.children = [];
         _this.parent = null;
         _this.collapsibleState = TreeItemCollapsibleState.None;
-        _this.syntax = syntax || 'plaintext';
-        _this.extension = extName;
-        _this.icon = undefined;
         _this.count = undefined;
-        _this.contextValue = 'kindGroup';
         return _this;
     }
     FolderItem.prototype.addChild = function (element) {
@@ -1141,13 +1133,12 @@ var TabDataProvider = /** @class */ (function () {
         var item;
         if (element instanceof FolderItem) {
             item = new TreeItem(element.name);
-            item.descriptiveText = showGroupCount ? '(' + element.children.length + ')' : '';
             item.collapsibleState = TreeItemCollapsibleState.Expanded;
-            item.path = element.path;
-            item.tooltip = '';
             item.contextValue = element.contextValue;
+            item.descriptiveText = showGroupCount ? '(' + element.children.length + ')' : '';
             item.identifier = element.syntax;
             item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
+            item.tooltip = '';
         }
         else {
             var name_1 = element.name;

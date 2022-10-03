@@ -749,19 +749,23 @@ nova.commands.register('tabs-sidebar.refresh', (workspace: Workspace) => {
 
 class ListItem {
 	name: string;
-	descriptiveText: string | undefined;
-	icon: string | undefined;
 	contextValue: string | undefined;
+	syntax: string | undefined;
+	extension: string | undefined;
+	path: string | undefined;
+	uri: string;
+	isRemote: boolean;
 
 	constructor(name: string) {
 		this.name = name;
+		this.path = '';
+		this.uri = '';
+		this.isRemote = false;
 	}
 }
 
 class TabItem extends ListItem {
 	path: string | undefined;
-	uri: string;
-	isRemote: boolean;
 	isDirty: boolean;
 	isUntitled: boolean;
 	isTrashed: boolean;
@@ -773,57 +777,41 @@ class TabItem extends ListItem {
 
 	constructor(name: string, tab: TextDocument) {
 		super(name);
+
 		// Check if in .Trash folder
 		const trashRegex = new RegExp('^file://' + nova.path.expanduser('~') + '/.Trash/');
-		const isTrashed = trashRegex.test(decodeURI(tab.uri));
-
-		const extName = nova.path.extname(tab.path || '').replace(/^\./, '');
 
 		this.name = name;
 		this.path = tab.path || undefined;
 		this.uri = tab.uri;
-		this.descriptiveText = '';
-		this.isRemote = tab.isRemote || false;
-		this.isDirty = tab.isDirty || false;
-		this.isUntitled = tab.isUntitled || false;
-		this.isTrashed = isTrashed;
+		this.isRemote = tab.isRemote;
+		this.isDirty = tab.isDirty;
+		this.isUntitled = tab.isUntitled;
+		this.isTrashed = trashRegex.test(decodeURI(tab.uri));
 		this.children = [];
 		this.parent = null;
 		this.syntax = tab.syntax || 'plaintext';
-		this.extension = extName;
-		this.icon = undefined;
-		this.count = undefined;
+		this.extension = nova.path.extname(tab.path || '').replace(/^\./, '');
 		this.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
 	}
 }
 
 class FolderItem extends ListItem {
-	path: string | undefined;
-	uri: string;
-	isRemote: boolean;
-	isDirty: boolean;
 	children: TabItem[];
 	parent: FolderItem | null;
 	collapsibleState: TreeItemCollapsibleState;
-	syntax: string;
-	extension: string | undefined;
 	count: number | undefined;
 
 	constructor(name: string, syntax: string | null, extName: string) {
 		super(name);
-		this.path = undefined;
-		this.uri = '';
-		this.descriptiveText = '';
-		this.isRemote = false;
-		this.isDirty = false;
+
+		this.syntax = syntax || 'plaintext';
+		this.extension = extName;
+		this.contextValue = 'kindGroup';
 		this.children = [];
 		this.parent = null;
 		this.collapsibleState = TreeItemCollapsibleState.None;
-		this.syntax = syntax || 'plaintext';
-		this.extension = extName;
-		this.icon = undefined;
 		this.count = undefined;
-		this.contextValue = 'kindGroup';
 	}
 
 	addChild(element: TabItem) {
@@ -1393,13 +1381,13 @@ class TabDataProvider {
 		if (element instanceof FolderItem) {
 			item = new TreeItem(element.name);
 
-			item.descriptiveText = showGroupCount ? '(' + element.children.length + ')' : '';
+
 			item.collapsibleState = TreeItemCollapsibleState.Expanded;
-			item.path = element.path;
-			item.tooltip = '';
 			item.contextValue = element.contextValue;
+			item.descriptiveText = showGroupCount ? '(' + element.children.length + ')' : '';
 			item.identifier = element.syntax;
 			item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
+			item.tooltip = '';
 		}
 		else {
 			let name = element.name;
