@@ -1230,10 +1230,7 @@ var TabDataProvider = /** @class */ (function () {
                     .reverse();
                 parentPathSplit
                     .filter(function (dir) { return dir.length; })
-                    .forEach(function (dir, i) {
-                    if (i === 0) {
-                        description_1 = '';
-                    }
+                    .forEach(function (dir) {
                     description_1 += '‹ ' + dir + ' ';
                 });
             }

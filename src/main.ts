@@ -1488,11 +1488,7 @@ class TabDataProvider {
 
 				parentPathSplit
 					.filter(dir => dir.length)
-					.forEach((dir, i) => {
-						if (i === 0) {
-							description = '';
-						}
-
+					.forEach(dir => {
 						description += '‹ ' + dir + ' ';
 					});
 			}
