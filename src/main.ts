@@ -1338,24 +1338,22 @@ class TabDataProvider {
 	}
 
 	getElementByPath(path: string): TabItem | undefined {
-		const element = this.flatItems.find(item => {
-			return item.path === path;
-		});
+		if (this.groupByKind) {
+			let childElement: TabItem | undefined;
+			this.groupedItems.some(item => {
+				childElement = item.children.find(child => {
+					return child.path === path;
+				});
 
-		if (element) {
-			return element;
-		}
-
-		let childElement = undefined;
-		this.flatItems.some(item => {
-			childElement = item.children.find(child => {
-				return child.path === path;
+				return !!childElement;
 			});
 
-			return !!childElement;
-		});
+			return childElement;
+		}
 
-		return childElement;
+		return this.flatItems.find(item => {
+			return item.path === path;
+		});
 	}
 
 	getFolderBySyntax(syntax: string) {

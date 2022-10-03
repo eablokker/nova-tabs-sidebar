@@ -1097,20 +1097,19 @@ var TabDataProvider = /** @class */ (function () {
         });
     };
     TabDataProvider.prototype.getElementByPath = function (path) {
-        var element = this.flatItems.find(function (item) {
+        if (this.groupByKind) {
+            var childElement_2;
+            this.groupedItems.some(function (item) {
+                childElement_2 = item.children.find(function (child) {
+                    return child.path === path;
+                });
+                return !!childElement_2;
+            });
+            return childElement_2;
+        }
+        return this.flatItems.find(function (item) {
             return item.path === path;
         });
-        if (element) {
-            return element;
-        }
-        var childElement = undefined;
-        this.flatItems.some(function (item) {
-            childElement = item.children.find(function (child) {
-                return child.path === path;
-            });
-            return !!childElement;
-        });
-        return childElement;
     };
     TabDataProvider.prototype.getFolderBySyntax = function (syntax) {
         return this.groupedItems.find(function (folder) { return folder.syntax === syntax; });
