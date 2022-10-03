@@ -1446,6 +1446,7 @@ class TabDataProvider {
 						case ' M':
 						case 'M ':
 						case 'MM':
+						case 'RM':
 							item.image = 'git-modified';
 							break;
 						case 'A ':

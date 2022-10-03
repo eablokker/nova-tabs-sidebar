@@ -1193,6 +1193,7 @@ var TabDataProvider = /** @class */ (function () {
                             case ' M':
                             case 'M ':
                             case 'MM':
+                            case 'RM':
                                 item.image = 'git-modified';
                                 break;
                             case 'A ':
