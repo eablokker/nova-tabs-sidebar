@@ -272,14 +272,15 @@ exports.activate = function () {
             nova.commands.invoke('tabs-sidebar.open');
         }
     });
-    treeView.onDidExpandElement(function (element) {
+    treeView.onDidExpandElement(function () {
         // console.log('Expanded: ' + element.name);
     });
-    treeView.onDidCollapseElement(function (element) {
+    treeView.onDidCollapseElement(function () {
         // console.log('Collapsed: ' + element.name);
     });
     treeView.onDidChangeVisibility(function () {
-        // console.log('Visibility Changed');
+        if (nova.inDevMode())
+            console.log('Visibility Changed');
     });
     // TreeView implements the Disposable interface
     nova.subscriptions.add(treeView);
@@ -337,7 +338,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
     if (activeDocument && selection[0].uri === activeDocument.uri) {
         tabDataProvider
             .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-            .then(function (result) {
+            .then(function () {
             activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
             if (activeDocument) {
                 focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
@@ -790,7 +791,7 @@ var TabDataProvider = /** @class */ (function () {
             }, timeout);
             process.onDidExit(function (status) {
                 clearTimeout(timeoutID);
-                if (errorString.length) {
+                if (status > 0 || errorString.length) {
                     reject(new Error(errorString));
                 }
                 else {
