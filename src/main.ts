@@ -69,7 +69,7 @@ const initFileWatcher = () => {
 		fileWatcher.onDidChange(path => {
 			clearTimeout(watchTimeoutID);
 			watchTimeoutID = setTimeout(() => {
-				console.log('File changed', path);
+				if (nova.inDevMode()) console.log('File changed', path);
 
 				tabDataProvider.updateGitStatus()
 					.then(gitStatuses => {
@@ -1208,7 +1208,7 @@ class TabDataProvider {
 	}
 
 	updateGitStatus(): Promise<GitStatus[]> {
-		console.log('updateGitStatus()');
+		if (nova.inDevMode()) console.log('updateGitStatus()');
 
 		return new Promise((resolve, reject) => {
 			const projectPath = nova.workspace.path;
@@ -1245,7 +1245,7 @@ class TabDataProvider {
 						matches = gitStatusRegex.exec(result);
 					}
 
-					console.log(this.gitStatuses);
+					// console.log(this.gitStatuses);
 
 					resolve(this.gitStatuses);
 				})
@@ -1435,7 +1435,7 @@ class TabDataProvider {
 				const foundStatus = this.gitStatuses.find(status => status.path === relativePath);
 
 				if (foundStatus) {
-					console.log('status', foundStatus.status);
+					// console.log('status', foundStatus.status);
 
 					if (foundStatus.status.length && (showGitStatus === 'text' || showGitStatus === 'both')) {
 						description += '[' + foundStatus.status.trim() + '] ';

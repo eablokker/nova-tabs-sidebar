@@ -72,7 +72,8 @@ var initFileWatcher = function () {
         fileWatcher.onDidChange(function (path) {
             clearTimeout(watchTimeoutID);
             watchTimeoutID = setTimeout(function () {
-                console.log('File changed', path);
+                if (nova.inDevMode())
+                    console.log('File changed', path);
                 tabDataProvider.updateGitStatus()
                     .then(function (gitStatuses) {
                     gitStatuses.forEach(function (gitStatus) {
@@ -987,7 +988,8 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.updateGitStatus = function () {
         var _this = this;
-        console.log('updateGitStatus()');
+        if (nova.inDevMode())
+            console.log('updateGitStatus()');
         return new Promise(function (resolve, reject) {
             var projectPath = nova.workspace.path;
             if (!projectPath) {
@@ -1020,7 +1022,7 @@ var TabDataProvider = /** @class */ (function () {
                 while (matches != null) {
                     _loop_1();
                 }
-                console.log(_this.gitStatuses);
+                // console.log(this.gitStatuses);
                 resolve(_this.gitStatuses);
             })
                 .catch(function (err) {
@@ -1182,7 +1184,7 @@ var TabDataProvider = /** @class */ (function () {
                 // console.log('relativePath', relativePath);
                 var foundStatus = this.gitStatuses.find(function (status) { return status.path === relativePath_1; });
                 if (foundStatus) {
-                    console.log('status', foundStatus.status);
+                    // console.log('status', foundStatus.status);
                     if (foundStatus.status.length && (showGitStatus === 'text' || showGitStatus === 'both')) {
                         description_1 += '[' + foundStatus.status.trim() + '] ';
                     }
