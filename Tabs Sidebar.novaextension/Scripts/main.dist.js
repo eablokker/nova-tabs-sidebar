@@ -28,7 +28,7 @@ var unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'st
 var unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
 var groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', 'boolean');
 var customTabOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array');
-var watcher;
+var fileWatcher;
 var syntaxnames = {
     'plaintext': nova.localize('Plain Text'),
     'coffeescript': 'CoffeeScript',
@@ -60,6 +60,45 @@ var syntaxnames = {
     'vue': 'Vue',
     'xml': 'XML',
     'yaml': 'YAML'
+};
+var initFileWatcher = function () {
+    // Prevent excessive watch events
+    var watchTimeoutID = setTimeout(function () {
+        //
+    });
+    // Don't watch files if workspace is not bound to folder
+    if (showGitStatus !== 'never' && nova.workspace.path) {
+        fileWatcher = nova.fs.watch(null, function () { });
+        fileWatcher.onDidChange(function (path) {
+            clearTimeout(watchTimeoutID);
+            watchTimeoutID = setTimeout(function () {
+                console.log('File changed', path);
+                tabDataProvider.updateGitStatus()
+                    .then(function (gitStatuses) {
+                    gitStatuses.forEach(function (gitStatus) {
+                        var path = nova.path.join(nova.workspace.path || '', gitStatus.path);
+                        // console.log('gitStatus.path', path);
+                        var element = tabDataProvider.getElementByPath(path);
+                        // console.log('element', element);
+                        // Don't reload treeview if that file is not open in workspace
+                        if (!element) {
+                            return;
+                        }
+                        treeView.reload(element)
+                            .then(function () {
+                            // treeView.reveal(element || null);
+                        })
+                            .catch(function (err) {
+                            console.error('Could not reload treeView.', err);
+                        });
+                    });
+                })
+                    .catch(function (err) {
+                    console.error('Could not update git statuses', err);
+                });
+            }, 100);
+        });
+    }
 };
 var openRemoteTab = function (uri) {
     return new Promise(function (resolve, reject) {
@@ -130,6 +169,12 @@ exports.activate = function () {
     });
     nova.config.onDidChange('eablokker.tabs-sidebar.show-git-status', function (newVal, oldVal) {
         showGitStatus = newVal;
+        if (newVal === 'never') {
+            fileWatcher.dispose();
+        }
+        else if (oldVal === 'never' && newVal !== 'never') {
+            initFileWatcher();
+        }
         treeView.reload();
     });
     nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', function (newVal, oldVal) {
@@ -284,43 +329,7 @@ exports.activate = function () {
     });
     // TreeView implements the Disposable interface
     nova.subscriptions.add(treeView);
-    // Prevent excessive watch events
-    var watchTimeoutID = setTimeout(function () {
-        //
-    });
-    // Don't watch files if workspace is not bound to folder
-    if (showGitStatus !== 'never' && nova.workspace.path) {
-        watcher = nova.fs.watch(null, function () { });
-        watcher.onDidChange(function (path) {
-            clearTimeout(watchTimeoutID);
-            watchTimeoutID = setTimeout(function () {
-                console.log('File changed', path);
-                tabDataProvider.updateGitStatus()
-                    .then(function (gitStatuses) {
-                    gitStatuses.forEach(function (gitStatus) {
-                        var path = nova.path.join(nova.workspace.path || '', gitStatus.path);
-                        // console.log('gitStatus.path', path);
-                        var element = tabDataProvider.getElementByPath(path);
-                        // console.log('element', element);
-                        // Don't reload treeview if that file is not open in workspace
-                        if (!element) {
-                            return;
-                        }
-                        treeView.reload(element)
-                            .then(function () {
-                            // treeView.reveal(element || null);
-                        })
-                            .catch(function (err) {
-                            console.error('Could not reload treeView.', err);
-                        });
-                    });
-                })
-                    .catch(function (err) {
-                    console.error('Could not update git statuses', err);
-                });
-            }, 100);
-        });
-    }
+    initFileWatcher();
 };
 exports.deactivate = function () {
     // Clean up state before the extension is deactivated
