@@ -108,8 +108,6 @@ class TabDataProvider {
 	}
 
 	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
-		// this.updateGitStatus();
-
 		// Remove extraneous from custom order
 		if (this.customOrder.length) {
 			this.customOrder = this.customOrder.filter(path => {
@@ -465,8 +463,8 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
-	updateGitStatus(): Promise<GitStatus[]> {
-		if (nova.inDevMode()) console.log('updateGitStatus()');
+	getGitStatus(): Promise<GitStatus[]> {
+		if (nova.inDevMode()) console.log('getGitStatus()');
 
 		return new Promise((resolve, reject) => {
 			const projectPath = nova.workspace.path;

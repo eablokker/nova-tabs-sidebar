@@ -672,11 +672,15 @@ class App {
 				this.tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
 			}
 
+			this.updateGitStatus(false);
+
 			this.treeView.reload();
 		});
 	}
 
 	initFileWatcher() {
+		this.updateGitStatus();
+
 		// Prevent excessive watch events
 		let watchTimeoutID = setTimeout(() => {
 			//
@@ -691,34 +695,15 @@ class App {
 				watchTimeoutID = setTimeout(() => {
 					if (nova.inDevMode()) console.log('File changed', path);
 
-					this.tabDataProvider.updateGitStatus()
-						.then(gitStatuses => {
-							gitStatuses.forEach(gitStatus => {
-								const path = nova.path.join(nova.workspace.path || '', gitStatus.path);
+					const pathSplit = nova.path.split(nova.path.dirname(path));
 
-								// console.log('gitStatus.path', path);
+					// Don't respond to changes to nova config
+					if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+						if (nova.inDevMode()) console.log('Dont respond to config changes');
+						return;
+					}
 
-								const element = this.tabDataProvider.getElementByPath(path);
-
-								// console.log('element', element);
-
-								// Don't reload treeview if that file is not open in workspace
-								if (!element) {
-									return;
-								}
-
-								this.treeView.reload(element)
-									.then(() => {
-										this.highlightTab(this.focusedTab || null);
-									})
-									.catch(err => {
-										console.error('Could not reload treeView.', err);
-									});
-							});
-						})
-						.catch((err: Error) => {
-							console.error('Could not update git statuses', err);
-						});
+					this.updateGitStatus();
 				}, 100);
 			});
 		}
@@ -762,8 +747,46 @@ class App {
 	}
 
 	highlightTab(tab: TabItem | FolderItem | null, options?: { select?: boolean | undefined, focus?: boolean | undefined, reveal?: number | undefined } | undefined) {
-		this.openTabWhenFocusSidebar = false;
+		const activeTabUri = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document.uri : undefined;
+		const gotoTabUri = tab?.uri;
+
+		if (activeTabUri !== gotoTabUri) {
+			this.openTabWhenFocusSidebar = false;
+		}
 		this.treeView.reveal(tab, options);
+	}
+
+	updateGitStatus(reload = true) {
+		this.tabDataProvider.getGitStatus()
+			.then(gitStatuses => {
+				gitStatuses.forEach(gitStatus => {
+					if (!reload) {
+						return;
+					}
+
+					const path = nova.path.join(nova.workspace.path || '', gitStatus.path);
+					const element = this.tabDataProvider.getElementByPath(path);
+
+					// console.log('gitStatus.path', path);
+					// console.log('element', element);
+
+					// Don't reload treeview if that file is not open in workspace
+					if (!element) {
+						return;
+					}
+
+					this.treeView.reload(element)
+						.then(() => {
+							this.highlightTab(this.focusedTab || null);
+						})
+						.catch(err => {
+							console.error('Could not reload treeView.', err);
+						});
+				});
+			})
+			.catch((err: Error) => {
+				console.error('Could not update git statuses', err);
+			});
 	}
 }
 

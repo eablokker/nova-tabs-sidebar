@@ -98,7 +98,6 @@ var TabDataProvider = /** @class */ (function () {
         //
     };
     TabDataProvider.prototype.loadData = function (documentTabs, focusedTab) {
-        // this.updateGitStatus();
         var _this = this;
         // Remove extraneous from custom order
         if (this.customOrder.length) {
@@ -384,10 +383,10 @@ var TabDataProvider = /** @class */ (function () {
         this.groupByKind = groupByKind;
         this.sortItems();
     };
-    TabDataProvider.prototype.updateGitStatus = function () {
+    TabDataProvider.prototype.getGitStatus = function () {
         var _this = this;
         if (nova.inDevMode())
-            console.log('updateGitStatus()');
+            console.log('getGitStatus()');
         return new Promise(function (resolve, reject) {
             var projectPath = nova.workspace.path;
             if (!projectPath) {
@@ -1197,11 +1196,13 @@ var App = /** @class */ (function () {
             else {
                 _this.tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
             }
+            _this.updateGitStatus(false);
             _this.treeView.reload();
         });
     };
     App.prototype.initFileWatcher = function () {
         var _this = this;
+        this.updateGitStatus();
         // Prevent excessive watch events
         var watchTimeoutID = setTimeout(function () {
             //
@@ -1214,29 +1215,14 @@ var App = /** @class */ (function () {
                 watchTimeoutID = setTimeout(function () {
                     if (nova.inDevMode())
                         console.log('File changed', path);
-                    _this.tabDataProvider.updateGitStatus()
-                        .then(function (gitStatuses) {
-                        gitStatuses.forEach(function (gitStatus) {
-                            var path = nova.path.join(nova.workspace.path || '', gitStatus.path);
-                            // console.log('gitStatus.path', path);
-                            var element = _this.tabDataProvider.getElementByPath(path);
-                            // console.log('element', element);
-                            // Don't reload treeview if that file is not open in workspace
-                            if (!element) {
-                                return;
-                            }
-                            _this.treeView.reload(element)
-                                .then(function () {
-                                _this.highlightTab(_this.focusedTab || null);
-                            })
-                                .catch(function (err) {
-                                console.error('Could not reload treeView.', err);
-                            });
-                        });
-                    })
-                        .catch(function (err) {
-                        console.error('Could not update git statuses', err);
-                    });
+                    var pathSplit = nova.path.split(nova.path.dirname(path));
+                    // Don't respond to changes to nova config
+                    if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+                        if (nova.inDevMode())
+                            console.log('Dont respond to config changes');
+                        return;
+                    }
+                    _this.updateGitStatus();
                 }, 100);
             });
         }
@@ -1274,8 +1260,42 @@ var App = /** @class */ (function () {
         });
     };
     App.prototype.highlightTab = function (tab, options) {
-        this.openTabWhenFocusSidebar = false;
+        var activeTabUri = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document.uri : undefined;
+        var gotoTabUri = tab === null || tab === void 0 ? void 0 : tab.uri;
+        if (activeTabUri !== gotoTabUri) {
+            this.openTabWhenFocusSidebar = false;
+        }
         this.treeView.reveal(tab, options);
+    };
+    App.prototype.updateGitStatus = function (reload) {
+        var _this = this;
+        if (reload === void 0) { reload = true; }
+        this.tabDataProvider.getGitStatus()
+            .then(function (gitStatuses) {
+            gitStatuses.forEach(function (gitStatus) {
+                if (!reload) {
+                    return;
+                }
+                var path = nova.path.join(nova.workspace.path || '', gitStatus.path);
+                var element = _this.tabDataProvider.getElementByPath(path);
+                // console.log('gitStatus.path', path);
+                // console.log('element', element);
+                // Don't reload treeview if that file is not open in workspace
+                if (!element) {
+                    return;
+                }
+                _this.treeView.reload(element)
+                    .then(function () {
+                    _this.highlightTab(_this.focusedTab || null);
+                })
+                    .catch(function (err) {
+                    console.error('Could not reload treeView.', err);
+                });
+            });
+        })
+            .catch(function (err) {
+            console.error('Could not update git statuses', err);
+        });
     };
     return App;
 }());
