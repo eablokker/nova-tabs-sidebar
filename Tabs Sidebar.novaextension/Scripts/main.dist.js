@@ -87,7 +87,7 @@ var initFileWatcher = function () {
                         }
                         treeView.reload(element)
                             .then(function () {
-                            // treeView.reveal(element || null);
+                            highlightTab(focusedTab || null);
                         })
                             .catch(function (err) {
                             console.error('Could not reload treeView.', err);
@@ -131,6 +131,10 @@ var openRemoteTab = function (uri) {
             reject(err);
         });
     });
+};
+var highlightTab = function (tab, options) {
+    openTabWhenFocusSidebar = false;
+    treeView.reveal(tab, options);
 };
 exports.activate = function () {
     // Do work when the extension is activated
@@ -221,7 +225,7 @@ exports.activate = function () {
                 .then(function () {
                 // Focus tab in sidebar
                 focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-                //treeView.reveal(focusedTab, { focus: true });
+                highlightTab(focusedTab || null, { focus: true });
             })
                 .catch(function (err) {
                 console.error('Could not reload treeView.', err);
@@ -245,7 +249,7 @@ exports.activate = function () {
                     var document = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
                     if (document) {
                         focusedTab = tabDataProvider.getElementByUri(document.uri);
-                        treeView.reveal(focusedTab || null, { focus: true });
+                        // highlightTab(focusedTab || null, { focus: true });
                     }
                 })
                     .catch(function (err) {
@@ -263,8 +267,7 @@ exports.activate = function () {
                 return;
             }
             focusedTab = tabDataProvider.getElementByUri(changedEditor.document.uri);
-            openTabWhenFocusSidebar = false;
-            treeView.reveal(focusedTab || null, { focus: true });
+            highlightTab(focusedTab || null, { focus: true });
         });
         editor.onDidStopChanging(function (changedEditor) {
             //console.log('Document stopped changing');
@@ -272,7 +275,7 @@ exports.activate = function () {
             tabDataProvider.setDirty(changedEditor);
             treeView.reload(focusedTab)
                 .then(function () {
-                treeView.reveal(focusedTab || null, { focus: true });
+                highlightTab(focusedTab || null, { focus: true });
             })
                 .catch(function (err) {
                 console.error('Could not reload treeView.', err);
@@ -285,7 +288,7 @@ exports.activate = function () {
             tabDataProvider.setDirty(savedEditor);
             treeView.reload(focusedTab)
                 .then(function () {
-                treeView.reveal(focusedTab || null, { focus: true });
+                highlightTab(focusedTab || null, { focus: true });
             })
                 .catch(function (err) {
                 console.error('Could not reload treeView.', err);
@@ -352,7 +355,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
             activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
             if (activeDocument) {
                 focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
-                treeView.reveal(focusedTab || null, { focus: true });
+                highlightTab(focusedTab || null, { focus: true });
             }
         })
             .catch(function (err) {
@@ -376,7 +379,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
                         .then(function (value) {
                         if (value) {
                             focusedTab = tabDataProvider.getElementByUri(value.document.uri);
-                            treeView.reveal(focusedTab || null, { focus: true });
+                            highlightTab(focusedTab || null, { focus: true });
                         }
                     })
                         .catch(function (err) {
@@ -389,7 +392,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
                     .then(function () {
                     if (activeDocument) {
                         focusedTab = tabDataProvider.getElementByUri(activeDocument.uri);
-                        treeView.reveal(focusedTab || null, { focus: true });
+                        highlightTab(focusedTab || null, { focus: true });
                     }
                 })
                     .catch(function (err) {
@@ -419,7 +422,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
                     .then(function (value) {
                     if (value) {
                         focusedTab = tabDataProvider.getElementByUri(value.document.uri);
-                        treeView.reveal(focusedTab || null, { focus: true });
+                        highlightTab(focusedTab || null, { focus: true });
                     }
                 })
                     .catch(function (err) {
@@ -432,7 +435,7 @@ nova.commands.register('tabs-sidebar.close', function (workspace) {
                 .then(function (value) {
                 if (value) {
                     focusedTab = tabDataProvider.getElementByUri(value.document.uri);
-                    treeView.reveal(focusedTab || null, { focus: true });
+                    highlightTab(focusedTab || null, { focus: true });
                 }
             })
                 .catch(function (err) {
@@ -464,7 +467,7 @@ nova.commands.register('tabs-sidebar.open', function (workspace) {
             .then(function (value) {
             if (value) {
                 focusedTab = tabDataProvider.getElementByUri(value.document.uri);
-                //treeView.reveal(focusedTab, { focus: true });
+                highlightTab(focusedTab || null, { focus: true });
             }
         })
             .catch(function (err) {
@@ -476,7 +479,7 @@ nova.commands.register('tabs-sidebar.open', function (workspace) {
     openRemoteTab(selection[0].uri)
         .then(function (editor) {
         focusedTab = tabDataProvider.getElementByUri(editor.document.uri);
-        //treeView.reveal(focusedTab, { focus: true });
+        highlightTab(focusedTab || null, { focus: true });
     })
         .catch(function (err) {
         console.error('Could not open remote tab.', err);
@@ -521,7 +524,7 @@ nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', function (workspace)
         focusedTab = workspace.activeTextEditor ? tabDataProvider.getElementByUri(workspace.activeTextEditor.document.uri) : undefined;
         treeView.reload()
             .then(function () {
-            treeView.reveal(focusedTab || null, { focus: true });
+            highlightTab(focusedTab || null, { focus: true });
         })
             .catch(function (err) {
             console.error('Could not reload treeView.', err);
@@ -537,7 +540,7 @@ nova.commands.register('tabs-sidebar.cleanUpByAlpha', function () {
     tabDataProvider.cleanUpByAlpha();
     treeView.reload()
         .then(function () {
-        treeView.reveal(focusedTab || null, { focus: true });
+        highlightTab(focusedTab || null, { focus: true });
     })
         .catch(function (err) {
         console.error('Could not reload treeView.', err);
@@ -549,7 +552,7 @@ nova.commands.register('tabs-sidebar.cleanUpByKind', function () {
     tabDataProvider.cleanUpByKind();
     treeView.reload()
         .then(function () {
-        treeView.reveal(focusedTab || null, { focus: true });
+        highlightTab(focusedTab || null, { focus: true });
     })
         .catch(function (err) {
         console.error('Could not reload treeView.', err);
@@ -893,11 +896,11 @@ var TabDataProvider = /** @class */ (function () {
         var item = this.customOrder.splice(fromIndex, 1)[0];
         this.customOrder.splice(toIndex, 0, item);
         nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
+        focusedTab = toItem;
         // Reload each item that got swapped
         Promise.all([treeView.reload(fromItem), treeView.reload(toItem)])
             .then(function () {
-            openTabWhenFocusSidebar = false;
-            treeView.reveal(toItem, { focus: true });
+            highlightTab(toItem, { focus: true });
         })
             .catch(function (err) {
             console.error(err);
