@@ -788,9 +788,12 @@ var App = /** @class */ (function () {
                 }
                 reload
                     .then(function () {
+                    var _a;
                     // Focus tab in sidebar
                     _this.focusedTab = _this.tabDataProvider.getElementByUri(editor.document.uri);
-                    _this.highlightTab(_this.focusedTab || null, { focus: true });
+                    if (editor.document.uri === ((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri)) {
+                        _this.highlightTab(_this.focusedTab || null, { focus: true });
+                    }
                 })
                     .catch(function (err) {
                     console.error('Could not reload treeView.', err);
@@ -814,7 +817,7 @@ var App = /** @class */ (function () {
                         var document = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
                         if (document) {
                             _this.focusedTab = _this.tabDataProvider.getElementByUri(document.uri);
-                            // highlightTab(focusedTab || null, { focus: true });
+                            _this.highlightTab(_this.focusedTab || null, { focus: true });
                         }
                     })
                         .catch(function (err) {
@@ -1293,8 +1296,10 @@ var App = /** @class */ (function () {
                 .runProcess(__dirname + '/click_project_item_by_name.sh', [nova.localize('Window'), basename])
                 .then(function () {
                 // console.log('Menu item ' + basename + ' of Window menu clicked');
-                var editor = nova.workspace.activeTextEditor;
-                resolve(editor);
+                setTimeout(function () {
+                    var editor = nova.workspace.activeTextEditor || null;
+                    resolve(editor);
+                }, 1);
             })
                 .catch(function (err) {
                 console.error('Could not click project item by filename.', err);
@@ -1316,6 +1321,7 @@ var App = /** @class */ (function () {
         this.tabDataProvider.getGitStatus(this.gitPath)
             .then(function (gitStatuses) {
             gitStatuses.forEach(function (gitStatus) {
+                var _a;
                 if (!reload) {
                     return;
                 }
@@ -1327,9 +1333,10 @@ var App = /** @class */ (function () {
                 if (!element) {
                     return;
                 }
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
                 _this.treeView.reload(element)
                     .then(function () {
-                    _this.highlightTab(_this.focusedTab || null);
+                    _this.highlightTab(activeEditor || null);
                 })
                     .catch(function (err) {
                     console.error('Could not reload treeView.', err);

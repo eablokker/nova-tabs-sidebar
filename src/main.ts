@@ -184,7 +184,10 @@ class App {
 					.then(() => {
 						// Focus tab in sidebar
 						this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
-						this.highlightTab(this.focusedTab || null, { focus: true });
+
+						if (editor.document.uri === nova.workspace.activeTextEditor?.document.uri) {
+							this.highlightTab(this.focusedTab || null, { focus: true });
+						}
 					})
 					.catch(err => {
 						console.error('Could not reload treeView.', err);
@@ -213,7 +216,7 @@ class App {
 
 							if (document) {
 								this.focusedTab = this.tabDataProvider.getElementByUri(document.uri);
-								// highlightTab(focusedTab || null, { focus: true });
+								this.highlightTab(this.focusedTab || null, { focus: true });
 							}
 						})
 						.catch(err => {
@@ -442,6 +445,7 @@ class App {
 							// Switch back to remote tab after closing other remote tab
 							this.openRemoteTab(activeDocument.uri)
 								.then(value => {
+
 									if (value) {
 										this.focusedTab = this.tabDataProvider.getElementByUri(value.document.uri);
 										this.highlightTab(this.focusedTab || null, { focus: true });
@@ -779,8 +783,10 @@ class App {
 				.runProcess(__dirname + '/click_project_item_by_name.sh', [nova.localize('Window'), basename])
 				.then(() => {
 					// console.log('Menu item ' + basename + ' of Window menu clicked');
-					const editor = nova.workspace.activeTextEditor;
-					resolve(editor);
+					setTimeout(() => {
+						const editor = nova.workspace.activeTextEditor || null;
+						resolve(editor);
+					}, 1);
 				})
 				.catch(err => {
 					console.error('Could not click project item by filename.', err);
@@ -818,9 +824,11 @@ class App {
 						return;
 					}
 
+					const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+
 					this.treeView.reload(element)
 						.then(() => {
-							this.highlightTab(this.focusedTab || null);
+							this.highlightTab(activeEditor || null);
 						})
 						.catch(err => {
 							console.error('Could not reload treeView.', err);
