@@ -1,3 +1,15 @@
+## v1.5.0 - 2022-10-03
+
+### Added
+
+- Show Git status indicators next to file names, as icon and/or text
+- Check for existence of Git executable and Git repo in project folder before starting file watcher
+
+### Changed
+
+- Refactored app as a class, moved TabDataProvider to separate file
+- Never activate open tab command when extension highlights a tab programmatically
+
 ## v1.4.2 - 2022-09-20
 
 ### Changed
