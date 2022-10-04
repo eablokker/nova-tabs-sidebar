@@ -1218,7 +1218,7 @@ var App = /** @class */ (function () {
                 console.log('System has Git executable at', _this.gitPath);
             // Check if workspace has git repo
             _this.tabDataProvider.runProcess(_this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse'])
-                .then(function (result) {
+                .then(function () {
                 if (nova.inDevMode())
                     console.log('Workspace has Git repo');
                 _this.updateGitStatus();

@@ -696,7 +696,7 @@ class App {
 
 				// Check if workspace has git repo
 				this.tabDataProvider.runProcess(this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse'])
-					.then((result) => {
+					.then(() => {
 						if (nova.inDevMode()) console.log('Workspace has Git repo');
 
 						this.updateGitStatus();
