@@ -59,18 +59,16 @@ class TabItem extends ListItem {
 class FolderItem extends ListItem {
 	children: TabItem[];
 	parent: FolderItem | null;
-	collapsibleState: TreeItemCollapsibleState;
 	count: number | undefined;
 
-	constructor(name: string, syntax: string | null, extName: string) {
+	constructor(name: string, options?: { syntax?: string | null, extName?: string }) {
 		super(name);
 
-		this.syntax = syntax || 'plaintext';
-		this.extension = extName;
+		this.syntax = options?.syntax || 'plaintext';
+		this.extension = options?.extName;
 		this.contextValue = 'kindGroup';
 		this.children = [];
 		this.parent = null;
-		this.collapsibleState = TreeItemCollapsibleState.None;
 		this.count = undefined;
 	}
 
@@ -88,6 +86,7 @@ class TabDataProvider {
 	gitStatuses: GitStatus[];
 	sortAlpha: boolean | null;
 	groupByKind: boolean | null;
+	collapsedKindGroups: string[];
 
 	constructor(app: App) {
 		this.app = app;
@@ -99,6 +98,7 @@ class TabDataProvider {
 		this.sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
 		this.groupByKind = this.app.groupByKind;
 		this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+		this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
 
 		this.init();
 	}
@@ -190,8 +190,7 @@ class TabDataProvider {
 
 					const newFolder = new FolderItem(
 						this.app.syntaxNames[tabSyntax as keyof SyntaxNames] || titleCaseName,
-						tab.syntax,
-						extName
+						{ syntax: tab.syntax, extName: extName }
 					);
 
 					newFolder.addChild(Object.assign({}, element));
@@ -651,13 +650,19 @@ class TabDataProvider {
 		if (element instanceof FolderItem) {
 			item = new TreeItem(element.name);
 
-
-			item.collapsibleState = TreeItemCollapsibleState.Expanded;
 			item.contextValue = element.contextValue;
 			item.descriptiveText = this.app.showGroupCount ? '(' + element.children.length + ')' : '';
 			item.identifier = element.syntax;
 			item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
 			item.tooltip = '';
+
+			let collapsibleState = TreeItemCollapsibleState.Expanded;
+
+			if (this.collapsedKindGroups.indexOf(element.syntax || '') > -1) {
+				collapsibleState = TreeItemCollapsibleState.Collapsed;
+			}
+
+			item.collapsibleState = collapsibleState;
 		}
 		else {
 			let name = element.name;

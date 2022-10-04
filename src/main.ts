@@ -19,8 +19,6 @@ class App {
 	syntaxNames: SyntaxNames;
 
 	constructor() {
-		this.tabDataProvider = new TabDataProvider(this);
-		this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
 		this.openTabWhenFocusSidebar = true;
 		this.gitPath = '/usr/bin/git';
 
@@ -64,6 +62,9 @@ class App {
 			'xml': 'XML',
 			'yaml': 'YAML'
 		};
+
+		this.tabDataProvider = new TabDataProvider(this);
+		this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
 
 		this.init();
 		this.initConfig();
@@ -229,12 +230,15 @@ class App {
 				const document = changedEditor.document;
 
 				// Don't reveal in treeview if it's already selected
-				if (selection && selection.uri === document.uri) {
+				if (selection?.uri === document.uri) {
 					return;
 				}
 
-				this.focusedTab = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-				this.highlightTab(this.focusedTab || null, { focus: true });
+				// Only highlight tab if it's the same as the current active tab
+				if (document.uri === nova.workspace.activeTextEditor?.document.uri) {
+					this.focusedTab = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
+					this.highlightTab(this.focusedTab || null, { focus: true });
+				}
 			});
 
 			editor.onDidStopChanging(changedEditor => {
@@ -299,12 +303,26 @@ class App {
 			}
 		});
 
-		this.treeView.onDidExpandElement(() => {
-			// console.log('Expanded: ' + element.name);
+		this.treeView.onDidCollapseElement(element => {
+			// console.log('Collapsed: ' + element?.name);
+
+			if (element?.syntax) {
+				this.tabDataProvider.collapsedKindGroups.push(element.syntax);
+				nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', this.tabDataProvider.collapsedKindGroups);
+			}
 		});
 
-		this.treeView.onDidCollapseElement(() => {
-			// console.log('Collapsed: ' + element.name);
+		this.treeView.onDidExpandElement(element => {
+			// console.log('Expanded: ' + element?.name);
+
+			if (element?.syntax) {
+				const index = this.tabDataProvider.collapsedKindGroups.indexOf(element.syntax);
+
+				if (index > -1) {
+					this.tabDataProvider.collapsedKindGroups.splice(index, 1);
+					nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', this.tabDataProvider.collapsedKindGroups);
+				}
+			}
 		});
 
 		this.treeView.onDidChangeVisibility(() => {

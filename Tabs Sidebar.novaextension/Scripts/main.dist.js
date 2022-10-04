@@ -66,14 +66,13 @@ var TabItem = /** @class */ (function (_super) {
 }(ListItem));
 var FolderItem = /** @class */ (function (_super) {
     __extends(FolderItem, _super);
-    function FolderItem(name, syntax, extName) {
+    function FolderItem(name, options) {
         var _this = _super.call(this, name) || this;
-        _this.syntax = syntax || 'plaintext';
-        _this.extension = extName;
+        _this.syntax = (options === null || options === void 0 ? void 0 : options.syntax) || 'plaintext';
+        _this.extension = options === null || options === void 0 ? void 0 : options.extName;
         _this.contextValue = 'kindGroup';
         _this.children = [];
         _this.parent = null;
-        _this.collapsibleState = TreeItemCollapsibleState.None;
         _this.count = undefined;
         return _this;
     }
@@ -92,6 +91,7 @@ var TabDataProvider = /** @class */ (function () {
         this.sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
         this.groupByKind = this.app.groupByKind;
         this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+        this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
         this.init();
     }
     TabDataProvider.prototype.init = function () {
@@ -167,7 +167,7 @@ var TabDataProvider = /** @class */ (function () {
                         .map(function (s) { return s.charAt(0).toUpperCase() + s.substring(1); })
                         .join(' ');
                     var extName = nova.path.extname(tab.path || '').replace(/^\./, '');
-                    var newFolder = new FolderItem(_this.app.syntaxNames[tabSyntax_1] || titleCaseName, tab.syntax, extName);
+                    var newFolder = new FolderItem(_this.app.syntaxNames[tabSyntax_1] || titleCaseName, { syntax: tab.syntax, extName: extName });
                     newFolder.addChild(Object.assign({}, element));
                     _this.groupedItems.push(newFolder);
                 }
@@ -545,12 +545,16 @@ var TabDataProvider = /** @class */ (function () {
         var item;
         if (element instanceof FolderItem) {
             item = new TreeItem(element.name);
-            item.collapsibleState = TreeItemCollapsibleState.Expanded;
             item.contextValue = element.contextValue;
             item.descriptiveText = this.app.showGroupCount ? '(' + element.children.length + ')' : '';
             item.identifier = element.syntax;
             item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
             item.tooltip = '';
+            var collapsibleState = TreeItemCollapsibleState.Expanded;
+            if (this.collapsedKindGroups.indexOf(element.syntax || '') > -1) {
+                collapsibleState = TreeItemCollapsibleState.Collapsed;
+            }
+            item.collapsibleState = collapsibleState;
         }
         else {
             var name_1 = element.name;
@@ -644,8 +648,6 @@ var TabDataProvider = /** @class */ (function () {
 
 var App = /** @class */ (function () {
     function App() {
-        this.tabDataProvider = new TabDataProvider(this);
-        this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
         this.openTabWhenFocusSidebar = true;
         this.gitPath = '/usr/bin/git';
         this.openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
@@ -687,6 +689,8 @@ var App = /** @class */ (function () {
             'xml': 'XML',
             'yaml': 'YAML'
         };
+        this.tabDataProvider = new TabDataProvider(this);
+        this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
         this.init();
         this.initConfig();
         this.initEditorEvents();
@@ -821,14 +825,18 @@ var App = /** @class */ (function () {
             // Focus tab in sidebar when clicking in document
             editor.onDidChangeSelection(function (changedEditor) {
                 // if (nova.inDevMode()) console.log('editor.onDidChangeSelection');
+                var _a;
                 var selection = _this.treeView.selection[0];
                 var document = changedEditor.document;
                 // Don't reveal in treeview if it's already selected
-                if (selection && selection.uri === document.uri) {
+                if ((selection === null || selection === void 0 ? void 0 : selection.uri) === document.uri) {
                     return;
                 }
-                _this.focusedTab = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-                _this.highlightTab(_this.focusedTab || null, { focus: true });
+                // Only highlight tab if it's the same as the current active tab
+                if (document.uri === ((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri)) {
+                    _this.focusedTab = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
+                    _this.highlightTab(_this.focusedTab || null, { focus: true });
+                }
             });
             editor.onDidStopChanging(function (changedEditor) {
                 //console.log('Document stopped changing');
@@ -882,11 +890,22 @@ var App = /** @class */ (function () {
                 nova.commands.invoke('tabs-sidebar.open');
             }
         });
-        this.treeView.onDidExpandElement(function () {
-            // console.log('Expanded: ' + element.name);
+        this.treeView.onDidCollapseElement(function (element) {
+            // console.log('Collapsed: ' + element?.name);
+            if (element === null || element === void 0 ? void 0 : element.syntax) {
+                _this.tabDataProvider.collapsedKindGroups.push(element.syntax);
+                nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', _this.tabDataProvider.collapsedKindGroups);
+            }
         });
-        this.treeView.onDidCollapseElement(function () {
-            // console.log('Collapsed: ' + element.name);
+        this.treeView.onDidExpandElement(function (element) {
+            // console.log('Expanded: ' + element?.name);
+            if (element === null || element === void 0 ? void 0 : element.syntax) {
+                var index = _this.tabDataProvider.collapsedKindGroups.indexOf(element.syntax);
+                if (index > -1) {
+                    _this.tabDataProvider.collapsedKindGroups.splice(index, 1);
+                    nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', _this.tabDataProvider.collapsedKindGroups);
+                }
+            }
         });
         this.treeView.onDidChangeVisibility(function () {
             if (nova.inDevMode())
