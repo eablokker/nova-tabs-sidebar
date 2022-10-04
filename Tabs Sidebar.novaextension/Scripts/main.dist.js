@@ -1200,7 +1200,7 @@ var App = /** @class */ (function () {
             else {
                 _this.tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
             }
-            _this.updateGitStatus(false);
+            _this.initFileWatcher();
             _this.treeView.reload();
         });
     };
@@ -1214,26 +1214,37 @@ var App = /** @class */ (function () {
         this.tabDataProvider.runProcess('/usr/bin/which', ['git'])
             .then(function (result) {
             _this.gitPath = result.trim();
-            _this.updateGitStatus();
-            // Prevent excessive watch events
-            var watchTimeoutID = setTimeout(function () {
-                //
-            });
-            _this.fileWatcher = nova.fs.watch(null, function () { });
-            _this.fileWatcher.onDidChange(function (path) {
-                clearTimeout(watchTimeoutID);
-                watchTimeoutID = setTimeout(function () {
-                    if (nova.inDevMode())
-                        console.log('File changed', path);
-                    var pathSplit = nova.path.split(nova.path.dirname(path));
-                    // Don't respond to changes to nova config
-                    if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+            if (nova.inDevMode())
+                console.log('System has Git executable at', _this.gitPath);
+            // Check if workspace has git repo
+            _this.tabDataProvider.runProcess(_this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse'])
+                .then(function (result) {
+                if (nova.inDevMode())
+                    console.log('Workspace has Git repo');
+                _this.updateGitStatus();
+                // Prevent excessive watch events
+                var watchTimeoutID = setTimeout(function () {
+                    //
+                });
+                _this.fileWatcher = nova.fs.watch(null, function () { });
+                _this.fileWatcher.onDidChange(function (path) {
+                    clearTimeout(watchTimeoutID);
+                    watchTimeoutID = setTimeout(function () {
                         if (nova.inDevMode())
-                            console.log('Dont respond to config changes');
-                        return;
-                    }
-                    _this.updateGitStatus();
-                }, 200);
+                            console.log('File changed', path);
+                        var pathSplit = nova.path.split(nova.path.dirname(path));
+                        // Don't respond to changes to nova config
+                        if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+                            if (nova.inDevMode())
+                                console.log('Dont respond to config changes');
+                            return;
+                        }
+                        _this.updateGitStatus();
+                    }, 200);
+                });
+            })
+                .catch(function (err) {
+                console.warn('Could not find Git repo in current workspace', err);
             });
         })
             .catch(function (err) {
