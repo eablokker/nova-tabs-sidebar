@@ -4,11 +4,18 @@
 
 - Show Git status indicators next to file names, as icon and/or text
 - Check for existence of Git executable and Git repo in project folder before starting file watcher
+- Global config for displaying Git status
+- Remember collapsed kind groups in workspace config
 
 ### Changed
 
 - Refactored app as a class, moved TabDataProvider to separate file
 - Never activate open tab command when extension highlights a tab programmatically
+
+### Fixed
+
+- Wrong tab sometimes being selected on startup
+- Wrong tab sometimes being selected on document open/close
 
 ## v1.4.2 - 2022-09-20
 
