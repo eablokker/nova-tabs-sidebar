@@ -195,7 +195,10 @@ var TabDataProvider = /** @class */ (function () {
             }, timeout);
             process.onDidExit(function (status) {
                 clearTimeout(timeoutID);
-                if (status > 0 || errorString.length) {
+                if (status > 0) {
+                    reject(new Error('Process returned error status ' + status + ' when executing ' + scriptPath + ' ' + args.join(' ')));
+                }
+                if (errorString.length) {
                     reject(new Error(errorString));
                 }
                 else {
@@ -383,7 +386,7 @@ var TabDataProvider = /** @class */ (function () {
         this.groupByKind = groupByKind;
         this.sortItems();
     };
-    TabDataProvider.prototype.getGitStatus = function () {
+    TabDataProvider.prototype.getGitStatus = function (gitPath) {
         var _this = this;
         if (nova.inDevMode())
             console.log('getGitStatus()');
@@ -394,7 +397,7 @@ var TabDataProvider = /** @class */ (function () {
             }
             // '--no-optional-locks' git option to prevent watching changes on .git/index.lock
             _this
-                .runProcess('/usr/bin/git', ['--no-optional-locks', 'status', '--porcelain'], projectPath)
+                .runProcess(gitPath, ['--no-optional-locks', 'status', '--porcelain'], projectPath)
                 .then(function (result) {
                 var gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z_. /-]+) ?-?>? ?([0-9a-zA-Z_. /-]*)', 'gm');
                 var matches = gitStatusRegex.exec(result);
@@ -641,9 +644,10 @@ var TabDataProvider = /** @class */ (function () {
 
 var App = /** @class */ (function () {
     function App() {
-        this.openTabWhenFocusSidebar = true;
         this.tabDataProvider = new TabDataProvider(this);
         this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
+        this.openTabWhenFocusSidebar = true;
+        this.gitPath = '/usr/bin/git';
         this.openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
         this.showGitStatus = nova.config.get('eablokker.tabs-sidebar.show-git-status', 'string');
         this.alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'boolean');
@@ -1202,15 +1206,21 @@ var App = /** @class */ (function () {
     };
     App.prototype.initFileWatcher = function () {
         var _this = this;
-        this.updateGitStatus();
-        // Prevent excessive watch events
-        var watchTimeoutID = setTimeout(function () {
-            //
-        });
         // Don't watch files if workspace is not bound to folder
-        if (this.showGitStatus !== 'never' && nova.workspace.path) {
-            this.fileWatcher = nova.fs.watch(null, function () { });
-            this.fileWatcher.onDidChange(function (path) {
+        if (this.showGitStatus === 'never' || !nova.workspace.path) {
+            return;
+        }
+        // Find git executable
+        this.tabDataProvider.runProcess('/usr/bin/which', ['git'])
+            .then(function (result) {
+            _this.gitPath = result.trim();
+            _this.updateGitStatus();
+            // Prevent excessive watch events
+            var watchTimeoutID = setTimeout(function () {
+                //
+            });
+            _this.fileWatcher = nova.fs.watch(null, function () { });
+            _this.fileWatcher.onDidChange(function (path) {
                 clearTimeout(watchTimeoutID);
                 watchTimeoutID = setTimeout(function () {
                     if (nova.inDevMode())
@@ -1223,9 +1233,12 @@ var App = /** @class */ (function () {
                         return;
                     }
                     _this.updateGitStatus();
-                }, 100);
+                }, 200);
             });
-        }
+        })
+            .catch(function (err) {
+            console.error('Could not find git executable', err);
+        });
     };
     App.prototype.openRemoteTab = function (uri) {
         var _this = this;
@@ -1270,7 +1283,7 @@ var App = /** @class */ (function () {
     App.prototype.updateGitStatus = function (reload) {
         var _this = this;
         if (reload === void 0) { reload = true; }
-        this.tabDataProvider.getGitStatus()
+        this.tabDataProvider.getGitStatus(this.gitPath)
             .then(function (gitStatuses) {
             gitStatuses.forEach(function (gitStatus) {
                 if (!reload) {

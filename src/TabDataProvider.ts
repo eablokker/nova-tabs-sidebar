@@ -228,7 +228,11 @@ class TabDataProvider {
 			process.onDidExit(status => {
 				clearTimeout(timeoutID);
 
-				if (status > 0 || errorString.length) {
+				if (status > 0) {
+					reject(new Error('Process returned error status ' + status + ' when executing ' + scriptPath + ' ' + args.join(' ')));
+				}
+
+				if (errorString.length) {
 					reject(new Error(errorString));
 				} else {
 					resolve(outString);
@@ -463,7 +467,7 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
-	getGitStatus(): Promise<GitStatus[]> {
+	getGitStatus(gitPath: string): Promise<GitStatus[]> {
 		if (nova.inDevMode()) console.log('getGitStatus()');
 
 		return new Promise((resolve, reject) => {
@@ -475,7 +479,7 @@ class TabDataProvider {
 
 			// '--no-optional-locks' git option to prevent watching changes on .git/index.lock
 			this
-				.runProcess('/usr/bin/git', ['--no-optional-locks', 'status', '--porcelain'], projectPath)
+				.runProcess(gitPath, ['--no-optional-locks', 'status', '--porcelain'], projectPath)
 				.then(result => {
 					const gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z_. /-]+) ?-?>? ?([0-9a-zA-Z_. /-]*)', 'gm');
 					let matches = gitStatusRegex.exec(result);
