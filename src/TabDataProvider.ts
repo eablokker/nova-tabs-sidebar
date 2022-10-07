@@ -83,6 +83,7 @@ class TabDataProvider {
 	flatItems: TabItem[];
 	groupedItems: FolderItem[];
 	customOrder: string[];
+	customKindGroupsOrder: string[];
 	gitStatuses: GitStatus[];
 	sortAlpha: boolean | null;
 	groupByKind: boolean | null;
@@ -98,13 +99,8 @@ class TabDataProvider {
 		this.sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
 		this.groupByKind = this.app.groupByKind;
 		this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+		this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
 		this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
-
-		this.init();
-	}
-
-	init() {
-		//
 	}
 
 	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
@@ -138,6 +134,16 @@ class TabDataProvider {
 				}
 			});
 		});
+
+		// Remove closed kind groups custom order
+		if (this.customKindGroupsOrder.length && this.groupedItems.length) {
+			this.customKindGroupsOrder = this.customKindGroupsOrder.filter(syntax => {
+				return this.groupedItems.some(group => {
+					const syntaxName = group.syntax || 'plaintext';
+					return syntax === syntaxName;
+				});
+			});
+		}
 
 		// Add newly opened tabs
 		documentTabs.forEach(tab => {
@@ -178,12 +184,16 @@ class TabDataProvider {
 				const tabSyntax = tab.syntax || 'plaintext';
 				const folder = this.groupedItems.find(group => group.syntax === tabSyntax);
 
+				// Add tab to folder if folder already exists
 				if (folder) {
 					const childIndex = folder.children.findIndex(child => child.uri === tab.uri);
 					if (childIndex < 0) {
 						folder.addChild(Object.assign({}, element));
 					}
 				} else {
+					// Add new folder if it doesn't exist yet
+
+					// Title case syntax name
 					const titleCaseName = tabSyntax
 						.split(' ')
 						.map((s) => s.charAt(0).toUpperCase() + s.substring(1))
@@ -198,9 +208,15 @@ class TabDataProvider {
 
 					newFolder.addChild(Object.assign({}, element));
 					this.groupedItems.push(newFolder);
+
+					if (this.customKindGroupsOrder.indexOf(tabSyntax) < 0) {
+						this.customKindGroupsOrder.push(tabSyntax);
+					}
 				}
 			}
 		});
+
+		nova.workspace.config.set('eablokker.tabsSidebar.config.customKindGroupsOrder', this.customKindGroupsOrder);
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
 
 		this.sortItems();
@@ -357,6 +373,50 @@ class TabDataProvider {
 			});
 	}
 
+	moveKindGroup(group: FolderItem, distance: number) {
+		// Original tab path
+		const syntax = group.syntax || 'plaintext';
+
+		// Get item indexes
+		const fromItemIndex = this.groupedItems.findIndex(item => item.syntax === syntax);
+		const toItemIndex = fromItemIndex + distance;
+
+		if (toItemIndex < 0 || toItemIndex >= this.groupedItems.length) {
+			return;
+		}
+
+		const fromItem = this.groupedItems[fromItemIndex];
+
+		// Update custom order
+		const fromIndex = this.groupedItems.findIndex(group => group.syntax === syntax);
+		const toIndex = fromIndex + distance;
+
+		if (toIndex < 0 || toIndex >= this.groupedItems.length) {
+			console.log('return', 'toIndex:', toIndex, 'this.groupedItems.length:', this.groupedItems.length);
+			return;
+		}
+
+		// Move group
+		const item = this.groupedItems.splice(fromIndex, 1)[0];
+		this.groupedItems.splice(toIndex, 0, item);
+
+		// Update group contextValues
+		this.updateGroupContexts();
+
+		// Update saved groups order
+		this.customKindGroupsOrder = this.groupedItems.map(group => group.syntax || 'plaintext');
+		nova.workspace.config.set('eablokker.tabsSidebar.config.customKindGroupsOrder', this.customKindGroupsOrder);
+
+		// Reload treeview
+		this.app.treeView.reload()
+			.then(() => {
+				this.app.highlightTab(fromItem, { focus: true });
+			})
+			.catch(err => {
+				console.error(err);
+			});
+	}
+
 	cleanUpByTabBarOrder(result: string) {
 		const windowList = result.split(', ');
 		const currentWindow: string[] = [];
@@ -469,6 +529,20 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
+	updateGroupContexts() {
+		this.groupedItems.forEach((group, i) => {
+			if (this.groupedItems.length === 1) {
+				group.contextValue = 'kindGroup-only';
+			} else if (i === 0) {
+				group.contextValue = 'kindGroup-first';
+			} else if (i === this.groupedItems.length - 1) {
+				group.contextValue = 'kindGroup-last';
+			} else {
+				group.contextValue = 'kindGroup';
+			}
+		});
+	}
+
 	getGitStatus(gitPath: string): Promise<GitStatus[]> {
 		if (nova.inDevMode()) console.log('getGitStatus()');
 
@@ -517,6 +591,7 @@ class TabDataProvider {
 		});
 	}
 
+	// Sorting function
 	byCustomOrder(a: TabItem, b: TabItem) {
 		if (this.customOrder.indexOf(a.path || '') < 0) {
 			return 1;
@@ -524,14 +599,20 @@ class TabDataProvider {
 		return this.customOrder.indexOf(a.path || '') - this.customOrder.indexOf(b.path || '');
 	}
 
+	// Sorting function
+	byCustomKindGroupsOrder(a: FolderItem, b: FolderItem) {
+		if (this.customKindGroupsOrder.indexOf(a.syntax || 'plaintext') < 0) {
+			return 1;
+		}
+		return this.customKindGroupsOrder.indexOf(a.syntax || 'plaintext') - this.customKindGroupsOrder.indexOf(b.syntax || 'plaintext');
+	}
+
 	sortItems() {
 		// Sort custom ordered items by custom order
 		this.flatItems.sort(this.byCustomOrder.bind(this));
 
-		// Sort folders alphabetically
-		this.groupedItems.sort((a, b) => {
-			return a.name.localeCompare(b.name);
-		});
+		// Sort folders by custom order
+		this.groupedItems.sort(this.byCustomKindGroupsOrder.bind(this));
 
 		// Sort folder children by custom order
 		this.groupedItems.forEach(item => {
@@ -539,18 +620,20 @@ class TabDataProvider {
 		});
 
 		// Set context of position in list
-		const length = this.flatItems.length;
 		this.flatItems.forEach((tab, i) => {
-			if (length === 1) {
+			if (this.flatItems.length === 1) {
 				tab.contextValue = tab.isRemote ? 'remote-only' : 'only';
 			} else if (i === 0) {
 				tab.contextValue = tab.isRemote ? 'remote-first' : 'first';
-			} else if (i === length - 1) {
+			} else if (i === this.flatItems.length - 1) {
 				tab.contextValue = tab.isRemote ? 'remote-last' : 'last';
 			} else {
 				tab.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
 			}
 		});
+
+		// Set context of position of group in list
+		this.updateGroupContexts();
 
 		//console.log('this.customOrder', this.customOrder);
 

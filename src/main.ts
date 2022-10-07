@@ -474,7 +474,7 @@ class App {
 			}
 
 			// Don't do anything with folders
-			if (selection[0].contextValue === 'kindGroup') {
+			if (selection[0]?.contextValue?.startsWith('kindGroup')) {
 				return;
 			}
 
@@ -519,7 +519,9 @@ class App {
 				return;
 			}
 
+			// Move kind group up
 			if (selection[0] instanceof FolderItem) {
+				this.tabDataProvider.moveKindGroup(selection[0], -1);
 				return;
 			}
 
@@ -537,7 +539,9 @@ class App {
 				return;
 			}
 
+			// Move kind group down
 			if (selection[0] instanceof FolderItem) {
+				this.tabDataProvider.moveKindGroup(selection[0], 1);
 				return;
 			}
 
