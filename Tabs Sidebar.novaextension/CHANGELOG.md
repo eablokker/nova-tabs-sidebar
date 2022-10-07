@@ -1,11 +1,11 @@
-## v1.5.0 - 2022-10-03
+## v1.5.0 - 2022-10-06
 
 ### Added
 
 - Show Git status indicators next to file names, as icon and/or text
-- Check for existence of Git executable and Git repo in project folder before starting file watcher
-- Global config for displaying Git status
-- Remember collapsed kind groups in workspace config
+- Display of git status is configurable
+- Remember collapsed state of groups
+- Group order can now be moved up/down when grouping by kind
 
 ### Changed
 
