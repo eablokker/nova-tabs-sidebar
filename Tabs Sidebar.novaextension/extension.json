@@ -41,14 +41,14 @@
                         {
                             "title": "↑",
                             "image": "",
-                            "tooltip": "Move Tab Up",
+                            "tooltip": "Move Item Up",
                             "command": "tabs-sidebar.up",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha == false && (eablokker.tabsSidebar.config.groupByKind == false || viewItem == 'kindGroup' || viewItem == 'kindGroup-last') && viewItem != 'first' && viewItem != 'remote-first' && viewItem != 'only'"
                         },
                         {
                             "title": "↓",
                             "image": "",
-                            "tooltip": "Move Tab Down",
+                            "tooltip": "Move Item Down",
                             "command": "tabs-sidebar.down",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha == false && (eablokker.tabsSidebar.config.groupByKind == false || viewItem == 'kindGroup' || viewItem == 'kindGroup-first') && viewItem != 'last' && viewItem != 'remote-last' && viewItem != 'only'"
                         },
@@ -108,12 +108,12 @@
                         },
                         {"separator": true},
                         {
-                            "title": "Move Tab Up",
+                            "title": "Move Item Up",
                             "command": "tabs-sidebar.up",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha == false && (eablokker.tabsSidebar.config.groupByKind == false || viewItem == 'kindGroup' || viewItem == 'kindGroup-last') && viewItem != 'first' && viewItem != 'remote-first' && viewItem != 'only'"
                         },
                         {
-                            "title": "Move Tab Down",
+                            "title": "Move Item Down",
                             "command": "tabs-sidebar.down",
                             "when": "viewItem != null && eablokker.tabsSidebar.config.sortAlpha == false && (eablokker.tabsSidebar.config.groupByKind == false || viewItem == 'kindGroup' || viewItem == 'kindGroup-first') && viewItem != 'last' && viewItem != 'remote-last' && viewItem != 'only'"
                         },

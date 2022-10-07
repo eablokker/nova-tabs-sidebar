@@ -6,8 +6,8 @@
 
 	"Open": "打开",
 	"Close Tab": "关闭标签页",
-	"Move Tab Up": "上移签页",
-	"Move Tab Down": "下移签页",
+	"Move Item Up": "向上移动项目",
+	"Move Item Down": "下移项目",
 	"Show in Files Sidebar": "在文件边栏中显示",
 	"Show in Finder": "在 Finder 中显示",
 	"Copy Path": "拷贝路径",

@@ -6,8 +6,8 @@
 
 	"Open": "Ouvrir",
 	"Close Tab": "Fermer l’onglet",
-	"Move Tab Up": "Déplacer vers le haut",
-	"Move Tab Down": "Déplacer vers le bas",
+	"Move Item Up": "Déplacer vers le haut",
+	"Move Item Down": "Déplacer vers le bas",
 	"Show in Files Sidebar": "Afficher dans la barre latérale Fichiers",
 	"Show in Finder": "Afficher dans le Finder",
 	"Copy Path": "Copier le chemin",

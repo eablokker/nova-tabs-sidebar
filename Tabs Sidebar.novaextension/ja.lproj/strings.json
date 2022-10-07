@@ -6,8 +6,8 @@
 
 	"Open": "開く",
 	"Close Tab": "タブを閉じる",
-	"Move Tab Up": "タブを上に移動",
-	"Move Tab Down": "タブを下に移動",
+	"Move Item Up": "アイテムを上に移動",
+	"Move Item Down": "アイテムを下に移動",
 	"Show in Files Sidebar": "ファイルサイドバーで表示",
 	"Show in Finder": "Finderに表示",
 	"Copy Path": "パスをコピー",
