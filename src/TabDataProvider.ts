@@ -108,24 +108,23 @@ class TabDataProvider {
 	}
 
 	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
-		// Remove extraneous from custom order
+		// Remove closed tabs from custom order
 		if (this.customOrder.length) {
 			this.customOrder = this.customOrder.filter(path => {
 				return documentTabs.some(tab => tab.path === path);
 			});
 		}
 
-		// Remove closed tabs
+		// Remove closed tabs from flat list
 		this.flatItems.forEach((item, i, self) => {
 			const tabIsClosed = documentTabs.every(tab => tab.uri !== item.uri);
 			if (tabIsClosed) {
 				// Remove from flat items
 				self.splice(i, 1);
-				// Remove from custom order
-				this.customOrder.splice(this.customOrder.indexOf(item.path || '', 1));
 			}
 		});
 
+		// Remove closed tabs from kind groups
 		this.groupedItems.forEach((folder, i, self) => {
 			folder.children.forEach((child, i2, self2) => {
 				const tabIsClosed = documentTabs.every(tab => tab.uri !== child.uri);
@@ -151,13 +150,18 @@ class TabDataProvider {
 			const tabIsNewInCustomOrder = this.customOrder.every(path => path !== tab.path);
 
 			// Add new tab to custom order
-			if (tabIsNewInCustomOrder && focusedTab) {
-				// Splice new tab into array just after focused tab
-				const tabIndex = this.customOrder
-					.findIndex(path => path === focusedTab.path);
-				this.customOrder.splice(tabIndex + 1, 0, tab.path);
-			} else if (tabIsNewInCustomOrder) {
-				this.customOrder.push(tab.path);
+			if (tabIsNewInCustomOrder) {
+				// Splice new tab into array just after active editor or las focused tab
+				let tabIndex = -1;
+				if (focusedTab) {
+					tabIndex = this.customOrder.findIndex(path => path === focusedTab.path);
+				}
+
+				if (tabIndex > -1) {
+					this.customOrder.splice(tabIndex + 1, 0, tab.path);
+				} else {
+					this.customOrder.push(tab.path);
+				}
 			}
 
 			// Check if tab is new in flat items
@@ -166,7 +170,6 @@ class TabDataProvider {
 			// Add tab to flat items if new
 			if (tabIsNew) {
 				const tabName = this.basename(tab.path || 'untitled');
-
 				const element = new TabItem(tabName, tab);
 
 				this.flatItems.push(element);

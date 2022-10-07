@@ -99,22 +99,21 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.loadData = function (documentTabs, focusedTab) {
         var _this = this;
-        // Remove extraneous from custom order
+        // Remove closed tabs from custom order
         if (this.customOrder.length) {
             this.customOrder = this.customOrder.filter(function (path) {
                 return documentTabs.some(function (tab) { return tab.path === path; });
             });
         }
-        // Remove closed tabs
+        // Remove closed tabs from flat list
         this.flatItems.forEach(function (item, i, self) {
             var tabIsClosed = documentTabs.every(function (tab) { return tab.uri !== item.uri; });
             if (tabIsClosed) {
                 // Remove from flat items
                 self.splice(i, 1);
-                // Remove from custom order
-                _this.customOrder.splice(_this.customOrder.indexOf(item.path || '', 1));
             }
         });
+        // Remove closed tabs from kind groups
         this.groupedItems.forEach(function (folder, i, self) {
             folder.children.forEach(function (child, i2, self2) {
                 var tabIsClosed = documentTabs.every(function (tab) { return tab.uri !== child.uri; });
@@ -136,14 +135,18 @@ var TabDataProvider = /** @class */ (function () {
             // Check if tab is new in custom order
             var tabIsNewInCustomOrder = _this.customOrder.every(function (path) { return path !== tab.path; });
             // Add new tab to custom order
-            if (tabIsNewInCustomOrder && focusedTab) {
-                // Splice new tab into array just after focused tab
-                var tabIndex = _this.customOrder
-                    .findIndex(function (path) { return path === focusedTab.path; });
-                _this.customOrder.splice(tabIndex + 1, 0, tab.path);
-            }
-            else if (tabIsNewInCustomOrder) {
-                _this.customOrder.push(tab.path);
+            if (tabIsNewInCustomOrder) {
+                // Splice new tab into array just after active editor or las focused tab
+                var tabIndex = -1;
+                if (focusedTab) {
+                    tabIndex = _this.customOrder.findIndex(function (path) { return path === focusedTab.path; });
+                }
+                if (tabIndex > -1) {
+                    _this.customOrder.splice(tabIndex + 1, 0, tab.path);
+                }
+                else {
+                    _this.customOrder.push(tab.path);
+                }
             }
             // Check if tab is new in flat items
             var tabIsNew = _this.flatItems.every(function (item) { return item.uri !== tab.uri; });
