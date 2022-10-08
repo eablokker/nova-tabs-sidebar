@@ -1,9 +1,8 @@
-## v1.5.0 - 2022-10-06
+## v1.5.0 - 2022-10-08
 
 ### Added
 
-- Show Git status indicators next to file names, as icon and/or text
-- Display of git status is configurable
+- Show Git status indicators next to file names, configurable as icon and/or text
 - Remember collapsed state of groups
 - Group order can now be moved up/down when grouping by kind
 - Basic workspace preferences pane
