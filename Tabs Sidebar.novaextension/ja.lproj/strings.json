@@ -18,6 +18,7 @@
 	"Sort Alphabetically": "アルファベット順に並べ替え",
 	"Group By Kind": "種類別にグループ化",
 	"Refresh": "リフレッシュ",
+	"Refresh Tab List": "タブ リストの更新",
 
 	"Open tabs with a single click": "ワンクリックでタブを開く",
 	"When disabled, tabs will only open on double-click or context menu.": "無効にすると、ダブルクリックまたはコンテキスト メニューでのみタブが開きます。",

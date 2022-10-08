@@ -18,6 +18,7 @@
 	"Sort Alphabetically": "Trier par ordre alphabétique",
 	"Group By Kind": "Regrouper par type",
 	"Refresh": "Rafraîchir",
+	"Refresh Tab List": "Rafraîchir la liste des onglets",
 
 	"Open tabs with a single click": "Ouvrir les onglets en un seul clic",
 	"When disabled, tabs will only open on double-click or context menu.": "Lorsqu'ils sont désactivés, les onglets ne s'ouvrent que par double-clic ou menu contextuel.",

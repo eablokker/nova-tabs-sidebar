@@ -18,6 +18,7 @@
 	"Sort Alphabetically": "按字母顺序排序",
 	"Group By Kind": "按种类分组",
 	"Refresh": "刷新",
+	"Refresh Tab List": "刷新标签列表",
 
 	"Open tabs with a single click": "一键打开签页",
 	"When disabled, tabs will only open on double-click or context menu.": "禁用时，选项卡只会在双击或上下文菜单中打开。",
