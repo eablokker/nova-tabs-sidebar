@@ -6,6 +6,7 @@
 - Display of git status is configurable
 - Remember collapsed state of groups
 - Group order can now be moved up/down when grouping by kind
+- Basic workspace preferences pane
 
 ### Changed
 

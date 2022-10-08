@@ -43,9 +43,10 @@ To use Tabs Sidebar:
 
 - From the "All Sidebars" panel, click and drag the "Tabs" item up into the toolbar or out into a new split
 - All open document tabs will be listed in the sidebar. Click or double-click an item to open its tab
-- Click the up/down buttons when a tab is selected to rearrange the list
+- Click the up/down buttons when a tab or group is selected to rearrange the list
 - Right-click in the sidebar or click the (…) button for sorting options
-- If "Group By Kind" or "Sort Alphabetically" are enabled, custom sorting is not available. When both are disabled, custom order is restored.
+- When "Sort Alphabetically" is enabled, custom sorting is not available. When disabled, custom order is restored.
+- When "Group by Kind" is enabled, only custom sorting of group folders is available.
 
 ### Configuration
 
