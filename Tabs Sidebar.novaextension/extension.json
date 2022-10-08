@@ -229,5 +229,26 @@
             ],
             "default": "before-filename"
         }
+    ],
+
+    "config-workspace": [
+        {
+            "key": "eablokker.tabsSidebar.config.sortAlpha",
+            "title": "Sort Alphabetically",
+            "type": "boolean",
+            "default": false
+        },
+        {
+            "key": "eablokker.tabsSidebar.config.groupByKind",
+            "title": "Group By Kind",
+            "type": "boolean",
+            "default": false
+        },
+        {
+            "title": "Refresh Tab List",
+            "Description": "Reloads Git repo",
+            "type": "command",
+            "command": "tabs-sidebar.refresh"
+        }
     ]
 }

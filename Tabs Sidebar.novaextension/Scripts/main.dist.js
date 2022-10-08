@@ -836,11 +836,28 @@ var App = /** @class */ (function () {
             _this.unsavedSymbolLocation = newVal;
             _this.treeView.reload();
         });
+        nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', function (newVal, oldVal) {
+            _this.tabDataProvider.setSortAlpha(newVal);
+            _this.treeView.reload();
+        });
         nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupByKind', function (newVal, oldVal) {
             _this.groupByKind = newVal;
             _this.tabDataProvider.setGroupByKind(_this.groupByKind);
             _this.treeView.reload();
         });
+        /*nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.customTabOrder', (newVal: string[], oldVal: string[]) => {
+            console.log('customTabOrder changed', newVal);
+
+            this.tabDataProvider.customOrder = newVal;
+            this.tabDataProvider.sortItems();
+            this.treeView.reload()
+                .then(() => {
+                    this.highlightTab(this.focusedTab || null, { focus: true });
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+        });*/
     };
     App.prototype.initEditorEvents = function () {
         var _this = this;
@@ -1220,10 +1237,7 @@ var App = /** @class */ (function () {
         nova.commands.register('tabs-sidebar.sortByAlpha', function (workspace) {
             if (nova.inDevMode())
                 console.log('Sort alphabetically');
-            var sortAlpha = !workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
-            workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', sortAlpha);
-            _this.tabDataProvider.setSortAlpha(sortAlpha);
-            _this.treeView.reload();
+            workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', !_this.tabDataProvider.sortAlpha);
         });
         nova.commands.register('tabs-sidebar.groupByKind', function (workspace) {
             if (nova.inDevMode())
