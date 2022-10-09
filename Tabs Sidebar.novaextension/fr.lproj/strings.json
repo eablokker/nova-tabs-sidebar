@@ -6,8 +6,8 @@
 
 	"Open": "Ouvrir",
 	"Close Tab": "Fermer l’onglet",
-	"Move Tab Up": "Déplacer vers le haut",
-	"Move Tab Down": "Déplacer vers le bas",
+	"Move Item Up": "Déplacer vers le haut",
+	"Move Item Down": "Déplacer vers le bas",
 	"Show in Files Sidebar": "Afficher dans la barre latérale Fichiers",
 	"Show in Finder": "Afficher dans le Finder",
 	"Copy Path": "Copier le chemin",
@@ -18,6 +18,7 @@
 	"Sort Alphabetically": "Trier par ordre alphabétique",
 	"Group By Kind": "Regrouper par type",
 	"Refresh": "Rafraîchir",
+	"Refresh Tab List": "Rafraîchir la liste des onglets",
 
 	"Open tabs with a single click": "Ouvrir les onglets en un seul clic",
 	"When disabled, tabs will only open on double-click or context menu.": "Lorsqu'ils sont désactivés, les onglets ne s'ouvrent que par double-clic ou menu contextuel.",
@@ -28,13 +29,18 @@
 	"Show files count when grouping by kind": "Afficher le nombre de fichiers lors du regroupement par type",
 	"Enable to show the number of files in each group next to the group's name.": "Activez cette option pour afficher le nombre de fichiers dans chaque groupe à côté du nom du groupe.",
 
+	"Show Git status": "Afficher le statut de Git",
+	"As Icon": "Comme icône",
+	"As Text": "Sous forme de texte",
+	"As Icon & Text": "Comme icône et texte",
+	"Never": "Jamais",
+
 	"Unsaved tab symbol": "Symbole d'onglet non enregistré",
 	"Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.": "Symbole à afficher dans les onglets avec des modifications non enregistrées. Vous pouvez utiliser des émoticônes ! 😃 Laissez vide par défaut.",
 
 	"Show unsaved tab symbol": "Afficher le symbole d'onglet non enregistré",
 	"Before file name": "Avant le nom du fichier",
 	"After file name, before folder name": "Après le nom du fichier, avant le nom du dossier",
-	"Never": "Jamais",
 
 	"Plain Text": "Texte brut",
 

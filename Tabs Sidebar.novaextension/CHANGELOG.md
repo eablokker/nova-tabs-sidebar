@@ -1,3 +1,22 @@
+## v1.5.0 - 2022-10-08
+
+### Added
+
+- Show Git status indicators next to file names, configurable as icon and/or text
+- Remember collapsed state of groups
+- Group order can now be moved up/down when grouping by kind
+- Basic workspace preferences pane
+
+### Changed
+
+- Refactored app as a class, moved TabDataProvider to separate file
+- Never activate open tab command when extension highlights a tab programmatically
+
+### Fixed
+
+- Wrong tab sometimes being selected on startup
+- Wrong tab sometimes being selected on document open/close
+
 ## v1.4.2 - 2022-09-20
 
 ### Changed

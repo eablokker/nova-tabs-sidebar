@@ -1,13 +1,13 @@
 {
 	"Tabs Sidebar": "Tabs Seitenleiste",
 	"Tabs": "Tabs",
-	"Open Files": "Geöffneten Dateien",
+	"Open Files": "Dateien öffnen",
 	"No files are open yet.": "Es sind noch keine Dateien geöffnet.",
 
 	"Open": "Öffnen",
 	"Close Tab": "Tab schließen",
-	"Move Tab Up": "Tab nach oben verschieben",
-	"Move Tab Down": "Tab nach unten verschieben",
+	"Move Item Up": "Artikel nach oben verschieben",
+	"Move Item Down": "Artikel nach unten verschieben",
 	"Show in Files Sidebar": "In der Dateien-Seitenleiste anzeigen",
 	"Show in Finder": "Im Finder anzeigen",
 	"Copy Path": "Pfad kopieren",
@@ -18,6 +18,7 @@
 	"Sort Alphabetically": "Alphabetisch sortieren",
 	"Group By Kind": "Nach Art gruppieren",
 	"Refresh": "Aktualisierung",
+	"Refresh Tab List": "Tab-Liste aktualisieren",
 
 	"Open tabs with a single click": "Öffnen Sie Tabs mit einem einzigen Klick",
 	"When disabled, tabs will only open on double-click or context menu.": "Wenn deaktiviert, öffnen sich Registerkarten nur per Doppelklick oder Kontextmenü.",
@@ -28,13 +29,18 @@
 	"Show files count when grouping by kind": "Anzahl der Dateien anzeigen, wenn nach Art gruppiert wird",
 	"Enable to show the number of files in each group next to the group's name.": "Aktivieren Sie diese Option, um die Anzahl der Dateien in jeder Gruppe neben dem Gruppennamen anzuzeigen.",
 
+	"Show Git status": "Git-Status anzeigen",
+	"As Icon": "Als Ikone",
+	"As Text": "Als Texte",
+	"As Icon & Text": "Als Ikone & Text",
+	"Never": "Noch nie",
+
 	"Unsaved tab symbol": "Nicht gespeichertes Tab-Symbol",
 	"Symbol to display in tabs with unsaved changes. You can use emoji! 😃 Leave blank for default.": "Symbol zur Anzeige in Registerkarten mit nicht gespeicherten Änderungen. Sie können Emojis verwenden! 😃 Standardmäßig leer lassen.",
 
 	"Show unsaved tab symbol": "Nicht gespeichertes Tab-Symbol anzeigen",
 	"Before file name": "Vor dem Dateinamen",
 	"After file name, before folder name": "Nach Dateiname, vor Ordnername",
-	"Never": "noch nie",
 
 	"Plain Text": "Reiner Text",
 
