@@ -392,7 +392,6 @@ class TabDataProvider {
 		const toIndex = fromIndex + distance;
 
 		if (toIndex < 0 || toIndex >= this.groupedItems.length) {
-			console.log('return', 'toIndex:', toIndex, 'this.groupedItems.length:', this.groupedItems.length);
 			return;
 		}
 

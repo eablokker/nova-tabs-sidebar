@@ -332,7 +332,6 @@ var TabDataProvider = /** @class */ (function () {
         var fromIndex = this.groupedItems.findIndex(function (group) { return group.syntax === syntax; });
         var toIndex = fromIndex + distance;
         if (toIndex < 0 || toIndex >= this.groupedItems.length) {
-            console.log('return', 'toIndex:', toIndex, 'this.groupedItems.length:', this.groupedItems.length);
             return;
         }
         // Move group
