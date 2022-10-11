@@ -556,7 +556,7 @@ class TabDataProvider {
 			this
 				.runProcess(gitPath, ['--no-optional-locks', 'status', '--porcelain'], projectPath)
 				.then(result => {
-					const gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z_. /-]+) ?-?>? ?([0-9a-zA-Z_. /-]*)', 'gm');
+					const gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z@_. /-]+) ?-?>? ?([0-9a-zA-Z@_. /-]*)', 'gm');
 					let matches = gitStatusRegex.exec(result);
 
 					// Reset statuses
