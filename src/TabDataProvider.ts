@@ -554,7 +554,7 @@ class TabDataProvider {
 
 			// '--no-optional-locks' git option to prevent watching changes on .git/index.lock
 			this
-				.runProcess(gitPath, ['--no-optional-locks', 'status', '--porcelain'], projectPath)
+				.runProcess(gitPath, ['--no-optional-locks', 'status', '--porcelain', '-uall'], projectPath)
 				.then(result => {
 					const gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z@_. /-]+) ?-?>? ?([0-9a-zA-Z@_. /-]*)', 'gm');
 					let matches = gitStatusRegex.exec(result);

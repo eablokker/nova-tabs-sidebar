@@ -464,9 +464,9 @@ var TabDataProvider = /** @class */ (function () {
             }
             // '--no-optional-locks' git option to prevent watching changes on .git/index.lock
             _this
-                .runProcess(gitPath, ['--no-optional-locks', 'status', '--porcelain'], projectPath)
+                .runProcess(gitPath, ['--no-optional-locks', 'status', '--porcelain', '-uall'], projectPath)
                 .then(function (result) {
-                var gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z_. /-]+) ?-?>? ?([0-9a-zA-Z_. /-]*)', 'gm');
+                var gitStatusRegex = new RegExp('([ ADMRCU?!]{2}) "?([0-9a-zA-Z@_. /-]+) ?-?>? ?([0-9a-zA-Z@_. /-]*)', 'gm');
                 var matches = gitStatusRegex.exec(result);
                 // Reset statuses
                 _this.gitStatuses.forEach(function (status) {
