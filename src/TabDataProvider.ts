@@ -815,14 +815,17 @@ class TabDataProvider {
 			}
 
 			// Calculate parent folder path for description
-			let parentPath = '';
+			let parentFolder = '';
 			const isUnique = this.isUniqueName(element);
 
 			// Always show parent folder if config setting is toggled on
-			if (this.app.alwaysShowParentFolder && !parentPath.length) {
+			if (this.app.alwaysShowParentFolder) {
 				const tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
-				parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
-				description += '‹ ' + parentPath;
+				parentFolder = decodeURI(tabDirArray[tabDirArray.length - 1]);
+
+				if (parentFolder !== '.Trash') {
+					description += '‹ ' + parentFolder;
+				}
 			}
 
 			// Show parent path if filename is not unique
@@ -834,7 +837,12 @@ class TabDataProvider {
 
 				parentPathSplit
 					.filter(dir => dir.length)
-					.forEach(dir => {
+					.forEach((dir, i) => {
+						// Don't show trash folder as parent
+						if (i === 0 && dir === '.Trash') {
+							return;
+						}
+
 						description += '‹ ' + dir + ' ';
 					});
 			}

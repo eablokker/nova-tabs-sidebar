@@ -689,13 +689,15 @@ var TabDataProvider = /** @class */ (function () {
                 }
             }
             // Calculate parent folder path for description
-            var parentPath = '';
+            var parentFolder = '';
             var isUnique = this.isUniqueName(element);
             // Always show parent folder if config setting is toggled on
-            if (this.app.alwaysShowParentFolder && !parentPath.length) {
+            if (this.app.alwaysShowParentFolder) {
                 var tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
-                parentPath = decodeURI(tabDirArray[tabDirArray.length - 1]);
-                description_1 += '‹ ' + parentPath;
+                parentFolder = decodeURI(tabDirArray[tabDirArray.length - 1]);
+                if (parentFolder !== '.Trash') {
+                    description_1 += '‹ ' + parentFolder;
+                }
             }
             // Show parent path if filename is not unique
             if (!isUnique) {
@@ -705,7 +707,11 @@ var TabDataProvider = /** @class */ (function () {
                     .reverse();
                 parentPathSplit
                     .filter(function (dir) { return dir.length; })
-                    .forEach(function (dir) {
+                    .forEach(function (dir, i) {
+                    // Don't show trash folder as parent
+                    if (i === 0 && dir === '.Trash') {
+                        return;
+                    }
                     description_1 += '‹ ' + dir + ' ';
                 });
             }
