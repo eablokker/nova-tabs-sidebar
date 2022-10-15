@@ -1,3 +1,11 @@
+## v1.5.1 - 2022-10-15
+
+### Fixed
+
+- Filenames with @ symbol not showing git status
+- Files inside untracked folders not showing git status
+- Trashed files showing .Trash as parent folder twice
+
 ## v1.5.0 - 2022-10-08
 
 ### Added
