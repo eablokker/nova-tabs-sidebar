@@ -1,3 +1,8 @@
+## v1.5.2 - 2022-10-17
+
+### Added
+- Add back missing icons for .editorconfig, .gitignore, .css.map, .js.map, and typescript .t.ds definitions.
+
 ## v1.5.1 - 2022-10-15
 
 ### Fixed

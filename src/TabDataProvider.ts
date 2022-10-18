@@ -769,8 +769,32 @@ class TabDataProvider {
 
 			item = new TreeItem(name);
 
-			item.image = element.extension ? '__filetype.' + element.extension : '__filetype.blank';
-			// item.image = 'blank';
+			if (!element.extension) {
+				item.image = '__filetype.blank';
+			}
+
+			if (element.name === '.editorconfig') {
+				item.image = 'filetype-config-editorconfig';
+			}
+
+			if (element.name === '.gitignore') {
+				item.image = 'filetype-config-gitignore';
+			}
+
+			if (element.extension === 'map') {
+				if (element.name.endsWith('.js.map')) {
+					item.image = '__filetype.js.map';
+				}
+
+				if (element.name.endsWith('.css.map')) {
+					item.image = '__filetype.css.map';
+				}
+			}
+
+			if (element.name.endsWith('.d.ts')) {
+				item.image = '__filetype.d.ts';
+			}
+
 			item.tooltip = element.path ? element.path.replace(nova.path.expanduser('~'), '~') : '';
 
 			if (element.isTrashed) {
