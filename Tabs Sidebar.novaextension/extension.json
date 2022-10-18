@@ -28,8 +28,8 @@
             "name": "Tabs",
             "smallImage": "tabs-sidebar-small",
             "smallSelectedImage": "tabs-sidebar-small-selected",
-            "largeImage": "tabs-sidebar-large",
-            "largeSelectedImage": "tabs-sidebar-large-selected",
+            "largeImage": "tabs-sidebar-medium",
+            "largeSelectedImage": "tabs-sidebar-medium-selected",
             "sections": [
                 {
                     "id": "tabs-sidebar",
