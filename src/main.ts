@@ -463,10 +463,10 @@ class App {
 
 							// Switch back to remote tab after closing other remote tab
 							this.openRemoteTab(activeDocument.uri)
-								.then(value => {
+								.then(editor => {
 
-									if (value) {
-										this.focusedTab = this.tabDataProvider.getElementByUri(value.document.uri);
+									if (editor) {
+										this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
 										this.highlightTab(this.focusedTab || null, { focus: true });
 									}
 								})
@@ -516,9 +516,11 @@ class App {
 
 			// Switch to tab for remote file
 			this.openRemoteTab(selection[0].uri)
-				.then((editor: TextEditor) => {
-					this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
-					this.highlightTab(this.focusedTab || null, { focus: true });
+				.then(editor => {
+					if (editor) {
+						this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
+						this.highlightTab(this.focusedTab || null, { focus: true });
+					}
 				})
 				.catch(err => {
 					console.error('Could not open remote tab.', err);
@@ -774,7 +776,7 @@ class App {
 			});
 	}
 
-	openRemoteTab(uri: string): Promise<TextEditor> {
+	openRemoteTab(uri: string): Promise<TextEditor | null | undefined> {
 		return new Promise((resolve, reject) => {
 			const element = this.tabDataProvider.getElementByUri(uri);
 
@@ -802,7 +804,8 @@ class App {
 				.then(() => {
 					// console.log('Menu item ' + basename + ' of Window menu clicked');
 					setTimeout(() => {
-						const editor = nova.workspace.activeTextEditor || null;
+						const editor = nova.workspace.activeTextEditor;
+
 						resolve(editor);
 					}, 1);
 				})

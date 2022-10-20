@@ -1126,9 +1126,9 @@ var App = /** @class */ (function () {
                     }
                     // Switch back to remote tab after closing other remote tab
                     _this.openRemoteTab(activeDocument.uri)
-                        .then(function (value) {
-                        if (value) {
-                            _this.focusedTab = _this.tabDataProvider.getElementByUri(value.document.uri);
+                        .then(function (editor) {
+                        if (editor) {
+                            _this.focusedTab = _this.tabDataProvider.getElementByUri(editor.document.uri);
                             _this.highlightTab(_this.focusedTab || null, { focus: true });
                         }
                     })
@@ -1173,8 +1173,10 @@ var App = /** @class */ (function () {
             // Switch to tab for remote file
             _this.openRemoteTab(selection[0].uri)
                 .then(function (editor) {
-                _this.focusedTab = _this.tabDataProvider.getElementByUri(editor.document.uri);
-                _this.highlightTab(_this.focusedTab || null, { focus: true });
+                if (editor) {
+                    _this.focusedTab = _this.tabDataProvider.getElementByUri(editor.document.uri);
+                    _this.highlightTab(_this.focusedTab || null, { focus: true });
+                }
             })
                 .catch(function (err) {
                 console.error('Could not open remote tab.', err);
@@ -1414,7 +1416,7 @@ var App = /** @class */ (function () {
                 .then(function () {
                 // console.log('Menu item ' + basename + ' of Window menu clicked');
                 setTimeout(function () {
-                    var editor = nova.workspace.activeTextEditor || null;
+                    var editor = nova.workspace.activeTextEditor;
                     resolve(editor);
                 }, 1);
             })
