@@ -36,10 +36,21 @@ function __extends(d, b) {
 var ListItem = /** @class */ (function () {
     function ListItem(name) {
         this.name = name;
+        this._syntax = null;
         this.path = '';
         this.uri = '';
         this.isRemote = false;
     }
+    Object.defineProperty(ListItem.prototype, "syntax", {
+        get: function () {
+            return this._syntax;
+        },
+        set: function (syntax) {
+            this._syntax = syntax;
+        },
+        enumerable: false,
+        configurable: true
+    });
     return ListItem;
 }());
 var TabItem = /** @class */ (function (_super) {
@@ -52,23 +63,33 @@ var TabItem = /** @class */ (function (_super) {
         _this.path = tab.path || undefined;
         _this.uri = tab.uri;
         _this.isRemote = tab.isRemote;
-        _this.isDirty = tab.isDirty;
+        _this._isDirty = tab.isDirty;
         _this.isUntitled = tab.isUntitled;
         _this.isTrashed = trashRegex.test(decodeURI(tab.uri));
         _this.children = [];
         _this.parent = null;
-        _this.syntax = tab.syntax || 'plaintext';
+        _this._syntax = tab.syntax || 'plaintext';
         _this.extension = nova.path.extname(tab.path || '').replace(/^\./, '');
         _this.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
         return _this;
     }
+    Object.defineProperty(TabItem.prototype, "isDirty", {
+        get: function () {
+            return this._isDirty;
+        },
+        set: function (isDirty) {
+            this._isDirty = isDirty;
+        },
+        enumerable: false,
+        configurable: true
+    });
     return TabItem;
 }(ListItem));
 var FolderItem = /** @class */ (function (_super) {
     __extends(FolderItem, _super);
     function FolderItem(name, options) {
         var _this = _super.call(this, name) || this;
-        _this.syntax = (options === null || options === void 0 ? void 0 : options.syntax) || 'plaintext';
+        _this._syntax = (options === null || options === void 0 ? void 0 : options.syntax) || 'plaintext';
         _this.extension = options === null || options === void 0 ? void 0 : options.extName;
         _this.contextValue = 'kindGroup';
         _this.children = [];
@@ -88,12 +109,34 @@ var TabDataProvider = /** @class */ (function () {
         this.flatItems = [];
         this.groupedItems = [];
         this.gitStatuses = [];
-        this.sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
-        this.groupByKind = this.app.groupByKind;
+        this._sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
+        this._groupByKind = this.app.groupByKind;
         this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
         this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
         this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
     }
+    Object.defineProperty(TabDataProvider.prototype, "sortAlpha", {
+        get: function () {
+            return this._sortAlpha;
+        },
+        set: function (sortAlpha) {
+            this._sortAlpha = sortAlpha;
+            this.sortItems();
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(TabDataProvider.prototype, "groupByKind", {
+        get: function () {
+            return this._groupByKind;
+        },
+        set: function (groupByKind) {
+            this._groupByKind = groupByKind;
+            this.sortItems();
+        },
+        enumerable: false,
+        configurable: true
+    });
     TabDataProvider.prototype.loadData = function (documentTabs, focusedTab) {
         var _this = this;
         // Remove closed tabs from custom order
@@ -114,16 +157,18 @@ var TabDataProvider = /** @class */ (function () {
         this.groupedItems.forEach(function (folder, i, self) {
             folder.children.forEach(function (child, i2, self2) {
                 var tabIsClosed = documentTabs.every(function (tab) { return tab.uri !== child.uri; });
-                if (tabIsClosed) {
+                var syntaxChanged = child.syntax && folder.syntax !== child.syntax;
+                console.log(folder.syntax, child.syntax);
+                if (tabIsClosed || syntaxChanged) {
                     self2.splice(i2, 1);
-                    // Remove folder if now empty
-                    if (!folder.children.length) {
-                        self.splice(i, 1);
-                    }
+                }
+                // Remove folder if now empty
+                if (!folder.children.length) {
+                    self.splice(i, 1);
                 }
             });
         });
-        // Remove closed kind groups custom order
+        // Remove closed kind groups from custom order
         if (this.customKindGroupsOrder.length && this.groupedItems.length) {
             this.customKindGroupsOrder = this.customKindGroupsOrder.filter(function (syntax) {
                 return _this.groupedItems.some(function (group) {
@@ -161,6 +206,14 @@ var TabDataProvider = /** @class */ (function () {
                 var tabName = _this.basename(tab.path || 'untitled');
                 var element = new TabItem(tabName, tab);
                 _this.flatItems.push(element);
+            }
+            // Check if tab is new in grouped items
+            var tabIsNewInGroup = _this.groupedItems.every(function (group) {
+                return group.children.every(function (item) { return item.uri !== tab.uri; });
+            });
+            if (tabIsNewInGroup) {
+                var tabName = _this.basename(tab.path || 'untitled');
+                var element = new TabItem(tabName, tab);
                 // Add tab to grouped items if new
                 var tabSyntax_1 = tab.syntax || 'plaintext';
                 var folder = _this.groupedItems.find(function (group) { return group.syntax === tabSyntax_1; });
@@ -179,6 +232,9 @@ var TabDataProvider = /** @class */ (function () {
                         .map(function (s) { return s.charAt(0).toUpperCase() + s.substring(1); })
                         .join(' ');
                     var extName = nova.path.extname(tab.path || '').replace(/^\./, '');
+                    if (tabSyntax_1 === 'plaintext') {
+                        extName = '';
+                    }
                     var newFolder = new FolderItem(_this.app.syntaxNames[tabSyntax_1] || titleCaseName, { syntax: tab.syntax, extName: extName });
                     newFolder.addChild(Object.assign({}, element));
                     _this.groupedItems.push(newFolder);
@@ -223,12 +279,6 @@ var TabDataProvider = /** @class */ (function () {
             });
             process.start();
         });
-    };
-    TabDataProvider.prototype.setDirty = function (editor) {
-        var element = this.getElementByUri(editor.document.uri);
-        if (element) {
-            element.isDirty = editor.document.isDirty;
-        }
     };
     TabDataProvider.prototype.basename = function (uri) {
         return nova.path.basename(uri);
@@ -418,22 +468,12 @@ var TabDataProvider = /** @class */ (function () {
         this.customOrder.sort(function (a, b) {
             var aElement = elementArray.find(function (item) { return (item === null || item === void 0 ? void 0 : item.path) === a; });
             var bElement = elementArray.find(function (item) { return (item === null || item === void 0 ? void 0 : item.path) === b; });
-            if (!aElement || !bElement) {
+            if (!aElement || !bElement || !aElement.syntax || !bElement.syntax) {
                 return 0;
             }
             return aElement.syntax.localeCompare(bElement.syntax);
         });
         nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
-        this.sortItems();
-    };
-    TabDataProvider.prototype.setSortAlpha = function (sortAlpha) {
-        //console.log('Setting sort alpha', sortAlpha);
-        this.sortAlpha = sortAlpha;
-        this.sortItems();
-    };
-    TabDataProvider.prototype.setGroupByKind = function (groupByKind) {
-        //console.log('Setting sort by kind', groupByKind);
-        this.groupByKind = groupByKind;
         this.sortItems();
     };
     TabDataProvider.prototype.updateGroupContexts = function () {
@@ -621,8 +661,14 @@ var TabDataProvider = /** @class */ (function () {
             item = new TreeItem(element.name);
             item.contextValue = element.contextValue;
             item.descriptiveText = this.app.showGroupCount ? '(' + element.children.length + ')' : '';
-            item.identifier = element.syntax;
-            item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
+            item.identifier = element.syntax || element.extension;
+            item.image = '__filetype.' + element.extension;
+            if (!element.extension) {
+                item.image = '__filetype.blank';
+            }
+            if (element.syntax === 'plaintext') {
+                item.image = '__filetype.blank';
+            }
             item.tooltip = '';
             var collapsibleState = TreeItemCollapsibleState.Expanded;
             if (this.collapsedKindGroups.indexOf(element.syntax || '') > -1) {
@@ -860,12 +906,12 @@ var App = /** @class */ (function () {
             _this.treeView.reload();
         });
         nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', function (newVal, oldVal) {
-            _this.tabDataProvider.setSortAlpha(newVal);
+            _this.tabDataProvider.sortAlpha = newVal;
             _this.treeView.reload();
         });
         nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupByKind', function (newVal, oldVal) {
             _this.groupByKind = newVal;
-            _this.tabDataProvider.setGroupByKind(_this.groupByKind);
+            _this.tabDataProvider.groupByKind = _this.groupByKind;
             _this.treeView.reload();
         });
         /*nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.customTabOrder', (newVal: string[], oldVal: string[]) => {
@@ -958,8 +1004,11 @@ var App = /** @class */ (function () {
             });
             editor.onDidStopChanging(function (changedEditor) {
                 //console.log('Document stopped changing');
-                _this.focusedTab = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-                _this.tabDataProvider.setDirty(changedEditor);
+                var element = _this.tabDataProvider.getElementByUri(editor.document.uri);
+                _this.focusedTab = element;
+                if (element) {
+                    element.isDirty = editor.document.isDirty;
+                }
                 _this.treeView.reload(_this.focusedTab)
                     .then(function () {
                     _this.highlightTab(_this.focusedTab || null, { focus: true });
@@ -971,8 +1020,11 @@ var App = /** @class */ (function () {
             // Focus tab in sidebar when saving document
             editor.onDidSave(function (savedEditor) {
                 //console.log('Document saved');
-                _this.focusedTab = _this.tabDataProvider.getElementByUri(savedEditor.document.uri);
-                _this.tabDataProvider.setDirty(savedEditor);
+                var element = _this.tabDataProvider.getElementByUri(savedEditor.document.uri);
+                _this.focusedTab = element;
+                if (element) {
+                    element.isDirty = editor.document.isDirty;
+                }
                 _this.treeView.reload(_this.focusedTab)
                     .then(function () {
                     _this.highlightTab(_this.focusedTab || null, { focus: true });
@@ -989,6 +1041,19 @@ var App = /** @class */ (function () {
             document.onDidChangeSyntax(function (changedDocument, newSyntax) {
                 if (nova.inDevMode())
                     console.log('editor.document.onDidChangeSyntax', changedDocument.uri, newSyntax);
+                var element = _this.tabDataProvider.getElementByUri(document.uri);
+                if (!element) {
+                    return;
+                }
+                element.syntax = newSyntax || 'plaintext';
+                _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab || undefined);
+                _this.treeView.reload()
+                    .then(function () {
+                    _this.highlightTab(_this.focusedTab || null, { focus: true });
+                })
+                    .catch(function (err) {
+                    console.error('Could not reload treeView.', err);
+                });
             });
         });
         this.treeView.onDidChangeSelection(function (selection) {

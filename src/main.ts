@@ -151,14 +151,14 @@ class App {
 		});
 
 		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', (newVal: boolean, oldVal: boolean) => {
-			this.tabDataProvider.setSortAlpha(newVal);
+			this.tabDataProvider.sortAlpha = newVal;
 			this.treeView.reload();
 		});
 
 		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupByKind', (newVal: boolean, oldVal: boolean) => {
 			this.groupByKind = newVal;
 
-			this.tabDataProvider.setGroupByKind(this.groupByKind);
+			this.tabDataProvider.groupByKind = this.groupByKind;
 			this.treeView.reload();
 		});
 
@@ -266,8 +266,12 @@ class App {
 			editor.onDidStopChanging(changedEditor => {
 				//console.log('Document stopped changing');
 
-				this.focusedTab = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-				this.tabDataProvider.setDirty(changedEditor);
+				const element = this.tabDataProvider.getElementByUri(editor.document.uri);
+				this.focusedTab = element;
+
+				if (element) {
+					element.isDirty = editor.document.isDirty;
+				}
 
 				this.treeView.reload(this.focusedTab)
 					.then(() => {
@@ -282,8 +286,12 @@ class App {
 			editor.onDidSave(savedEditor => {
 				//console.log('Document saved');
 
-				this.focusedTab = this.tabDataProvider.getElementByUri(savedEditor.document.uri);
-				this.tabDataProvider.setDirty(savedEditor);
+				const element = this.tabDataProvider.getElementByUri(savedEditor.document.uri);
+				this.focusedTab = element;
+
+				if (element) {
+					element.isDirty = editor.document.isDirty;
+				}
 
 				this.treeView.reload(this.focusedTab)
 					.then(() => {
@@ -301,6 +309,23 @@ class App {
 
 			document.onDidChangeSyntax((changedDocument, newSyntax) => {
 				if (nova.inDevMode()) console.log('editor.document.onDidChangeSyntax', changedDocument.uri, newSyntax);
+
+				const element = this.tabDataProvider.getElementByUri(document.uri);
+
+				if (!element) {
+					return;
+				}
+
+				element.syntax = newSyntax || 'plaintext';
+
+				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab || undefined);
+				this.treeView.reload()
+					.then(() => {
+						this.highlightTab(this.focusedTab || null, { focus: true });
+					})
+					.catch(err => {
+						console.error('Could not reload treeView.', err);
+					});
 			});
 		});
 

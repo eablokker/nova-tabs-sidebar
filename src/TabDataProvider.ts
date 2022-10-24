@@ -10,7 +10,7 @@ type SyntaxNames = {[name: string]: string};
 class ListItem {
 	name: string;
 	contextValue: string | undefined;
-	syntax: string | undefined;
+	_syntax: string | null;
 	extension: string | undefined;
 	path: string | undefined;
 	uri: string;
@@ -18,20 +18,28 @@ class ListItem {
 
 	constructor(name: string) {
 		this.name = name;
+		this._syntax = null;
 		this.path = '';
 		this.uri = '';
 		this.isRemote = false;
+	}
+
+	get syntax() {
+		return this._syntax;
+	}
+
+	set syntax(syntax: string | null) {
+		this._syntax = syntax;
 	}
 }
 
 class TabItem extends ListItem {
 	path: string | undefined;
-	isDirty: boolean;
+	_isDirty: boolean;
 	isUntitled: boolean;
 	isTrashed: boolean;
 	children: TabItem[];
 	parent: FolderItem | null;
-	syntax: string;
 	extension: string | undefined;
 	count: number | undefined;
 
@@ -45,14 +53,22 @@ class TabItem extends ListItem {
 		this.path = tab.path || undefined;
 		this.uri = tab.uri;
 		this.isRemote = tab.isRemote;
-		this.isDirty = tab.isDirty;
+		this._isDirty = tab.isDirty;
 		this.isUntitled = tab.isUntitled;
 		this.isTrashed = trashRegex.test(decodeURI(tab.uri));
 		this.children = [];
 		this.parent = null;
-		this.syntax = tab.syntax || 'plaintext';
+		this._syntax = tab.syntax || 'plaintext';
 		this.extension = nova.path.extname(tab.path || '').replace(/^\./, '');
 		this.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
+	}
+
+	get isDirty() {
+		return this._isDirty;
+	}
+
+	set isDirty(isDirty: boolean) {
+		this._isDirty = isDirty;
 	}
 }
 
@@ -64,7 +80,7 @@ class FolderItem extends ListItem {
 	constructor(name: string, options?: { syntax?: string | null, extName?: string }) {
 		super(name);
 
-		this.syntax = options?.syntax || 'plaintext';
+		this._syntax = options?.syntax || 'plaintext';
 		this.extension = options?.extName;
 		this.contextValue = 'kindGroup';
 		this.children = [];
@@ -85,8 +101,8 @@ class TabDataProvider {
 	customOrder: string[];
 	customKindGroupsOrder: string[];
 	gitStatuses: GitStatus[];
-	sortAlpha: boolean | null;
-	groupByKind: boolean | null;
+	_sortAlpha: boolean | null;
+	_groupByKind: boolean | null;
 	collapsedKindGroups: string[];
 
 	constructor(app: App) {
@@ -96,11 +112,31 @@ class TabDataProvider {
 		this.groupedItems = [];
 		this.gitStatuses = [];
 
-		this.sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
-		this.groupByKind = this.app.groupByKind;
+		this._sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
+		this._groupByKind = this.app.groupByKind;
 		this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
 		this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
 		this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
+	}
+
+	get sortAlpha() {
+		return this._sortAlpha;
+	}
+
+	set sortAlpha(sortAlpha: boolean | null) {
+		this._sortAlpha = sortAlpha;
+
+		this.sortItems();
+	}
+
+	get groupByKind() {
+		return this._groupByKind;
+	}
+
+	set groupByKind(groupByKind: boolean | null) {
+		this._groupByKind = groupByKind;
+
+		this.sortItems();
 	}
 
 	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
@@ -124,18 +160,22 @@ class TabDataProvider {
 		this.groupedItems.forEach((folder, i, self) => {
 			folder.children.forEach((child, i2, self2) => {
 				const tabIsClosed = documentTabs.every(tab => tab.uri !== child.uri);
-				if (tabIsClosed) {
-					self2.splice(i2, 1);
+				const syntaxChanged = child.syntax && folder.syntax !== child.syntax;
 
-					// Remove folder if now empty
-					if (!folder.children.length) {
-						self.splice(i, 1);
-					}
+				console.log(folder.syntax, child.syntax);
+
+				if (tabIsClosed || syntaxChanged) {
+					self2.splice(i2, 1);
+				}
+
+				// Remove folder if now empty
+				if (!folder.children.length) {
+					self.splice(i, 1);
 				}
 			});
 		});
 
-		// Remove closed kind groups custom order
+		// Remove closed kind groups from custom order
 		if (this.customKindGroupsOrder.length && this.groupedItems.length) {
 			this.customKindGroupsOrder = this.customKindGroupsOrder.filter(syntax => {
 				return this.groupedItems.some(group => {
@@ -179,6 +219,16 @@ class TabDataProvider {
 				const element = new TabItem(tabName, tab);
 
 				this.flatItems.push(element);
+			}
+
+			// Check if tab is new in grouped items
+			const tabIsNewInGroup = this.groupedItems.every(group => {
+				return group.children.every(item => item.uri !== tab.uri);
+			});
+
+			if (tabIsNewInGroup) {
+				const tabName = this.basename(tab.path || 'untitled');
+				const element = new TabItem(tabName, tab);
 
 				// Add tab to grouped items if new
 				const tabSyntax = tab.syntax || 'plaintext';
@@ -199,7 +249,11 @@ class TabDataProvider {
 						.map((s) => s.charAt(0).toUpperCase() + s.substring(1))
 						.join(' ');
 
-					const extName = nova.path.extname(tab.path || '').replace(/^\./, '');
+					let extName = nova.path.extname(tab.path || '').replace(/^\./, '');
+
+					if (tabSyntax === 'plaintext') {
+						extName = '';
+					}
 
 					const newFolder = new FolderItem(
 						this.app.syntaxNames[tabSyntax as keyof SyntaxNames] || titleCaseName,
@@ -259,14 +313,6 @@ class TabDataProvider {
 
 			process.start();
 		});
-	}
-
-	setDirty(editor: TextEditor) {
-		const element = this.getElementByUri(editor.document.uri);
-
-		if (element) {
-			element.isDirty = editor.document.isDirty;
-		}
 	}
 
 	basename(uri: string) {
@@ -503,27 +549,13 @@ class TabDataProvider {
 			const aElement = elementArray.find(item => item?.path === a);
 			const bElement = elementArray.find(item => item?.path === b);
 
-			if (!aElement || !bElement) {
+			if (!aElement || !bElement || !aElement.syntax || !bElement.syntax ) {
 				return 0;
 			}
 
 			return aElement.syntax.localeCompare(bElement.syntax);
 		});
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
-
-		this.sortItems();
-	}
-
-	setSortAlpha(sortAlpha: boolean) {
-		//console.log('Setting sort alpha', sortAlpha);
-		this.sortAlpha = sortAlpha;
-
-		this.sortItems();
-	}
-
-	setGroupByKind(groupByKind: boolean) {
-		//console.log('Setting sort by kind', groupByKind);
-		this.groupByKind = groupByKind;
 
 		this.sortItems();
 	}
@@ -737,8 +769,17 @@ class TabDataProvider {
 
 			item.contextValue = element.contextValue;
 			item.descriptiveText = this.app.showGroupCount ? '(' + element.children.length + ')' : '';
-			item.identifier = element.syntax;
-			item.image = element.extension ? '__filetype.' + element.extension : element.syntax === 'plaintext' ? '__filetype.txt' : '__filetype.blank';
+			item.identifier = element.syntax || element.extension;
+			item.image = '__filetype.' + element.extension;
+
+			if (!element.extension) {
+				item.image = '__filetype.blank';
+			}
+
+			if (element.syntax === 'plaintext') {
+				item.image = '__filetype.blank';
+			}
+
 			item.tooltip = '';
 
 			let collapsibleState = TreeItemCollapsibleState.Expanded;
