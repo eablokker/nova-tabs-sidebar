@@ -1,6 +1,18 @@
+## v1.5.3 - 2022-10-28
+
+### Added
+
+- Reload tab list when document syntax changed
+
+### Changed
+
+- Update sidebar icon to better match Nova interface
+- Update Typescript definitions
+
 ## v1.5.2 - 2022-10-17
 
 ### Added
+
 - Add back missing icons for .editorconfig, .gitignore, .css.map, .js.map, and typescript .t.ds definitions.
 
 ## v1.5.1 - 2022-10-15
