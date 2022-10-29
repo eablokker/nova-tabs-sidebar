@@ -387,6 +387,11 @@ class App {
 				return;
 			}
 
+			// Don't do anything with folders
+			if (selection[0]?.contextValue?.startsWith('kindGroup')) {
+				return;
+			}
+
 			let activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
 			const activeDocumentIsRemote = activeDocument ? activeDocument.isRemote : false;
 			const selectionIsRemote = selection[0].isRemote;

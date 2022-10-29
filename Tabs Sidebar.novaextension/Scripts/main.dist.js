@@ -1099,8 +1099,13 @@ var App = /** @class */ (function () {
         var _this = this;
         nova.commands.register('tabs-sidebar.close', function (workspace) {
             // console.log('Close Tab clicked');
+            var _a, _b;
             var selection = _this.treeView.selection;
             if (!selection[0]) {
+                return;
+            }
+            // Don't do anything with folders
+            if ((_b = (_a = selection[0]) === null || _a === void 0 ? void 0 : _a.contextValue) === null || _b === void 0 ? void 0 : _b.startsWith('kindGroup')) {
                 return;
             }
             var activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
