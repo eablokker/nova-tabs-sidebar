@@ -14,7 +14,7 @@ class App {
 	showGroupCount: boolean | null;
 	unsavedSymbol: string | null;
 	unsavedSymbolLocation: string | null;
-	groupByKind: boolean | null;
+	groupBy: string | null;
 
 	syntaxNames: SyntaxNames;
 
@@ -28,7 +28,7 @@ class App {
 		this.showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
 		this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
 		this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
-		this.groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', 'boolean');
+		this.groupBy = nova.workspace.config.get('ealokker.tabsSidebar.config.groupBy', 'string');
 
 		this.syntaxNames = {
 			'plaintext': nova.localize('Plain Text'),
@@ -155,10 +155,10 @@ class App {
 			this.treeView.reload();
 		});
 
-		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupByKind', (newVal: boolean, oldVal: boolean) => {
-			this.groupByKind = newVal;
+		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupBy', (newVal: string, oldVal: string) => {
+			this.groupBy = newVal;
 
-			this.tabDataProvider.groupByKind = this.groupByKind;
+			this.tabDataProvider.groupBy = newVal;
 			this.treeView.reload();
 		});
 
@@ -193,7 +193,7 @@ class App {
 
 				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
 
-				if (folder && this.groupByKind) {
+				if (folder && this.groupBy === 'folder') {
 					reload = this.treeView.reload(folder);
 				} else {
 					reload = this.treeView.reload();
@@ -221,7 +221,7 @@ class App {
 					let reload;
 					const folder = this.tabDataProvider.getFolderBySyntax(destroyedEditor.document.syntax || 'plaintext');
 
-					if (folder && folder.children.length > 1 && this.groupByKind) {
+					if (folder && folder.children.length > 1 && this.groupBy === 'folder') {
 						reload = this.treeView.reload(folder);
 					} else {
 						reload = this.treeView.reload();
@@ -633,10 +633,10 @@ class App {
 				});
 		});
 
-		nova.commands.register('tabs-sidebar.cleanUpByKind', () => {
-			if (nova.inDevMode()) console.log('cleanUpByKind');
+		nova.commands.register('tabs-sidebar.cleanUpByType', () => {
+			if (nova.inDevMode()) console.log('cleanUpByType');
 
-			this.tabDataProvider.cleanUpByKind();
+			this.tabDataProvider.cleanUpByType();
 			this.treeView.reload()
 				.then(() => {
 					this.highlightTab(this.focusedTab || null, { focus: true });
@@ -652,10 +652,24 @@ class App {
 			workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', !this.tabDataProvider.sortAlpha);
 		});
 
-		nova.commands.register('tabs-sidebar.groupByKind', (workspace: Workspace) => {
-			if (nova.inDevMode()) console.log('groupByKind');
+		nova.commands.register('tabs-sidebar.groupByType', (workspace: Workspace) => {
+			if (nova.inDevMode()) console.log('groupByType');
 
-			workspace.config.set('eablokker.tabsSidebar.config.groupByKind', !this.groupByKind);
+			if (this.groupBy !== 'type') {
+				workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'type');
+			} else {
+				workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
+			}
+		});
+
+		nova.commands.register('tabs-sidebar.groupByFolder', (workspace: Workspace) => {
+			if (nova.inDevMode()) console.log('groupByFolder');
+
+			if (this.groupBy !== 'folder') {
+				workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'folder');
+			} else {
+				workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
+			}
 		});
 
 		nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace: Workspace) => {

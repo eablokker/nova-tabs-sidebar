@@ -102,7 +102,7 @@ class TabDataProvider {
 	customKindGroupsOrder: string[];
 	gitStatuses: GitStatus[];
 	_sortAlpha: boolean | null;
-	_groupByKind: boolean | null;
+	_groupBy: string | null;
 	collapsedKindGroups: string[];
 
 	constructor(app: App) {
@@ -113,7 +113,7 @@ class TabDataProvider {
 		this.gitStatuses = [];
 
 		this._sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
-		this._groupByKind = this.app.groupByKind;
+		this._groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
 		this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
 		this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
 		this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
@@ -129,12 +129,12 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
-	get groupByKind() {
-		return this._groupByKind;
+	get groupBy() {
+		return this._groupBy;
 	}
 
-	set groupByKind(groupByKind: boolean | null) {
-		this._groupByKind = groupByKind;
+	set groupBy(groupBy: string | null) {
+		this._groupBy = groupBy;
 
 		this.sortItems();
 	}
@@ -540,7 +540,7 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
-	cleanUpByKind() {
+	cleanUpByType() {
 		const elementArray = this.customOrder.map(path => {
 			return this.getElementByPath(path);
 		});
@@ -676,7 +676,7 @@ class TabDataProvider {
 			});
 		}
 
-		if (this.groupByKind && this.sortAlpha) {
+		if (this.groupBy === 'type' && this.sortAlpha) {
 			if (nova.inDevMode()) console.log('Sorting folders by alpha');
 
 			this.groupedItems.sort((a, b) => {
@@ -692,7 +692,7 @@ class TabDataProvider {
 	}
 
 	getElementByUri(uri: string): TabItem | undefined {
-		if (this.groupByKind) {
+		if (this.groupBy === 'type') {
 			let childElement: TabItem | undefined;
 			this.groupedItems.some(item => {
 				childElement = item.children.find(child => {
@@ -712,7 +712,7 @@ class TabDataProvider {
 	}
 
 	getElementByPath(path: string): TabItem | undefined {
-		if (this.groupByKind) {
+		if (this.groupBy === 'type') {
 			let childElement: TabItem | undefined;
 			this.groupedItems.some(item => {
 				childElement = item.children.find(child => {
@@ -737,7 +737,7 @@ class TabDataProvider {
 	getChildren(element: TabItem | FolderItem) {
 		// Requests the children of an element
 		if (!element) {
-			if (this.groupByKind) {
+			if (this.groupBy === 'type') {
 				return this.groupedItems;
 			} else {
 				return this.flatItems;
