@@ -8,8 +8,14 @@
 - [x] Localize text
 - [x] Show git status
 - [x] Custom ordering for grouped by kind
-- [ ] When switching to remote tab with same name as local, check if active document is remote and switch to next one
-- [ ] Update list when file is moved or syntax changed
+- [x] Update list when syntax changed
 - [ ] Group by folder option
+- [ ] When switching to remote tab with same name as local, check if active document is remote and switch to next one
+- [ ] Update list when file is moved
 - [ ] Show loading indicator when AppleScript action is waiting to finish
-- [ ] Ability to move selected group of tabs up and down
+- [ ] Ability to move selected range of tabs up and down
+
+
+# Group by folder
+
+- [ ] Add new text translations (group by type, clean up by type, config options)

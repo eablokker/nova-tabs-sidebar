@@ -97,7 +97,8 @@ class FolderItem extends ListItem {
 class TabDataProvider {
 	app: App;
 	flatItems: TabItem[];
-	groupedItems: FolderItem[];
+	kindGroupItems: FolderItem[];
+	folderGroupItems: FolderItem[];
 	customOrder: string[];
 	customKindGroupsOrder: string[];
 	gitStatuses: GitStatus[];
@@ -109,11 +110,12 @@ class TabDataProvider {
 		this.app = app;
 
 		this.flatItems = [];
-		this.groupedItems = [];
+		this.kindGroupItems = [];
+		this.folderGroupItems = [];
 		this.gitStatuses = [];
 
 		this._sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
-		this._groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
+		this._groupBy = this.app.groupBy;
 		this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
 		this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
 		this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
@@ -157,7 +159,7 @@ class TabDataProvider {
 		});
 
 		// Remove closed tabs from kind groups
-		this.groupedItems.forEach((folder, i, self) => {
+		this.kindGroupItems.forEach((folder, i, self) => {
 			folder.children.forEach((child, i2, self2) => {
 				const tabIsClosed = documentTabs.every(tab => tab.uri !== child.uri);
 				const syntaxChanged = child.syntax && folder.syntax !== child.syntax;
@@ -176,9 +178,9 @@ class TabDataProvider {
 		});
 
 		// Remove closed kind groups from custom order
-		if (this.customKindGroupsOrder.length && this.groupedItems.length) {
+		if (this.customKindGroupsOrder.length && this.kindGroupItems.length) {
 			this.customKindGroupsOrder = this.customKindGroupsOrder.filter(syntax => {
-				return this.groupedItems.some(group => {
+				return this.kindGroupItems.some(group => {
 					const syntaxName = group.syntax || 'plaintext';
 					return syntax === syntaxName;
 				});
@@ -222,7 +224,7 @@ class TabDataProvider {
 			}
 
 			// Check if tab is new in grouped items
-			const tabIsNewInGroup = this.groupedItems.every(group => {
+			const tabIsNewInGroup = this.kindGroupItems.every(group => {
 				return group.children.every(item => item.uri !== tab.uri);
 			});
 
@@ -232,7 +234,7 @@ class TabDataProvider {
 
 				// Add tab to grouped items if new
 				const tabSyntax = tab.syntax || 'plaintext';
-				const folder = this.groupedItems.find(group => group.syntax === tabSyntax);
+				const folder = this.kindGroupItems.find(group => group.syntax === tabSyntax);
 
 				// Add tab to folder if folder already exists
 				if (folder) {
@@ -261,7 +263,7 @@ class TabDataProvider {
 					);
 
 					newFolder.addChild(Object.assign({}, element));
-					this.groupedItems.push(newFolder);
+					this.kindGroupItems.push(newFolder);
 
 					if (this.customKindGroupsOrder.indexOf(tabSyntax) < 0) {
 						this.customKindGroupsOrder.push(tabSyntax);
@@ -424,32 +426,32 @@ class TabDataProvider {
 		const syntax = group.syntax || 'plaintext';
 
 		// Get item indexes
-		const fromItemIndex = this.groupedItems.findIndex(item => item.syntax === syntax);
+		const fromItemIndex = this.kindGroupItems.findIndex(item => item.syntax === syntax);
 		const toItemIndex = fromItemIndex + distance;
 
-		if (toItemIndex < 0 || toItemIndex >= this.groupedItems.length) {
+		if (toItemIndex < 0 || toItemIndex >= this.kindGroupItems.length) {
 			return;
 		}
 
-		const fromItem = this.groupedItems[fromItemIndex];
+		const fromItem = this.kindGroupItems[fromItemIndex];
 
 		// Update custom order
-		const fromIndex = this.groupedItems.findIndex(group => group.syntax === syntax);
+		const fromIndex = this.kindGroupItems.findIndex(group => group.syntax === syntax);
 		const toIndex = fromIndex + distance;
 
-		if (toIndex < 0 || toIndex >= this.groupedItems.length) {
+		if (toIndex < 0 || toIndex >= this.kindGroupItems.length) {
 			return;
 		}
 
 		// Move group
-		const item = this.groupedItems.splice(fromIndex, 1)[0];
-		this.groupedItems.splice(toIndex, 0, item);
+		const item = this.kindGroupItems.splice(fromIndex, 1)[0];
+		this.kindGroupItems.splice(toIndex, 0, item);
 
 		// Update group contextValues
 		this.updateGroupContexts();
 
 		// Update saved groups order
-		this.customKindGroupsOrder = this.groupedItems.map(group => group.syntax || 'plaintext');
+		this.customKindGroupsOrder = this.kindGroupItems.map(group => group.syntax || 'plaintext');
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customKindGroupsOrder', this.customKindGroupsOrder);
 
 		// Reload treeview
@@ -561,12 +563,12 @@ class TabDataProvider {
 	}
 
 	updateGroupContexts() {
-		this.groupedItems.forEach((group, i) => {
-			if (this.groupedItems.length === 1) {
+		this.kindGroupItems.forEach((group, i) => {
+			if (this.kindGroupItems.length === 1) {
 				group.contextValue = 'kindGroup-only';
 			} else if (i === 0) {
 				group.contextValue = 'kindGroup-first';
-			} else if (i === this.groupedItems.length - 1) {
+			} else if (i === this.kindGroupItems.length - 1) {
 				group.contextValue = 'kindGroup-last';
 			} else {
 				group.contextValue = 'kindGroup';
@@ -643,10 +645,10 @@ class TabDataProvider {
 		this.flatItems.sort(this.byCustomOrder.bind(this));
 
 		// Sort folders by custom order
-		this.groupedItems.sort(this.byCustomKindGroupsOrder.bind(this));
+		this.kindGroupItems.sort(this.byCustomKindGroupsOrder.bind(this));
 
 		// Sort folder children by custom order
-		this.groupedItems.forEach(item => {
+		this.kindGroupItems.forEach(item => {
 			item.children.sort(this.byCustomOrder.bind(this));
 		});
 
@@ -679,11 +681,11 @@ class TabDataProvider {
 		if (this.groupBy === 'type' && this.sortAlpha) {
 			if (nova.inDevMode()) console.log('Sorting folders by alpha');
 
-			this.groupedItems.sort((a, b) => {
+			this.kindGroupItems.sort((a, b) => {
 				return a.name.localeCompare(b.name);
 			});
 
-			this.groupedItems.forEach(item => {
+			this.kindGroupItems.forEach(item => {
 				item.children.sort((a, b) => {
 					return a.name.localeCompare(b.name);
 				});
@@ -694,7 +696,7 @@ class TabDataProvider {
 	getElementByUri(uri: string): TabItem | undefined {
 		if (this.groupBy === 'type') {
 			let childElement: TabItem | undefined;
-			this.groupedItems.some(item => {
+			this.kindGroupItems.some(item => {
 				childElement = item.children.find(child => {
 					return child.uri === uri;
 				});
@@ -714,7 +716,7 @@ class TabDataProvider {
 	getElementByPath(path: string): TabItem | undefined {
 		if (this.groupBy === 'type') {
 			let childElement: TabItem | undefined;
-			this.groupedItems.some(item => {
+			this.kindGroupItems.some(item => {
 				childElement = item.children.find(child => {
 					return child.path === path;
 				});
@@ -731,14 +733,14 @@ class TabDataProvider {
 	}
 
 	getFolderBySyntax(syntax: string) {
-		return this.groupedItems.find((folder: FolderItem) => folder.syntax === syntax);
+		return this.kindGroupItems.find((folder: FolderItem) => folder.syntax === syntax);
 	}
 
 	getChildren(element: TabItem | FolderItem) {
 		// Requests the children of an element
 		if (!element) {
 			if (this.groupBy === 'type') {
-				return this.groupedItems;
+				return this.kindGroupItems;
 			} else {
 				return this.flatItems;
 			}

@@ -107,10 +107,11 @@ var TabDataProvider = /** @class */ (function () {
     function TabDataProvider(app) {
         this.app = app;
         this.flatItems = [];
-        this.groupedItems = [];
+        this.kindGroupItems = [];
+        this.folderGroupItems = [];
         this.gitStatuses = [];
         this._sortAlpha = nova.workspace.config.get('eablokker.tabsSidebar.config.sortAlpha', 'boolean');
-        this._groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
+        this._groupBy = this.app.groupBy;
         this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
         this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
         this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
@@ -154,7 +155,7 @@ var TabDataProvider = /** @class */ (function () {
             }
         });
         // Remove closed tabs from kind groups
-        this.groupedItems.forEach(function (folder, i, self) {
+        this.kindGroupItems.forEach(function (folder, i, self) {
             folder.children.forEach(function (child, i2, self2) {
                 var tabIsClosed = documentTabs.every(function (tab) { return tab.uri !== child.uri; });
                 var syntaxChanged = child.syntax && folder.syntax !== child.syntax;
@@ -169,9 +170,9 @@ var TabDataProvider = /** @class */ (function () {
             });
         });
         // Remove closed kind groups from custom order
-        if (this.customKindGroupsOrder.length && this.groupedItems.length) {
+        if (this.customKindGroupsOrder.length && this.kindGroupItems.length) {
             this.customKindGroupsOrder = this.customKindGroupsOrder.filter(function (syntax) {
-                return _this.groupedItems.some(function (group) {
+                return _this.kindGroupItems.some(function (group) {
                     var syntaxName = group.syntax || 'plaintext';
                     return syntax === syntaxName;
                 });
@@ -208,7 +209,7 @@ var TabDataProvider = /** @class */ (function () {
                 _this.flatItems.push(element);
             }
             // Check if tab is new in grouped items
-            var tabIsNewInGroup = _this.groupedItems.every(function (group) {
+            var tabIsNewInGroup = _this.kindGroupItems.every(function (group) {
                 return group.children.every(function (item) { return item.uri !== tab.uri; });
             });
             if (tabIsNewInGroup) {
@@ -216,7 +217,7 @@ var TabDataProvider = /** @class */ (function () {
                 var element = new TabItem(tabName, tab);
                 // Add tab to grouped items if new
                 var tabSyntax_1 = tab.syntax || 'plaintext';
-                var folder = _this.groupedItems.find(function (group) { return group.syntax === tabSyntax_1; });
+                var folder = _this.kindGroupItems.find(function (group) { return group.syntax === tabSyntax_1; });
                 // Add tab to folder if folder already exists
                 if (folder) {
                     var childIndex = folder.children.findIndex(function (child) { return child.uri === tab.uri; });
@@ -237,7 +238,7 @@ var TabDataProvider = /** @class */ (function () {
                     }
                     var newFolder = new FolderItem(_this.app.syntaxNames[tabSyntax_1] || titleCaseName, { syntax: tab.syntax, extName: extName });
                     newFolder.addChild(Object.assign({}, element));
-                    _this.groupedItems.push(newFolder);
+                    _this.kindGroupItems.push(newFolder);
                     if (_this.customKindGroupsOrder.indexOf(tabSyntax_1) < 0) {
                         _this.customKindGroupsOrder.push(tabSyntax_1);
                     }
@@ -372,25 +373,25 @@ var TabDataProvider = /** @class */ (function () {
         // Original tab path
         var syntax = group.syntax || 'plaintext';
         // Get item indexes
-        var fromItemIndex = this.groupedItems.findIndex(function (item) { return item.syntax === syntax; });
+        var fromItemIndex = this.kindGroupItems.findIndex(function (item) { return item.syntax === syntax; });
         var toItemIndex = fromItemIndex + distance;
-        if (toItemIndex < 0 || toItemIndex >= this.groupedItems.length) {
+        if (toItemIndex < 0 || toItemIndex >= this.kindGroupItems.length) {
             return;
         }
-        var fromItem = this.groupedItems[fromItemIndex];
+        var fromItem = this.kindGroupItems[fromItemIndex];
         // Update custom order
-        var fromIndex = this.groupedItems.findIndex(function (group) { return group.syntax === syntax; });
+        var fromIndex = this.kindGroupItems.findIndex(function (group) { return group.syntax === syntax; });
         var toIndex = fromIndex + distance;
-        if (toIndex < 0 || toIndex >= this.groupedItems.length) {
+        if (toIndex < 0 || toIndex >= this.kindGroupItems.length) {
             return;
         }
         // Move group
-        var item = this.groupedItems.splice(fromIndex, 1)[0];
-        this.groupedItems.splice(toIndex, 0, item);
+        var item = this.kindGroupItems.splice(fromIndex, 1)[0];
+        this.kindGroupItems.splice(toIndex, 0, item);
         // Update group contextValues
         this.updateGroupContexts();
         // Update saved groups order
-        this.customKindGroupsOrder = this.groupedItems.map(function (group) { return group.syntax || 'plaintext'; });
+        this.customKindGroupsOrder = this.kindGroupItems.map(function (group) { return group.syntax || 'plaintext'; });
         nova.workspace.config.set('eablokker.tabsSidebar.config.customKindGroupsOrder', this.customKindGroupsOrder);
         // Reload treeview
         this.app.treeView.reload()
@@ -478,14 +479,14 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.updateGroupContexts = function () {
         var _this = this;
-        this.groupedItems.forEach(function (group, i) {
-            if (_this.groupedItems.length === 1) {
+        this.kindGroupItems.forEach(function (group, i) {
+            if (_this.kindGroupItems.length === 1) {
                 group.contextValue = 'kindGroup-only';
             }
             else if (i === 0) {
                 group.contextValue = 'kindGroup-first';
             }
-            else if (i === _this.groupedItems.length - 1) {
+            else if (i === _this.kindGroupItems.length - 1) {
                 group.contextValue = 'kindGroup-last';
             }
             else {
@@ -556,9 +557,9 @@ var TabDataProvider = /** @class */ (function () {
         // Sort custom ordered items by custom order
         this.flatItems.sort(this.byCustomOrder.bind(this));
         // Sort folders by custom order
-        this.groupedItems.sort(this.byCustomKindGroupsOrder.bind(this));
+        this.kindGroupItems.sort(this.byCustomKindGroupsOrder.bind(this));
         // Sort folder children by custom order
-        this.groupedItems.forEach(function (item) {
+        this.kindGroupItems.forEach(function (item) {
             item.children.sort(_this.byCustomOrder.bind(_this));
         });
         // Set context of position in list
@@ -589,10 +590,10 @@ var TabDataProvider = /** @class */ (function () {
         if (this.groupBy === 'type' && this.sortAlpha) {
             if (nova.inDevMode())
                 console.log('Sorting folders by alpha');
-            this.groupedItems.sort(function (a, b) {
+            this.kindGroupItems.sort(function (a, b) {
                 return a.name.localeCompare(b.name);
             });
-            this.groupedItems.forEach(function (item) {
+            this.kindGroupItems.forEach(function (item) {
                 item.children.sort(function (a, b) {
                     return a.name.localeCompare(b.name);
                 });
@@ -602,7 +603,7 @@ var TabDataProvider = /** @class */ (function () {
     TabDataProvider.prototype.getElementByUri = function (uri) {
         if (this.groupBy === 'type') {
             var childElement_1;
-            this.groupedItems.some(function (item) {
+            this.kindGroupItems.some(function (item) {
                 childElement_1 = item.children.find(function (child) {
                     return child.uri === uri;
                 });
@@ -617,7 +618,7 @@ var TabDataProvider = /** @class */ (function () {
     TabDataProvider.prototype.getElementByPath = function (path) {
         if (this.groupBy === 'type') {
             var childElement_2;
-            this.groupedItems.some(function (item) {
+            this.kindGroupItems.some(function (item) {
                 childElement_2 = item.children.find(function (child) {
                     return child.path === path;
                 });
@@ -630,13 +631,13 @@ var TabDataProvider = /** @class */ (function () {
         });
     };
     TabDataProvider.prototype.getFolderBySyntax = function (syntax) {
-        return this.groupedItems.find(function (folder) { return folder.syntax === syntax; });
+        return this.kindGroupItems.find(function (folder) { return folder.syntax === syntax; });
     };
     TabDataProvider.prototype.getChildren = function (element) {
         // Requests the children of an element
         if (!element) {
             if (this.groupBy === 'type') {
-                return this.groupedItems;
+                return this.kindGroupItems;
             }
             else {
                 return this.flatItems;
@@ -800,7 +801,7 @@ var App = /** @class */ (function () {
         this.showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
         this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
         this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
-        this.groupBy = nova.workspace.config.get('ealokker.tabsSidebar.config.groupBy', 'string');
+        this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
         this.syntaxNames = {
             'plaintext': nova.localize('Plain Text'),
             'coffeescript': 'CoffeeScript',

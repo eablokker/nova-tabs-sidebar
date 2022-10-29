@@ -28,7 +28,7 @@ class App {
 		this.showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
 		this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
 		this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
-		this.groupBy = nova.workspace.config.get('ealokker.tabsSidebar.config.groupBy', 'string');
+		this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
 
 		this.syntaxNames = {
 			'plaintext': nova.localize('Plain Text'),
