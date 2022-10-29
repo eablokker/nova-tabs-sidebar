@@ -14,6 +14,7 @@ class ListItem {
 	extension: string | undefined;
 	path: string | undefined;
 	uri: string;
+	tooltip: string | undefined;
 	isRemote: boolean;
 
 	constructor(name: string) {
@@ -112,7 +113,15 @@ class FolderItem extends ListItem {
 
 	addChild(element: FolderItem | TabItem) {
 		element.parent = this;
-		this.children.push(element);
+		const lastFolderIndex = this.children.slice().reverse().findIndex(child => child instanceof FolderItem);
+
+		if (element instanceof FolderItem && lastFolderIndex === -1) {
+			this.children.unshift(element);
+		} else if (element instanceof FolderItem) {
+			this.children.splice(lastFolderIndex - 1, 0, element);
+		} else {
+			this.children.push(element);
+		}
 	}
 }
 
@@ -213,9 +222,18 @@ class TabDataProvider {
 		const localTabs = documentTabs.filter(tab => !tab.isRemote);
 		const remoteTabs = documentTabs.filter(tab => tab.isRemote);
 
+		localTabs.sort((a, b) => {
+			const aName = a.path || '';
+			const bName = b.path || '';
+			return aName.localeCompare(bName);
+		});
+
 		// remoteTabs.forEach(tab => {
 		// 	console.log(tab.uri, tab.path);
 		// });
+
+		// Reset folder items
+		this.folderGroupItems = [];
 
 		// Add local and remote groups
 		if (localTabs.length && remoteTabs.length) {
@@ -225,9 +243,56 @@ class TabDataProvider {
 			localFolder.contextValue = 'folderGroup-root';
 
 			localTabs.forEach(tab => {
+				const tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
+
+				let parentFolder = localFolder;
+				tabDirArray.forEach((dir, i, arr) => {
+					const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
+
+					console.log(folderPath);
+
+					const childFolder = parentFolder.children.find(child => child instanceof FolderItem && child.path === folderPath) as FolderItem;
+
+					// Add new folder if it doesn't exist yet
+					if (!childFolder) {
+						const subFolder = new FolderItem(dir);
+						subFolder.path = folderPath;
+						subFolder.tooltip = folderPath;
+						subFolder.image = 'folder';
+
+						if (folderPath === nova.path.expanduser('~')) {
+							subFolder.image = 'folder-home';
+						}
+
+						if (dir === '.nova') {
+							subFolder.image = 'folder-nova';
+						}
+
+						if (dir === '.git') {
+							subFolder.image = 'folder-git';
+						}
+
+						if (dir === 'node_modules') {
+							subFolder.image = 'folder-node';
+						}
+
+						if (dir.endsWith('.novaextension')) {
+							subFolder.image = '__filetype.novaextension';
+						}
+
+						parentFolder.addChild(subFolder);
+
+						parentFolder = subFolder;
+
+					// Use existing folder to add child to
+					} else if (childFolder) {
+						parentFolder = childFolder;
+					}
+				});
+
 				const tabName = this.basename(tab.path || 'untitled');
 				const child = new TabItem(tabName, tab);
-				localFolder.addChild(child);
+				parentFolder.addChild(child);
 			});
 
 			const remoteFolder = new FolderItem('Remote');
@@ -236,13 +301,66 @@ class TabDataProvider {
 			remoteFolder.contextValue = 'folderGroup-root';
 
 			remoteTabs.forEach(tab => {
+				const tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
+
+				let parentFolder = remoteFolder;
+				tabDirArray.forEach((dir, i, arr) => {
+					const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
+
+					console.log(folderPath);
+
+					const childFolder = parentFolder.children.find(child => child instanceof FolderItem && child.path === folderPath) as FolderItem;
+
+					// Add new folder if it doesn't exist yet
+					if (!childFolder) {
+						const subFolder = new FolderItem(dir);
+						subFolder.path = folderPath;
+						subFolder.tooltip = folderPath;
+						subFolder.image = 'folder';
+
+						if (folderPath === nova.path.expanduser('~')) {
+							subFolder.image = 'folder-home';
+						}
+
+						if (dir === '.nova') {
+							subFolder.image = 'folder-nova';
+						}
+
+						if (dir === '.git') {
+							subFolder.image = 'folder-git';
+						}
+
+						if (dir === 'node_modules') {
+							subFolder.image = 'folder-node';
+						}
+
+						if (dir.endsWith('.novaextension')) {
+							subFolder.image = '__filetype.novaextension';
+						}
+
+						parentFolder.addChild(subFolder);
+
+						parentFolder = subFolder;
+
+					// Use existing folder to add child to
+					} else if (childFolder) {
+						parentFolder = childFolder;
+					}
+				});
+
 				const tabName = this.basename(tab.path || 'untitled');
 				const child = new TabItem(tabName, tab);
-				remoteFolder.addChild(child);
+				parentFolder.addChild(child);
 			});
 
 			this.folderGroupItems.push(localFolder);
 			this.folderGroupItems.push(remoteFolder);
+		} else {
+			localTabs.forEach(tab => {
+				const tabName = this.basename(tab.path || 'untitled');
+				const element = new TabItem(tabName, tab);
+				this.folderGroupItems.push(element);
+			});
 		}
 
 		// Add newly opened tabs
@@ -861,6 +979,7 @@ class TabDataProvider {
 		else if (element instanceof FolderItem) {
 			item = new TreeItem(element.name);
 
+			item.tooltip = element.tooltip;
 			item.contextValue = element.contextValue;
 			item.identifier = element.path;
 
