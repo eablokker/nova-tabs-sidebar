@@ -178,6 +178,21 @@ var TabDataProvider = /** @class */ (function () {
                 });
             });
         }
+        // Check if there are local and remote tabs
+        var localTabs = documentTabs.filter(function (tab) { return !tab.isRemote; });
+        var remoteTabs = documentTabs.filter(function (tab) { return tab.isRemote; });
+        // remoteTabs.forEach(tab => {
+        // 	console.log(tab.uri, tab.path);
+        // });
+        // Add local and remote groups
+        if (localTabs.length && remoteTabs.length) {
+            var localFolder = new FolderItem('Local');
+            localFolder.image = 'sidebar-files';
+            var remoteFolder = new FolderItem('Remote');
+            remoteFolder.image = 'sidebar-remote';
+            this.folderGroupItems.push(localFolder);
+            this.folderGroupItems.push(remoteFolder);
+        }
         // Add newly opened tabs
         documentTabs.forEach(function (tab) {
             // Hide untitled tabs
@@ -208,11 +223,11 @@ var TabDataProvider = /** @class */ (function () {
                 var element = new TabItem(tabName, tab);
                 _this.flatItems.push(element);
             }
-            // Check if tab is new in grouped items
-            var tabIsNewInGroup = _this.kindGroupItems.every(function (group) {
+            // Check if tab is new in kind groups
+            var tabIsNewInKindGroups = _this.kindGroupItems.every(function (group) {
                 return group.children.every(function (item) { return item.uri !== tab.uri; });
             });
-            if (tabIsNewInGroup) {
+            if (tabIsNewInKindGroups) {
                 var tabName = _this.basename(tab.path || 'untitled');
                 var element = new TabItem(tabName, tab);
                 // Add tab to grouped items if new
@@ -639,9 +654,10 @@ var TabDataProvider = /** @class */ (function () {
             if (this.groupBy === 'type') {
                 return this.kindGroupItems;
             }
-            else {
-                return this.flatItems;
+            if (this.groupBy === 'folder') {
+                return this.folderGroupItems;
             }
+            return this.flatItems;
         }
         else {
             return element.children;
@@ -669,6 +685,9 @@ var TabDataProvider = /** @class */ (function () {
             }
             if (element.syntax === 'plaintext') {
                 item.image = '__filetype.blank';
+            }
+            if (element.image) {
+                item.image = element.image;
             }
             item.tooltip = '';
             var collapsibleState = TreeItemCollapsibleState.Expanded;
@@ -699,6 +718,9 @@ var TabDataProvider = /** @class */ (function () {
             }
             if (element.name === '.editorconfig') {
                 item.image = 'filetype-config-editorconfig';
+            }
+            if (element.name === 'Dockerfile') {
+                item.image = 'filetype-config-docker';
             }
             if (element.name === '.gitignore') {
                 item.image = 'filetype-config-gitignore';

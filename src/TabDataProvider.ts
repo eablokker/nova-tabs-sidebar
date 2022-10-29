@@ -76,6 +76,7 @@ class FolderItem extends ListItem {
 	children: TabItem[];
 	parent: FolderItem | null;
 	count: number | undefined;
+	image: string | undefined;
 
 	constructor(name: string, options?: { syntax?: string | null, extName?: string }) {
 		super(name);
@@ -187,6 +188,26 @@ class TabDataProvider {
 			});
 		}
 
+		// Check if there are local and remote tabs
+		const localTabs = documentTabs.filter(tab => !tab.isRemote);
+		const remoteTabs = documentTabs.filter(tab => tab.isRemote);
+
+		// remoteTabs.forEach(tab => {
+		// 	console.log(tab.uri, tab.path);
+		// });
+
+		// Add local and remote groups
+		if (localTabs.length && remoteTabs.length) {
+			const localFolder = new FolderItem('Local');
+			localFolder.image = 'sidebar-files';
+
+			const remoteFolder = new FolderItem('Remote');
+			remoteFolder.image = 'sidebar-remote';
+
+			this.folderGroupItems.push(localFolder);
+			this.folderGroupItems.push(remoteFolder);
+		}
+
 		// Add newly opened tabs
 		documentTabs.forEach(tab => {
 			// Hide untitled tabs
@@ -223,12 +244,12 @@ class TabDataProvider {
 				this.flatItems.push(element);
 			}
 
-			// Check if tab is new in grouped items
-			const tabIsNewInGroup = this.kindGroupItems.every(group => {
+			// Check if tab is new in kind groups
+			const tabIsNewInKindGroups = this.kindGroupItems.every(group => {
 				return group.children.every(item => item.uri !== tab.uri);
 			});
 
-			if (tabIsNewInGroup) {
+			if (tabIsNewInKindGroups) {
 				const tabName = this.basename(tab.path || 'untitled');
 				const element = new TabItem(tabName, tab);
 
@@ -741,9 +762,13 @@ class TabDataProvider {
 		if (!element) {
 			if (this.groupBy === 'type') {
 				return this.kindGroupItems;
-			} else {
-				return this.flatItems;
 			}
+
+			if (this.groupBy === 'folder') {
+				return this.folderGroupItems;
+			}
+
+			return this.flatItems;
 		}
 		else {
 			return element.children;
@@ -780,6 +805,10 @@ class TabDataProvider {
 
 			if (element.syntax === 'plaintext') {
 				item.image = '__filetype.blank';
+			}
+
+			if (element.image) {
+				item.image = element.image;
 			}
 
 			item.tooltip = '';
