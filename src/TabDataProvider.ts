@@ -39,7 +39,7 @@ class TabItem extends ListItem {
 	isUntitled: boolean;
 	isTrashed: boolean;
 	children: TabItem[];
-	parent: FolderItem | null;
+	parent: GroupItem | null;
 	extension: string | undefined;
 	count: number | undefined;
 
@@ -72,9 +72,9 @@ class TabItem extends ListItem {
 	}
 }
 
-class FolderItem extends ListItem {
+class GroupItem extends ListItem {
 	children: TabItem[];
-	parent: FolderItem | null;
+	parent: GroupItem | null;
 	count: number | undefined;
 	image: string | undefined;
 
@@ -95,11 +95,32 @@ class FolderItem extends ListItem {
 	}
 }
 
+class FolderItem extends ListItem {
+	children: (FolderItem | TabItem)[];
+	parent: FolderItem | null;
+	count: number | undefined;
+	image: string | undefined;
+
+	constructor(name: string) {
+		super(name);
+
+		this.contextValue = 'folderGroup';
+		this.children = [];
+		this.parent = null;
+		this.count = undefined;
+	}
+
+	addChild(element: FolderItem | TabItem) {
+		element.parent = this;
+		this.children.push(element);
+	}
+}
+
 class TabDataProvider {
 	app: App;
 	flatItems: TabItem[];
-	kindGroupItems: FolderItem[];
-	folderGroupItems: FolderItem[];
+	kindGroupItems: GroupItem[];
+	folderGroupItems: (FolderItem | TabItem)[];
 	customOrder: string[];
 	customKindGroupsOrder: string[];
 	gitStatuses: GitStatus[];
@@ -199,10 +220,26 @@ class TabDataProvider {
 		// Add local and remote groups
 		if (localTabs.length && remoteTabs.length) {
 			const localFolder = new FolderItem('Local');
+			localFolder.path = '/';
 			localFolder.image = 'sidebar-files';
+			localFolder.contextValue = 'folderGroup-root';
+
+			localTabs.forEach(tab => {
+				const tabName = this.basename(tab.path || 'untitled');
+				const child = new TabItem(tabName, tab);
+				localFolder.addChild(child);
+			});
 
 			const remoteFolder = new FolderItem('Remote');
+			remoteFolder.path = '/';
 			remoteFolder.image = 'sidebar-remote';
+			remoteFolder.contextValue = 'folderGroup-root';
+
+			remoteTabs.forEach(tab => {
+				const tabName = this.basename(tab.path || 'untitled');
+				const child = new TabItem(tabName, tab);
+				remoteFolder.addChild(child);
+			});
 
 			this.folderGroupItems.push(localFolder);
 			this.folderGroupItems.push(remoteFolder);
@@ -278,7 +315,7 @@ class TabDataProvider {
 						extName = '';
 					}
 
-					const newFolder = new FolderItem(
+					const newFolder = new GroupItem(
 						this.app.syntaxNames[tabSyntax as keyof SyntaxNames] || titleCaseName,
 						{ syntax: tab.syntax, extName: extName }
 					);
@@ -442,7 +479,7 @@ class TabDataProvider {
 			});
 	}
 
-	moveKindGroup(group: FolderItem, distance: number) {
+	moveKindGroup(group: GroupItem, distance: number) {
 		// Original tab path
 		const syntax = group.syntax || 'plaintext';
 
@@ -654,7 +691,7 @@ class TabDataProvider {
 	}
 
 	// Sorting function
-	byCustomKindGroupsOrder(a: FolderItem, b: FolderItem) {
+	byCustomKindGroupsOrder(a: GroupItem, b: GroupItem) {
 		if (this.customKindGroupsOrder.indexOf(a.syntax || 'plaintext') < 0) {
 			return 1;
 		}
@@ -754,10 +791,10 @@ class TabDataProvider {
 	}
 
 	getFolderBySyntax(syntax: string) {
-		return this.kindGroupItems.find((folder: FolderItem) => folder.syntax === syntax);
+		return this.kindGroupItems.find((folder: GroupItem) => folder.syntax === syntax);
 	}
 
-	getChildren(element: TabItem | FolderItem) {
+	getChildren(element: TabItem | GroupItem) {
 		// Requests the children of an element
 		if (!element) {
 			if (this.groupBy === 'type') {
@@ -775,7 +812,7 @@ class TabDataProvider {
 		}
 	}
 
-	getParent(element: TabItem | FolderItem) {
+	getParent(element: TabItem | GroupItem) {
 		// Requests the parent of an element, for use with the reveal() method
 
 		// if (nova.inDevMode()) console.log('getParent');
@@ -787,11 +824,11 @@ class TabDataProvider {
 		return element.parent;
 	}
 
-	getTreeItem(element: TabItem | FolderItem) {
+	getTreeItem(element: TabItem | GroupItem) {
 		// Converts an element into its display (TreeItem) representation
 		let item: TreeItem;
 
-		if (element instanceof FolderItem) {
+		if (element instanceof GroupItem) {
 			item = new TreeItem(element.name);
 
 			item.contextValue = element.contextValue;
@@ -819,6 +856,19 @@ class TabDataProvider {
 				collapsibleState = TreeItemCollapsibleState.Collapsed;
 			}
 
+			item.collapsibleState = collapsibleState;
+		}
+		else if (element instanceof FolderItem) {
+			item = new TreeItem(element.name);
+
+			item.contextValue = element.contextValue;
+			item.identifier = element.path;
+
+			if (element.image) {
+				item.image = element.image;
+			}
+
+			let collapsibleState = TreeItemCollapsibleState.Expanded;
 			item.collapsibleState = collapsibleState;
 		}
 		else {
@@ -957,4 +1007,4 @@ class TabDataProvider {
 	}
 }
 
-export { SyntaxNames, TabItem, FolderItem, TabDataProvider };
+export { SyntaxNames, TabItem, GroupItem, FolderItem, TabDataProvider };

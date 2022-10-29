@@ -85,13 +85,29 @@ var TabItem = /** @class */ (function (_super) {
     });
     return TabItem;
 }(ListItem));
-var FolderItem = /** @class */ (function (_super) {
-    __extends(FolderItem, _super);
-    function FolderItem(name, options) {
+var GroupItem = /** @class */ (function (_super) {
+    __extends(GroupItem, _super);
+    function GroupItem(name, options) {
         var _this = _super.call(this, name) || this;
         _this._syntax = (options === null || options === void 0 ? void 0 : options.syntax) || 'plaintext';
         _this.extension = options === null || options === void 0 ? void 0 : options.extName;
         _this.contextValue = 'kindGroup';
+        _this.children = [];
+        _this.parent = null;
+        _this.count = undefined;
+        return _this;
+    }
+    GroupItem.prototype.addChild = function (element) {
+        element.parent = this;
+        this.children.push(element);
+    };
+    return GroupItem;
+}(ListItem));
+var FolderItem = /** @class */ (function (_super) {
+    __extends(FolderItem, _super);
+    function FolderItem(name) {
+        var _this = _super.call(this, name) || this;
+        _this.contextValue = 'folderGroup';
         _this.children = [];
         _this.parent = null;
         _this.count = undefined;
@@ -186,12 +202,26 @@ var TabDataProvider = /** @class */ (function () {
         // });
         // Add local and remote groups
         if (localTabs.length && remoteTabs.length) {
-            var localFolder = new FolderItem('Local');
-            localFolder.image = 'sidebar-files';
-            var remoteFolder = new FolderItem('Remote');
-            remoteFolder.image = 'sidebar-remote';
-            this.folderGroupItems.push(localFolder);
-            this.folderGroupItems.push(remoteFolder);
+            var localFolder_1 = new FolderItem('Local');
+            localFolder_1.path = '/';
+            localFolder_1.image = 'sidebar-files';
+            localFolder_1.contextValue = 'folderGroup-root';
+            localTabs.forEach(function (tab) {
+                var tabName = _this.basename(tab.path || 'untitled');
+                var child = new TabItem(tabName, tab);
+                localFolder_1.addChild(child);
+            });
+            var remoteFolder_1 = new FolderItem('Remote');
+            remoteFolder_1.path = '/';
+            remoteFolder_1.image = 'sidebar-remote';
+            remoteFolder_1.contextValue = 'folderGroup-root';
+            remoteTabs.forEach(function (tab) {
+                var tabName = _this.basename(tab.path || 'untitled');
+                var child = new TabItem(tabName, tab);
+                remoteFolder_1.addChild(child);
+            });
+            this.folderGroupItems.push(localFolder_1);
+            this.folderGroupItems.push(remoteFolder_1);
         }
         // Add newly opened tabs
         documentTabs.forEach(function (tab) {
@@ -251,7 +281,7 @@ var TabDataProvider = /** @class */ (function () {
                     if (tabSyntax_1 === 'plaintext') {
                         extName = '';
                     }
-                    var newFolder = new FolderItem(_this.app.syntaxNames[tabSyntax_1] || titleCaseName, { syntax: tab.syntax, extName: extName });
+                    var newFolder = new GroupItem(_this.app.syntaxNames[tabSyntax_1] || titleCaseName, { syntax: tab.syntax, extName: extName });
                     newFolder.addChild(Object.assign({}, element));
                     _this.kindGroupItems.push(newFolder);
                     if (_this.customKindGroupsOrder.indexOf(tabSyntax_1) < 0) {
@@ -674,7 +704,7 @@ var TabDataProvider = /** @class */ (function () {
     TabDataProvider.prototype.getTreeItem = function (element) {
         // Converts an element into its display (TreeItem) representation
         var item;
-        if (element instanceof FolderItem) {
+        if (element instanceof GroupItem) {
             item = new TreeItem(element.name);
             item.contextValue = element.contextValue;
             item.descriptiveText = this.app.showGroupCount ? '(' + element.children.length + ')' : '';
@@ -694,6 +724,16 @@ var TabDataProvider = /** @class */ (function () {
             if (this.collapsedKindGroups.indexOf(element.syntax || '') > -1) {
                 collapsibleState = TreeItemCollapsibleState.Collapsed;
             }
+            item.collapsibleState = collapsibleState;
+        }
+        else if (element instanceof FolderItem) {
+            item = new TreeItem(element.name);
+            item.contextValue = element.contextValue;
+            item.identifier = element.path;
+            if (element.image) {
+                item.image = element.image;
+            }
+            var collapsibleState = TreeItemCollapsibleState.Expanded;
             item.collapsibleState = collapsibleState;
         }
         else {
@@ -1098,6 +1138,10 @@ var App = /** @class */ (function () {
         });
         this.treeView.onDidCollapseElement(function (element) {
             // console.log('Collapsed: ' + element?.name);
+            // Handle Folder Items
+            if (element instanceof FolderItem) {
+                return;
+            }
             if (element === null || element === void 0 ? void 0 : element.syntax) {
                 _this.tabDataProvider.collapsedKindGroups.push(element.syntax);
                 nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', _this.tabDataProvider.collapsedKindGroups);
@@ -1105,6 +1149,10 @@ var App = /** @class */ (function () {
         });
         this.treeView.onDidExpandElement(function (element) {
             // console.log('Expanded: ' + element?.name);
+            // Handle Folder Items
+            if (element instanceof FolderItem) {
+                return;
+            }
             if (element === null || element === void 0 ? void 0 : element.syntax) {
                 var index = _this.tabDataProvider.collapsedKindGroups.indexOf(element.syntax);
                 if (index > -1) {
@@ -1122,13 +1170,12 @@ var App = /** @class */ (function () {
         var _this = this;
         nova.commands.register('tabs-sidebar.close', function (workspace) {
             // console.log('Close Tab clicked');
-            var _a, _b;
             var selection = _this.treeView.selection;
             if (!selection[0]) {
                 return;
             }
             // Don't do anything with folders
-            if ((_b = (_a = selection[0]) === null || _a === void 0 ? void 0 : _a.contextValue) === null || _b === void 0 ? void 0 : _b.startsWith('kindGroup')) {
+            if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
                 return;
             }
             var activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
@@ -1238,14 +1285,13 @@ var App = /** @class */ (function () {
             });
         });
         nova.commands.register('tabs-sidebar.open', function (workspace) {
-            var _a, _b;
             var selection = _this.treeView.selection;
             // console.log('Selection: ' + selection[0].name);
             if (!selection[0]) {
                 return;
             }
             // Don't do anything with folders
-            if ((_b = (_a = selection[0]) === null || _a === void 0 ? void 0 : _a.contextValue) === null || _b === void 0 ? void 0 : _b.startsWith('kindGroup')) {
+            if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
                 return;
             }
             var isRemote = selection[0].isRemote;
@@ -1285,8 +1331,12 @@ var App = /** @class */ (function () {
             if (!selection[0]) {
                 return;
             }
-            // Move kind group up
+            // Don't do anything with folders
             if (selection[0] instanceof FolderItem) {
+                return;
+            }
+            // Move kind group up
+            if (selection[0] instanceof GroupItem) {
                 _this.tabDataProvider.moveKindGroup(selection[0], -1);
                 return;
             }
@@ -1300,8 +1350,12 @@ var App = /** @class */ (function () {
             if (!selection[0]) {
                 return;
             }
-            // Move kind group down
+            // Don't do anything with folders
             if (selection[0] instanceof FolderItem) {
+                return;
+            }
+            // Move kind group down
+            if (selection[0] instanceof GroupItem) {
                 _this.tabDataProvider.moveKindGroup(selection[0], 1);
                 return;
             }
@@ -1443,7 +1497,7 @@ var App = /** @class */ (function () {
         });
         nova.commands.register('tabs-sidebar.refresh', function (workspace) {
             var selection = _this.treeView.selection;
-            if (selection[0] instanceof FolderItem) {
+            if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
                 _this.tabDataProvider.loadData(workspace.textDocuments);
             }
             else {

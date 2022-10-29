@@ -1,7 +1,7 @@
-import { SyntaxNames, TabItem, FolderItem, TabDataProvider } from './TabDataProvider';
+import { SyntaxNames, TabItem, GroupItem, FolderItem, TabDataProvider } from './TabDataProvider';
 
 class App {
-	treeView: TreeView<TabItem | FolderItem | null>;
+	treeView: TreeView<TabItem | GroupItem | FolderItem | null>;
 	tabDataProvider: TabDataProvider;
 	fileWatcher: FileSystemWatcher | undefined;
 	focusedTab: TabItem | undefined;
@@ -353,6 +353,11 @@ class App {
 		this.treeView.onDidCollapseElement(element => {
 			// console.log('Collapsed: ' + element?.name);
 
+			// Handle Folder Items
+			if (element instanceof FolderItem) {
+				return
+			}
+
 			if (element?.syntax) {
 				this.tabDataProvider.collapsedKindGroups.push(element.syntax);
 				nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', this.tabDataProvider.collapsedKindGroups);
@@ -361,6 +366,11 @@ class App {
 
 		this.treeView.onDidExpandElement(element => {
 			// console.log('Expanded: ' + element?.name);
+
+			// Handle Folder Items
+			if (element instanceof FolderItem) {
+				return
+			}
 
 			if (element?.syntax) {
 				const index = this.tabDataProvider.collapsedKindGroups.indexOf(element.syntax);
@@ -388,7 +398,7 @@ class App {
 			}
 
 			// Don't do anything with folders
-			if (selection[0]?.contextValue?.startsWith('kindGroup')) {
+			if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
 				return;
 			}
 
@@ -523,7 +533,7 @@ class App {
 			}
 
 			// Don't do anything with folders
-			if (selection[0]?.contextValue?.startsWith('kindGroup')) {
+			if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
 				return;
 			}
 
@@ -570,8 +580,13 @@ class App {
 				return;
 			}
 
-			// Move kind group up
+			// Don't do anything with folders
 			if (selection[0] instanceof FolderItem) {
+				return;
+			}
+
+			// Move kind group up
+			if (selection[0] instanceof GroupItem) {
 				this.tabDataProvider.moveKindGroup(selection[0], -1);
 				return;
 			}
@@ -590,8 +605,13 @@ class App {
 				return;
 			}
 
-			// Move kind group down
+			// Don't do anything with folders
 			if (selection[0] instanceof FolderItem) {
+				return;
+			}
+
+			// Move kind group down
+			if (selection[0] instanceof GroupItem) {
 				this.tabDataProvider.moveKindGroup(selection[0], 1);
 				return;
 			}
@@ -755,7 +775,7 @@ class App {
 		nova.commands.register('tabs-sidebar.refresh', (workspace: Workspace) => {
 			const selection = this.treeView.selection;
 
-			if (selection[0] instanceof FolderItem) {
+			if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
 				this.tabDataProvider.loadData(workspace.textDocuments);
 			} else {
 				this.tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
@@ -860,7 +880,7 @@ class App {
 		});
 	}
 
-	highlightTab(tab: TabItem | FolderItem | null, options?: { select?: boolean | undefined, focus?: boolean | undefined, reveal?: number | undefined } | undefined) {
+	highlightTab(tab: TabItem | GroupItem | null, options?: { select?: boolean | undefined, focus?: boolean | undefined, reveal?: number | undefined } | undefined) {
 		const activeTabUri = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document.uri : undefined;
 		const gotoTabUri = tab?.uri;
 
