@@ -43,14 +43,14 @@
                             "image": "",
                             "tooltip": "Move Item Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem !== null && eablokker.tabsSidebar.config.sortAlpha === false && (eablokker.tabsSidebar.config.groupBy !== 'type' || viewItem === 'kindGroup' || viewItem === 'kindGroup-last') && viewItem !== 'first' && viewItem !== 'remote-first' && viewItem !== 'only'"
+                            "when": "viewItem !== null && eablokker.tabsSidebar.config.sortAlpha === false && (eablokker.tabsSidebar.config.groupBy !== 'type' || viewItem === 'kindGroup' || viewItem === 'kindGroup-last') && viewItem !== 'first' && viewItem !== 'remote-first' && viewItem !== 'only' && eablokker.tabsSidebar.config.groupBy !== 'folder'"
                         },
                         {
                             "title": "↓",
                             "image": "",
                             "tooltip": "Move Item Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem !== null && eablokker.tabsSidebar.config.sortAlpha === false && (eablokker.tabsSidebar.config.groupBy !== 'type' || viewItem === 'kindGroup' || viewItem === 'kindGroup-first') && viewItem !== 'last' && viewItem !== 'remote-last' && viewItem !== 'only'"
+                            "when": "viewItem !== null && eablokker.tabsSidebar.config.sortAlpha === false && (eablokker.tabsSidebar.config.groupBy !== 'type' || viewItem === 'kindGroup' || viewItem === 'kindGroup-first') && viewItem !== 'last' && viewItem !== 'remote-last' && viewItem !== 'only' && eablokker.tabsSidebar.config.groupBy !== 'folder'"
                         },
                         {
                             "title": "Clean Up By Tab Bar Order",
@@ -106,45 +106,45 @@
                         {
                             "title": "Open",
                             "command": "tabs-sidebar.open",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last' && viewItem !== 'folderGroup' && viewItem !== 'folderGroup-root'"
                         },
                         {
                             "title": "Close Tab",
                             "command": "tabs-sidebar.close",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last' && viewItem !== 'folderGroup' && viewItem !== 'folderGroup-root'"
                         },
                         {"separator": true},
                         {
                             "title": "Move Item Up",
                             "command": "tabs-sidebar.up",
-                            "when": "viewItem !== null && eablokker.tabsSidebar.config.sortAlpha === false && (eablokker.tabsSidebar.config.groupBy !== 'type' || viewItem === 'kindGroup' || viewItem === 'kindGroup-last') && viewItem !== 'first' && viewItem !== 'remote-first' && viewItem !== 'only'"
+                            "when": "viewItem !== null && eablokker.tabsSidebar.config.sortAlpha === false && (eablokker.tabsSidebar.config.groupBy !== 'type' || viewItem === 'kindGroup' || viewItem === 'kindGroup-last') && viewItem !== 'first' && viewItem !== 'remote-first' && viewItem !== 'only' && eablokker.tabsSidebar.config.groupBy !== 'folder'"
                         },
                         {
                             "title": "Move Item Down",
                             "command": "tabs-sidebar.down",
-                            "when": "viewItem !== null && eablokker.tabsSidebar.config.sortAlpha === false && (eablokker.tabsSidebar.config.groupBy !== 'type' || viewItem === 'kindGroup' || viewItem === 'kindGroup-first') && viewItem !== 'last' && viewItem !== 'remote-last' && viewItem !== 'only'"
+                            "when": "viewItem !== null && eablokker.tabsSidebar.config.sortAlpha === false && (eablokker.tabsSidebar.config.groupBy !== 'type' || viewItem === 'kindGroup' || viewItem === 'kindGroup-first') && viewItem !== 'last' && viewItem !== 'remote-last' && viewItem !== 'only' && eablokker.tabsSidebar.config.groupBy !== 'folder'"
                         },
                         {"separator": true},
                         {
                             "title": "Show in Files Sidebar",
                             "command": "tabs-sidebar.showInFilesSidebar",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'remote-tab' && viewItem !== 'remote-first' && viewItem !== 'remote-last' && viewItem !== 'remote-only'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last' && viewItem !== 'remote-tab' && viewItem !== 'remote-first' && viewItem !== 'remote-last' && viewItem !== 'remote-only' && viewItem !== 'folderGroup-root'"
                         },
                         {
                             "title": "Show in Finder",
                             "command": "tabs-sidebar.showInFinder",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'remote-tab' && viewItem !== 'remote-first' && viewItem !== 'remote-last' && viewItem !== 'remote-only'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last' && viewItem !== 'remote-tab' && viewItem !== 'remote-first' && viewItem !== 'remote-last' && viewItem !== 'remote-only' && viewItem !== 'folderGroup-root'"
                         },
                         {"separator": true},
                         {
                             "title": "Copy Path",
                             "command": "tabs-sidebar.copyPath",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last' && viewItem !== 'folderGroup-root'"
                         },
                         {
                             "title": "Copy Relative Path",
                             "command": "tabs-sidebar.copyRelativePath",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'remote-tab' && viewItem !== 'remote-first' && viewItem !== 'remote-last' && viewItem !== 'remote-only'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last' && viewItem !== 'remote-tab' && viewItem !== 'remote-first' && viewItem !== 'remote-last' && viewItem !== 'remote-only' && viewItem !== 'folderGroup-root'"
                         },
                         {"separator": true},
                         {
