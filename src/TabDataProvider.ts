@@ -242,124 +242,24 @@ class TabDataProvider {
 			localFolder.image = 'sidebar-files';
 			localFolder.contextValue = 'folderGroup-root';
 
-			localTabs.forEach(tab => {
-				const tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
-
-				let parentFolder = localFolder;
-				tabDirArray.forEach((dir, i, arr) => {
-					const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
-
-					console.log(folderPath);
-
-					const childFolder = parentFolder.children.find(child => child instanceof FolderItem && child.path === folderPath) as FolderItem;
-
-					// Add new folder if it doesn't exist yet
-					if (!childFolder) {
-						const subFolder = new FolderItem(dir);
-						subFolder.path = folderPath;
-						subFolder.tooltip = folderPath;
-						subFolder.image = 'folder';
-
-						if (folderPath === nova.path.expanduser('~')) {
-							subFolder.image = 'folder-home';
-						}
-
-						if (dir === '.nova') {
-							subFolder.image = 'folder-nova';
-						}
-
-						if (dir === '.git') {
-							subFolder.image = 'folder-git';
-						}
-
-						if (dir === 'node_modules') {
-							subFolder.image = 'folder-node';
-						}
-
-						if (dir.endsWith('.novaextension')) {
-							subFolder.image = '__filetype.novaextension';
-						}
-
-						parentFolder.addChild(subFolder);
-
-						parentFolder = subFolder;
-
-					// Use existing folder to add child to
-					} else if (childFolder) {
-						parentFolder = childFolder;
-					}
-				});
-
-				const tabName = this.basename(tab.path || 'untitled');
-				const child = new TabItem(tabName, tab);
-				parentFolder.addChild(child);
-			});
+			this.createNestedFolders(localTabs, localFolder);
 
 			const remoteFolder = new FolderItem('Remote');
 			remoteFolder.path = '/';
 			remoteFolder.image = 'sidebar-remote';
 			remoteFolder.contextValue = 'folderGroup-root';
 
-			remoteTabs.forEach(tab => {
-				const tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
-
-				let parentFolder = remoteFolder;
-				tabDirArray.forEach((dir, i, arr) => {
-					const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
-
-					console.log(folderPath);
-
-					const childFolder = parentFolder.children.find(child => child instanceof FolderItem && child.path === folderPath) as FolderItem;
-
-					// Add new folder if it doesn't exist yet
-					if (!childFolder) {
-						const subFolder = new FolderItem(dir);
-						subFolder.path = folderPath;
-						subFolder.tooltip = folderPath;
-						subFolder.image = 'folder';
-
-						if (folderPath === nova.path.expanduser('~')) {
-							subFolder.image = 'folder-home';
-						}
-
-						if (dir === '.nova') {
-							subFolder.image = 'folder-nova';
-						}
-
-						if (dir === '.git') {
-							subFolder.image = 'folder-git';
-						}
-
-						if (dir === 'node_modules') {
-							subFolder.image = 'folder-node';
-						}
-
-						if (dir.endsWith('.novaextension')) {
-							subFolder.image = '__filetype.novaextension';
-						}
-
-						parentFolder.addChild(subFolder);
-
-						parentFolder = subFolder;
-
-					// Use existing folder to add child to
-					} else if (childFolder) {
-						parentFolder = childFolder;
-					}
-				});
-
-				const tabName = this.basename(tab.path || 'untitled');
-				const child = new TabItem(tabName, tab);
-				parentFolder.addChild(child);
-			});
+			this.createNestedFolders(remoteTabs, remoteFolder);
 
 			this.folderGroupItems.push(localFolder);
 			this.folderGroupItems.push(remoteFolder);
 		} else {
-			localTabs.forEach(tab => {
-				const tabName = this.basename(tab.path || 'untitled');
-				const element = new TabItem(tabName, tab);
-				this.folderGroupItems.push(element);
+			const rootFolder = new FolderItem('Root');
+
+			this.createNestedFolders(documentTabs, rootFolder);
+
+			rootFolder.children.forEach(child => {
+				this.folderGroupItems.push(child);
 			});
 		}
 
@@ -452,6 +352,61 @@ class TabDataProvider {
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
 
 		this.sortItems();
+	}
+
+	createNestedFolders(tabs: readonly TextDocument[], rootFolder: FolderItem) {
+		tabs.forEach(tab => {
+			const tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
+
+			let parentFolder = rootFolder;
+			tabDirArray.forEach((dir, i, arr) => {
+				const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
+
+				console.log(folderPath);
+
+				const childFolder = parentFolder.children.find(child => child instanceof FolderItem && child.path === folderPath) as FolderItem;
+
+				// Add new folder if it doesn't exist yet
+				if (!childFolder) {
+					const subFolder = new FolderItem(dir);
+					subFolder.path = folderPath;
+					subFolder.tooltip = folderPath;
+					subFolder.image = 'folder';
+
+					if (folderPath === nova.path.expanduser('~')) {
+						subFolder.image = 'folder-home';
+					}
+
+					if (dir === '.nova') {
+						subFolder.image = 'folder-nova';
+					}
+
+					if (dir === '.git') {
+						subFolder.image = 'folder-git';
+					}
+
+					if (dir === 'node_modules') {
+						subFolder.image = 'folder-node';
+					}
+
+					if (dir.endsWith('.novaextension')) {
+						subFolder.image = '__filetype.novaextension';
+					}
+
+					parentFolder.addChild(subFolder);
+
+					parentFolder = subFolder;
+
+				// Use existing folder to add child to
+				} else if (childFolder) {
+					parentFolder = childFolder;
+				}
+			});
+
+			const tabName = this.basename(tab.path || 'untitled');
+			const child = new TabItem(tabName, tab);
+			parentFolder.addChild(child);
+		});
 	}
 
 	runProcess(scriptPath: string, args: string[], cwd?: string, timeout = 3000): Promise<string> {
