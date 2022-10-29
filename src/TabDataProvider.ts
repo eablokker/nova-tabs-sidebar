@@ -238,15 +238,17 @@ class TabDataProvider {
 		// Add local and remote groups
 		if (localTabs.length && remoteTabs.length) {
 			const localFolder = new FolderItem('Local');
-			localFolder.path = '/';
+			localFolder.path = '__LocalRootFolder__';
 			localFolder.image = 'sidebar-files';
+			localFolder.tooltip = 'Local';
 			localFolder.contextValue = 'folderGroup-root';
 
 			this.createNestedFolders(localTabs, localFolder);
 
 			const remoteFolder = new FolderItem('Remote');
-			remoteFolder.path = '/';
+			remoteFolder.path = '__RemoteRootFolder__';
 			remoteFolder.image = 'sidebar-remote';
+			remoteFolder.tooltip = 'Remote';
 			remoteFolder.contextValue = 'folderGroup-root';
 
 			this.createNestedFolders(remoteTabs, remoteFolder);

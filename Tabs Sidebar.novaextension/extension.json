@@ -128,7 +128,7 @@
                         {
                             "title": "Show in Files Sidebar",
                             "command": "tabs-sidebar.showInFilesSidebar",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last' && viewItem !== 'remote-tab' && viewItem !== 'remote-first' && viewItem !== 'remote-last' && viewItem !== 'remote-only' && viewItem !== 'folderGroup-root'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last' && viewItem !== 'remote-tab' && viewItem !== 'remote-first' && viewItem !== 'remote-last' && viewItem !== 'remote-only' && viewItem !== 'folderGroup-root' && viewItem !== 'folderGroup'"
                         },
                         {
                             "title": "Show in Finder",
