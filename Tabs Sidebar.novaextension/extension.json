@@ -106,12 +106,12 @@
                         {
                             "title": "Open",
                             "command": "tabs-sidebar.open",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last'"
                         },
                         {
                             "title": "Close Tab",
                             "command": "tabs-sidebar.close",
-                            "when": "viewItem !== null && viewItem !== 'kindGroup'"
+                            "when": "viewItem !== null && viewItem !== 'kindGroup' && viewItem !== 'kindGroup-only' && viewItem !== 'kindGroup-first' && viewItem !== 'kindGroup-last'"
                         },
                         {"separator": true},
                         {
