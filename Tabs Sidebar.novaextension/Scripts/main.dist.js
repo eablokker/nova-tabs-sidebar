@@ -311,13 +311,30 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.createNestedFolders = function (tabs, rootFolder) {
         var _this = this;
+        // Find common parent folder
+        var tabDirArray = nova.path.split(nova.path.dirname(tabs[0].path || ''));
+        var commonDirArray = [];
+        tabDirArray.every(function (dir, i) {
+            var commonDir = tabs.every(function (tab2) {
+                var tabDirArray2 = nova.path.split(nova.path.dirname(tab2.path || ''));
+                return tabDirArray2[i] === dir;
+            });
+            if (!commonDir) {
+                return false;
+            }
+            commonDirArray.push(dir);
+            return true;
+        });
         tabs.forEach(function (tab) {
             var tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
             var parentFolder = rootFolder;
             tabDirArray.forEach(function (dir, i, arr) {
                 var _a;
                 var folderPath = '/' + (_a = nova.path).join.apply(_a, arr.slice(0, i + 1));
-                console.log(folderPath);
+                // Exclude common parent folders from tree
+                if (i < commonDirArray.length - 1) {
+                    return;
+                }
                 var childFolder = parentFolder.children.find(function (child) { return child instanceof FolderItem && child.path === folderPath; });
                 // Add new folder if it doesn't exist yet
                 if (!childFolder) {
@@ -1549,7 +1566,13 @@ var App = /** @class */ (function () {
                 return;
             }
             if (workspace.path) {
-                nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+                if (nova.version[0] >= 8) {
+                    // @ts-ignore
+                    nova.clipboard.writeText(nova.path.relative(selection[0].path, workspace.path));
+                }
+                else {
+                    nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+                }
             }
             else {
                 nova.clipboard.writeText(selection[0].path);

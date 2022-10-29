@@ -253,6 +253,8 @@ class TabDataProvider {
 
 			this.folderGroupItems.push(localFolder);
 			this.folderGroupItems.push(remoteFolder);
+
+
 		} else {
 			const rootFolder = new FolderItem('Root');
 
@@ -355,6 +357,24 @@ class TabDataProvider {
 	}
 
 	createNestedFolders(tabs: readonly TextDocument[], rootFolder: FolderItem) {
+		// Find common parent folder
+		const tabDirArray = nova.path.split(nova.path.dirname(tabs[0].path || ''));
+
+		const commonDirArray: string[] = [];
+		tabDirArray.every((dir, i) => {
+			const commonDir = tabs.every((tab2) => {
+				const tabDirArray2 = nova.path.split(nova.path.dirname(tab2.path || ''));
+				return tabDirArray2[i] === dir;
+			});
+
+			if (!commonDir) {
+				return false;
+			}
+
+			commonDirArray.push(dir);
+			return true;
+		});
+
 		tabs.forEach(tab => {
 			const tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
 
@@ -362,7 +382,10 @@ class TabDataProvider {
 			tabDirArray.forEach((dir, i, arr) => {
 				const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
 
-				console.log(folderPath);
+				// Exclude common parent folders from tree
+				if (i < commonDirArray.length - 1) {
+					return;
+				}
 
 				const childFolder = parentFolder.children.find(child => child instanceof FolderItem && child.path === folderPath) as FolderItem;
 

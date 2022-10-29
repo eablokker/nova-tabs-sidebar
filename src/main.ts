@@ -766,7 +766,12 @@ class App {
 			}
 
 			if (workspace.path) {
-				nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+				if (nova.version[0] >= 8) {
+					// @ts-ignore
+					nova.clipboard.writeText(nova.path.relative(selection[0].path, workspace.path));
+				} else {
+					nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+				}
 			} else {
 				nova.clipboard.writeText(selection[0].path);
 			}
