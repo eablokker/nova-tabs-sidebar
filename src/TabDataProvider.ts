@@ -820,6 +820,10 @@ class TabDataProvider {
 				item.image = 'filetype-config-editorconfig';
 			}
 
+			if (element.name === 'Dockerfile') {
+				item.image = 'filetype-config-docker';
+			}
+
 			if (element.name === '.gitignore') {
 				item.image = 'filetype-config-gitignore';
 			}
