@@ -863,6 +863,11 @@ class TabDataProvider {
 			return childElement;
 		}
 
+		if (this.groupBy === 'folder') {
+			const childElement = this.findNestedChild(this.folderGroupItems, uri, 'uri');
+			return childElement || undefined;
+		}
+
 		return this.flatItems.find(item => {
 			return item.uri === uri;
 		});
@@ -883,6 +888,11 @@ class TabDataProvider {
 			return childElement;
 		}
 
+		if (this.groupBy === 'folder') {
+			const childElement = this.findNestedChild(this.folderGroupItems, path, 'path');
+			return childElement || undefined;
+		}
+
 		return this.flatItems.find(item => {
 			return item.path === path;
 		});
@@ -890,6 +900,36 @@ class TabDataProvider {
 
 	getFolderBySyntax(syntax: string) {
 		return this.kindGroupItems.find((folder: GroupItem) => folder.syntax === syntax);
+	}
+
+	findNestedChild(arr: (FolderItem | TabItem)[], id: string, key: 'uri' | 'path'): TabItem | null {
+		const folders = arr.filter(item => item instanceof FolderItem);
+		const tabs = arr.filter(item => item instanceof TabItem);
+
+		let foundTab: TabItem | null = tabs.find(tab => {
+			return tab[key] === id;
+		}) as TabItem;
+
+		if (foundTab) {
+			return foundTab;
+		}
+
+		folders.some(folder => {
+			const foundChildTab = this.findNestedChild(folder.children, id, key);
+
+			if (foundChildTab) {
+				foundTab = foundChildTab;
+				return true;
+			} else {
+				return false;
+			}
+		});
+
+		if (foundTab) {
+			return foundTab;
+		}
+
+		return null;
 	}
 
 	getChildren(element: TabItem | GroupItem) {

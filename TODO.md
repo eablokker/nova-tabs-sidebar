@@ -18,8 +18,9 @@
 
 # Group by folder
 
+- [x] Show saved status in folder tree
 - [ ] Add new text translations (group by type, clean up by type, config options)
 - [ ] Remember collapsed state of folders by path
 - [ ] Refresh folder tree when adding/removing tabs
-- [ ] Show saved status in folder tree
 - [ ] Show Git status in folder tree
+- [ ] Sort items in alpha order with folders on top

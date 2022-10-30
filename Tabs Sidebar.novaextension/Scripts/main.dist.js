@@ -734,6 +734,10 @@ var TabDataProvider = /** @class */ (function () {
             });
             return childElement_1;
         }
+        if (this.groupBy === 'folder') {
+            var childElement = this.findNestedChild(this.folderGroupItems, uri, 'uri');
+            return childElement || undefined;
+        }
         return this.flatItems.find(function (item) {
             return item.uri === uri;
         });
@@ -749,12 +753,41 @@ var TabDataProvider = /** @class */ (function () {
             });
             return childElement_2;
         }
+        if (this.groupBy === 'folder') {
+            var childElement = this.findNestedChild(this.folderGroupItems, path, 'path');
+            return childElement || undefined;
+        }
         return this.flatItems.find(function (item) {
             return item.path === path;
         });
     };
     TabDataProvider.prototype.getFolderBySyntax = function (syntax) {
         return this.kindGroupItems.find(function (folder) { return folder.syntax === syntax; });
+    };
+    TabDataProvider.prototype.findNestedChild = function (arr, id, key) {
+        var _this = this;
+        var folders = arr.filter(function (item) { return item instanceof FolderItem; });
+        var tabs = arr.filter(function (item) { return item instanceof TabItem; });
+        var foundTab = tabs.find(function (tab) {
+            return tab[key] === id;
+        });
+        if (foundTab) {
+            return foundTab;
+        }
+        folders.some(function (folder) {
+            var foundChildTab = _this.findNestedChild(folder.children, id, key);
+            if (foundChildTab) {
+                foundTab = foundChildTab;
+                return true;
+            }
+            else {
+                return false;
+            }
+        });
+        if (foundTab) {
+            return foundTab;
+        }
+        return null;
     };
     TabDataProvider.prototype.getChildren = function (element) {
         // Requests the children of an element
