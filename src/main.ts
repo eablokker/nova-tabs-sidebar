@@ -193,7 +193,7 @@ class App {
 
 				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
 
-				if (folder && this.groupBy === 'folder') {
+				if (folder && this.groupBy === 'type') {
 					reload = this.treeView.reload(folder);
 				} else {
 					reload = this.treeView.reload();
@@ -221,7 +221,7 @@ class App {
 					let reload;
 					const folder = this.tabDataProvider.getFolderBySyntax(destroyedEditor.document.syntax || 'plaintext');
 
-					if (folder && folder.children.length > 1 && this.groupBy === 'folder') {
+					if (folder && folder.children.length > 1 && this.groupBy === 'type') {
 						reload = this.treeView.reload(folder);
 					} else {
 						reload = this.treeView.reload();

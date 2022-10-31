@@ -1116,7 +1116,7 @@ var App = /** @class */ (function () {
                 var reload;
                 var folder = _this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
                 _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);
-                if (folder && _this.groupBy === 'folder') {
+                if (folder && _this.groupBy === 'type') {
                     reload = _this.treeView.reload(folder);
                 }
                 else {
@@ -1141,7 +1141,7 @@ var App = /** @class */ (function () {
                 setTimeout(function () {
                     var reload;
                     var folder = _this.tabDataProvider.getFolderBySyntax(destroyedEditor.document.syntax || 'plaintext');
-                    if (folder && folder.children.length > 1 && _this.groupBy === 'folder') {
+                    if (folder && folder.children.length > 1 && _this.groupBy === 'type') {
                         reload = _this.treeView.reload(folder);
                     }
                     else {
