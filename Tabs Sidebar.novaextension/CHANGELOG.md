@@ -1,3 +1,14 @@
+## v1.6.0 - 2022-10-30
+
+### Added
+
+- Group by folder option
+- New Dockerfile icon
+
+### Changed
+
+- Disabled open/close context menu items on type group folders
+
 ## v1.5.3 - 2022-10-28
 
 ### Added
