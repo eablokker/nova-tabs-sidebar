@@ -21,9 +21,10 @@
 - [x] Show saved status in folder tree
 - [x] Never show parent folder in description when grouping by folder
 - [x] Show Git status in folder tree
+- [x] Update "alphabetically" to "by name" to match Nova's terminology
 - [ ] Add new text translations (group by type, clean up by type, config options)
 - [ ] Remember collapsed state of folders by path
 - [ ] Refresh folder tree when adding/removing tabs
 - [ ] Sort items in alpha order with folders on top
 - [ ] Update macOS permissions instructions in readme
-- [ ] Update "alphabetically" to "by name" to match Nova's terminology
+- [ ] Group local files into "project" and "other local"

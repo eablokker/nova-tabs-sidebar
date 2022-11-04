@@ -59,9 +59,9 @@
                             "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
                         },
                         {
-                            "title": "Clean Up Alphabetically",
+                            "title": "Clean Up By Name",
                             "image": "__builtin.path",
-                            "tooltip": "Clean Up Alphabetically",
+                            "tooltip": "Clean Up By Name",
                             "command": "tabs-sidebar.cleanUpByAlpha",
                             "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
                         },
@@ -74,9 +74,9 @@
                         },
                         {"separator": true},
                         {
-                            "title": "Sort Alphabetically",
+                            "title": "Sort By Name",
                             "image": "__builtin.path",
-                            "tooltip": "Sort Alphabetically",
+                            "tooltip": "Sort By Name",
                             "command": "tabs-sidebar.sortByAlpha",
                             "when": "eablokker.tabsSidebar.config.groupBy !== 'folder'",
                             "state": "eablokker.tabsSidebar.config.sortAlpha === true"
@@ -155,7 +155,7 @@
                             "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
                         },
                         {
-                            "title": "Clean Up Alphabetically",
+                            "title": "Clean Up By Name",
                             "command": "tabs-sidebar.cleanUpByAlpha",
                             "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
                         },
@@ -166,7 +166,7 @@
                         },
                         {"separator": true},
                         {
-                            "title": "Sort Alphabetically",
+                            "title": "Sort By Name",
                             "command": "tabs-sidebar.sortByAlpha",
                             "when": "eablokker.tabsSidebar.config.groupBy !== 'folder'",
                             "state": "eablokker.tabsSidebar.config.sortAlpha === true"
