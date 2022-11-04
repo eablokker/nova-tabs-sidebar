@@ -206,14 +206,6 @@ var TabDataProvider = /** @class */ (function () {
         // Check if there are local and remote tabs
         var localTabs = documentTabs.filter(function (tab) { return !tab.isRemote; });
         var remoteTabs = documentTabs.filter(function (tab) { return tab.isRemote; });
-        localTabs.sort(function (a, b) {
-            var aName = a.path || '';
-            var bName = b.path || '';
-            return aName.localeCompare(bName);
-        });
-        // remoteTabs.forEach(tab => {
-        // 	console.log(tab.uri, tab.path);
-        // });
         // Reset folder items
         this.folderGroupItems = [];
         // Add local and remote groups
@@ -234,8 +226,9 @@ var TabDataProvider = /** @class */ (function () {
             this.folderGroupItems.push(remoteFolder);
         }
         else {
+            var tabs = documentTabs.slice(0);
             var rootFolder = new FolderItem('Root');
-            this.createNestedFolders(documentTabs, rootFolder);
+            this.createNestedFolders(tabs, rootFolder);
             rootFolder.children.forEach(function (child) {
                 _this.folderGroupItems.push(child);
             });
@@ -370,6 +363,33 @@ var TabDataProvider = /** @class */ (function () {
             var tabName = _this.basename(tab.path || 'untitled');
             var child = new TabItem(tabName, tab);
             parentFolder.addChild(child);
+        });
+        this.sortNestedFolders(rootFolder);
+    };
+    TabDataProvider.prototype.sortNestedFolders = function (parentFolder) {
+        var _this = this;
+        parentFolder.children.sort(function (a, b) {
+            // Sort folders above files
+            if (a instanceof FolderItem && b instanceof TabItem) {
+                return -1;
+            }
+            if (a instanceof TabItem && b instanceof FolderItem) {
+                return 1;
+            }
+            // Sort folders by alpha
+            if (a instanceof FolderItem && b instanceof FolderItem) {
+                return a.name.localeCompare(b.name);
+            }
+            // Sort tabs by alpha
+            if (a instanceof TabItem && b instanceof TabItem) {
+                return a.name.localeCompare(b.name);
+            }
+            return 0;
+        });
+        parentFolder.children.forEach(function (child) {
+            if (child instanceof FolderItem) {
+                _this.sortNestedFolders(child);
+            }
         });
     };
     TabDataProvider.prototype.runProcess = function (scriptPath, args, cwd, timeout) {
@@ -679,9 +699,9 @@ var TabDataProvider = /** @class */ (function () {
         var _this = this;
         // Sort custom ordered items by custom order
         this.flatItems.sort(this.byCustomOrder.bind(this));
-        // Sort folders by custom order
+        // Sort kind groups by custom order
         this.kindGroupItems.sort(this.byCustomKindGroupsOrder.bind(this));
-        // Sort folder children by custom order
+        // Sort kind group children by custom order
         this.kindGroupItems.forEach(function (item) {
             item.children.sort(_this.byCustomOrder.bind(_this));
         });
