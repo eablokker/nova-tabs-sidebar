@@ -930,16 +930,16 @@ var TabDataProvider = /** @class */ (function () {
             // Calculate parent folder path for description
             var parentFolder = '';
             var isUnique = this.isUniqueName(element);
-            // Always show parent folder if config setting is toggled on
-            if (this.app.alwaysShowParentFolder) {
+            // Always show parent folder if config setting is toggled on, unless grouping by folder
+            if (this.groupBy !== 'folder' && this.app.alwaysShowParentFolder) {
                 var tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
                 parentFolder = decodeURI(tabDirArray[tabDirArray.length - 1]);
                 if (parentFolder !== '.Trash') {
                     description_1 += '‹ ' + parentFolder;
                 }
             }
-            // Show parent path if filename is not unique
-            if (!isUnique) {
+            // Show parent path if filename is not unique, unless grouping by folder
+            if (this.groupBy !== 'folder' && !isUnique) {
                 var commonBasePath = this.getCommonBasePath(element);
                 var parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
                     .split('/')

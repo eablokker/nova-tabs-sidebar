@@ -9,7 +9,7 @@
 - [x] Show git status
 - [x] Custom ordering for grouped by kind
 - [x] Update list when syntax changed
-- [ ] Group by folder option
+- [x] Group by folder option
 - [ ] When switching to remote tab with same name as local, check if active document is remote and switch to next one
 - [ ] Update list when file is moved
 - [ ] Show loading indicator when AppleScript action is waiting to finish
@@ -19,8 +19,11 @@
 # Group by folder
 
 - [x] Show saved status in folder tree
+- [x] Never show parent folder in description when grouping by folder
 - [ ] Add new text translations (group by type, clean up by type, config options)
 - [ ] Remember collapsed state of folders by path
 - [ ] Refresh folder tree when adding/removing tabs
 - [ ] Show Git status in folder tree
 - [ ] Sort items in alpha order with folders on top
+- [ ] Update macOS permissions instructions in readme
+- [ ] Update "alphabetically" to "by name" to match Nova's terminology

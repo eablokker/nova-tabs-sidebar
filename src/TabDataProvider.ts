@@ -1107,8 +1107,8 @@ class TabDataProvider {
 			let parentFolder = '';
 			const isUnique = this.isUniqueName(element);
 
-			// Always show parent folder if config setting is toggled on
-			if (this.app.alwaysShowParentFolder) {
+			// Always show parent folder if config setting is toggled on, unless grouping by folder
+			if (this.groupBy !== 'folder' && this.app.alwaysShowParentFolder) {
 				const tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
 				parentFolder = decodeURI(tabDirArray[tabDirArray.length - 1]);
 
@@ -1117,8 +1117,8 @@ class TabDataProvider {
 				}
 			}
 
-			// Show parent path if filename is not unique
-			if (!isUnique) {
+			// Show parent path if filename is not unique, unless grouping by folder
+			if (this.groupBy !== 'folder' && !isUnique) {
 				const commonBasePath = this.getCommonBasePath(element);
 				const parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
 					.split('/')
