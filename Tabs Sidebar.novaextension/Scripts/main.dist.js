@@ -40,6 +40,7 @@ var ListItem = /** @class */ (function () {
         this.path = '';
         this.uri = '';
         this.isRemote = false;
+        this.collapsibleState = TreeItemCollapsibleState.None;
     }
     Object.defineProperty(ListItem.prototype, "syntax", {
         get: function () {
@@ -111,6 +112,7 @@ var FolderItem = /** @class */ (function (_super) {
         _this.children = [];
         _this.parent = null;
         _this.count = undefined;
+        _this.collapsibleState = TreeItemCollapsibleState.Expanded;
         return _this;
     }
     FolderItem.prototype.addChild = function (element) {
@@ -140,6 +142,7 @@ var TabDataProvider = /** @class */ (function () {
         this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
         this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
         this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
+        this.collapsedFolders = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedFolders', 'array') || [];
     }
     Object.defineProperty(TabDataProvider.prototype, "sortAlpha", {
         get: function () {
@@ -212,15 +215,25 @@ var TabDataProvider = /** @class */ (function () {
         if (localTabs.length && remoteTabs.length) {
             var localFolder = new FolderItem('Local');
             localFolder.path = '__LocalRootFolder__';
+            localFolder.uri = '__LocalRootFolder__';
             localFolder.image = 'sidebar-files';
             localFolder.tooltip = 'Local';
             localFolder.contextValue = 'folderGroup-root';
+            localFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+            if (this.collapsedFolders.indexOf(localFolder.path) > -1) {
+                localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+            }
             this.createNestedFolders(localTabs, localFolder);
             var remoteFolder = new FolderItem('Remote');
             remoteFolder.path = '__RemoteRootFolder__';
+            remoteFolder.uri = '__RemoteRootFolder__';
             remoteFolder.image = 'sidebar-remote';
             remoteFolder.tooltip = 'Remote';
             remoteFolder.contextValue = 'folderGroup-root';
+            remoteFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+            if (this.collapsedFolders.indexOf(remoteFolder.path) > -1) {
+                remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+            }
             this.createNestedFolders(remoteTabs, remoteFolder);
             this.folderGroupItems.push(localFolder);
             this.folderGroupItems.push(remoteFolder);
@@ -228,6 +241,8 @@ var TabDataProvider = /** @class */ (function () {
         else {
             var tabs = documentTabs.slice(0);
             var rootFolder = new FolderItem('Root');
+            rootFolder.path = '__RootFolder__';
+            rootFolder.uri = '__RootFolder__';
             this.createNestedFolders(tabs, rootFolder);
             rootFolder.children.forEach(function (child) {
                 _this.folderGroupItems.push(child);
@@ -324,8 +339,12 @@ var TabDataProvider = /** @class */ (function () {
             var tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
             var parentFolder = rootFolder;
             tabDirArray.forEach(function (dir, i, arr) {
-                var _a;
+                var _a, _b;
                 var folderPath = '/' + (_a = nova.path).join.apply(_a, arr.slice(0, i + 1));
+                var folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1));
+                var folderUri = folderUriSliced.length ? (_b = nova.path).join.apply(_b, folderUriSliced) : nova.path.dirname(tab.uri);
+                // console.log('folderPath', folderPath);
+                // console.log('folderUri', folderUri);
                 // Exclude common parent folders from tree
                 if (i < commonDirArray.length - 1) {
                     return;
@@ -335,6 +354,7 @@ var TabDataProvider = /** @class */ (function () {
                 if (!childFolder) {
                     var subFolder = new FolderItem(dir);
                     subFolder.path = folderPath;
+                    subFolder.uri = folderUri;
                     subFolder.tooltip = folderPath;
                     subFolder.image = 'folder';
                     if (folderPath === nova.path.expanduser('~')) {
@@ -352,6 +372,10 @@ var TabDataProvider = /** @class */ (function () {
                     if (dir.endsWith('.novaextension')) {
                         subFolder.image = '__filetype.novaextension';
                     }
+                    if (folderPath && _this.collapsedFolders.indexOf(folderPath) > -1) {
+                        subFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+                    }
+                    // console.log('folderPath', folderPath, subFolder.collapsibleState);
                     parentFolder.addChild(subFolder);
                     parentFolder = subFolder;
                     // Use existing folder to add child to
@@ -861,12 +885,11 @@ var TabDataProvider = /** @class */ (function () {
             item = new TreeItem(element.name);
             item.tooltip = element.tooltip;
             item.contextValue = element.contextValue;
-            item.identifier = element.path;
+            item.identifier = element.uri;
             if (element.image) {
                 item.image = element.image;
             }
-            var collapsibleState = TreeItemCollapsibleState.Expanded;
-            item.collapsibleState = collapsibleState;
+            item.collapsibleState = element.collapsibleState;
         }
         else {
             var name_1 = element.name;
@@ -996,6 +1019,9 @@ var App = /** @class */ (function () {
         this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
         this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
         this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
+        this.collapseTimeoutID = setTimeout(function () {
+            //
+        });
         this.syntaxNames = {
             'plaintext': nova.localize('Plain Text'),
             'coffeescript': 'CoffeeScript',
@@ -1269,20 +1295,31 @@ var App = /** @class */ (function () {
             }
         });
         this.treeView.onDidCollapseElement(function (element) {
-            // console.log('Collapsed: ' + element?.name);
-            // Handle Folder Items
-            if (element instanceof FolderItem) {
-                return;
-            }
+            clearTimeout(_this.collapseTimeoutID);
+            _this.collapseTimeoutID = setTimeout(function () {
+                // console.log('Collapsed: ' + element?.name, element?.collapsibleState);
+                // Handle Folder Items
+                if (element instanceof FolderItem && element.path) {
+                    _this.tabDataProvider.collapsedFolders.push(element.path);
+                    nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', _this.tabDataProvider.collapsedFolders);
+                    return;
+                }
+            }, 1);
+            // Handle kind groups
             if (element === null || element === void 0 ? void 0 : element.syntax) {
                 _this.tabDataProvider.collapsedKindGroups.push(element.syntax);
                 nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', _this.tabDataProvider.collapsedKindGroups);
             }
         });
         this.treeView.onDidExpandElement(function (element) {
-            // console.log('Expanded: ' + element?.name);
+            // console.log('Expanded: ' + element?.name, element?.collapsibleState);
             // Handle Folder Items
-            if (element instanceof FolderItem) {
+            if (element instanceof FolderItem && element.path) {
+                var index = _this.tabDataProvider.collapsedFolders.indexOf(element.path);
+                if (index > -1) {
+                    _this.tabDataProvider.collapsedFolders.splice(index, 1);
+                    nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', _this.tabDataProvider.collapsedFolders);
+                }
                 return;
             }
             if (element === null || element === void 0 ? void 0 : element.syntax) {
@@ -1622,7 +1659,6 @@ var App = /** @class */ (function () {
             }
             if (workspace.path) {
                 if (nova.version[0] >= 8) {
-                    // @ts-ignore
                     nova.clipboard.writeText(nova.path.relative(selection[0].path, workspace.path));
                 }
                 else {
