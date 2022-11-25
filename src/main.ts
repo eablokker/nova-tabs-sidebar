@@ -16,6 +16,8 @@ class App {
 	unsavedSymbolLocation: string | null;
 	groupBy: string | null;
 
+	collapseTimeoutID: NodeJS.Timeout;
+
 	syntaxNames: SyntaxNames;
 
 	constructor() {
@@ -29,6 +31,10 @@ class App {
 		this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
 		this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
 		this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
+
+		this.collapseTimeoutID = setTimeout(() => {
+			//
+		});
 
 		this.syntaxNames = {
 			'plaintext': nova.localize('Plain Text'),
@@ -351,13 +357,20 @@ class App {
 		});
 
 		this.treeView.onDidCollapseElement(element => {
-			// console.log('Collapsed: ' + element?.name);
 
-			// Handle Folder Items
-			if (element instanceof FolderItem) {
-				return
-			}
+			clearTimeout(this.collapseTimeoutID);
+			this.collapseTimeoutID = setTimeout(() => {
+				// console.log('Collapsed: ' + element?.name, element?.collapsibleState);
 
+				// Handle Folder Items
+				if (element instanceof FolderItem && element.path) {
+					this.tabDataProvider.collapsedFolders.push(element.path);
+					nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', this.tabDataProvider.collapsedFolders);
+					return;
+				}
+			}, 1);
+
+			// Handle kind groups
 			if (element?.syntax) {
 				this.tabDataProvider.collapsedKindGroups.push(element.syntax);
 				nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', this.tabDataProvider.collapsedKindGroups);
@@ -365,11 +378,18 @@ class App {
 		});
 
 		this.treeView.onDidExpandElement(element => {
-			// console.log('Expanded: ' + element?.name);
+			// console.log('Expanded: ' + element?.name, element?.collapsibleState);
 
 			// Handle Folder Items
-			if (element instanceof FolderItem) {
-				return
+			if (element instanceof FolderItem && element.path) {
+				const index = this.tabDataProvider.collapsedFolders.indexOf(element.path);
+
+				if (index > -1) {
+					this.tabDataProvider.collapsedFolders.splice(index, 1);
+					nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', this.tabDataProvider.collapsedFolders);
+				}
+
+				return;
 			}
 
 			if (element?.syntax) {

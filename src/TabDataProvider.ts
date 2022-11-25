@@ -16,6 +16,7 @@ class ListItem {
 	uri: string;
 	tooltip: string | undefined;
 	isRemote: boolean;
+	collapsibleState: TreeItemCollapsibleState;
 
 	constructor(name: string) {
 		this.name = name;
@@ -23,6 +24,7 @@ class ListItem {
 		this.path = '';
 		this.uri = '';
 		this.isRemote = false;
+		this.collapsibleState = TreeItemCollapsibleState.None;
 	}
 
 	get syntax() {
@@ -109,6 +111,7 @@ class FolderItem extends ListItem {
 		this.children = [];
 		this.parent = null;
 		this.count = undefined;
+		this.collapsibleState = TreeItemCollapsibleState.Expanded;
 	}
 
 	addChild(element: FolderItem | TabItem) {
@@ -136,6 +139,7 @@ class TabDataProvider {
 	_sortAlpha: boolean | null;
 	_groupBy: string | null;
 	collapsedKindGroups: string[];
+	collapsedFolders: string[];
 
 	constructor(app: App) {
 		this.app = app;
@@ -150,6 +154,7 @@ class TabDataProvider {
 		this.customOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
 		this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
 		this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
+		this.collapsedFolders = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedFolders', 'array') || [];
 	}
 
 	get sortAlpha() {
@@ -229,17 +234,29 @@ class TabDataProvider {
 		if (localTabs.length && remoteTabs.length) {
 			const localFolder = new FolderItem('Local');
 			localFolder.path = '__LocalRootFolder__';
+			localFolder.uri = '__LocalRootFolder__';
 			localFolder.image = 'sidebar-files';
 			localFolder.tooltip = 'Local';
 			localFolder.contextValue = 'folderGroup-root';
+			localFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+
+			if (this.collapsedFolders.indexOf(localFolder.path) > -1) {
+				localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+			}
 
 			this.createNestedFolders(localTabs, localFolder);
 
 			const remoteFolder = new FolderItem('Remote');
 			remoteFolder.path = '__RemoteRootFolder__';
+			remoteFolder.uri = '__RemoteRootFolder__';
 			remoteFolder.image = 'sidebar-remote';
 			remoteFolder.tooltip = 'Remote';
 			remoteFolder.contextValue = 'folderGroup-root';
+			remoteFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+
+			if (this.collapsedFolders.indexOf(remoteFolder.path) > -1) {
+				remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+			}
 
 			this.createNestedFolders(remoteTabs, remoteFolder);
 
@@ -250,6 +267,8 @@ class TabDataProvider {
 		} else {
 			const tabs = documentTabs.slice(0);
 			const rootFolder = new FolderItem('Root');
+			rootFolder.path = '__RootFolder__';
+			rootFolder.uri = '__RootFolder__';
 
 			this.createNestedFolders(tabs, rootFolder);
 
@@ -374,6 +393,11 @@ class TabDataProvider {
 			let parentFolder = rootFolder;
 			tabDirArray.forEach((dir, i, arr) => {
 				const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
+				const folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1))
+				const folderUri = folderUriSliced.length ? nova.path.join(...folderUriSliced) : nova.path.dirname(tab.uri);
+
+				// console.log('folderPath', folderPath);
+				// console.log('folderUri', folderUri);
 
 				// Exclude common parent folders from tree
 				if (i < commonDirArray.length - 1) {
@@ -386,6 +410,7 @@ class TabDataProvider {
 				if (!childFolder) {
 					const subFolder = new FolderItem(dir);
 					subFolder.path = folderPath;
+					subFolder.uri = folderUri;
 					subFolder.tooltip = folderPath;
 					subFolder.image = 'folder';
 
@@ -408,6 +433,12 @@ class TabDataProvider {
 					if (dir.endsWith('.novaextension')) {
 						subFolder.image = '__filetype.novaextension';
 					}
+
+					if (folderPath && this.collapsedFolders.indexOf(folderPath) > -1) {
+						subFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+					}
+
+					// console.log('folderPath', folderPath, subFolder.collapsibleState);
 
 					parentFolder.addChild(subFolder);
 
@@ -1025,14 +1056,13 @@ class TabDataProvider {
 
 			item.tooltip = element.tooltip;
 			item.contextValue = element.contextValue;
-			item.identifier = element.path;
+			item.identifier = element.uri;
 
 			if (element.image) {
 				item.image = element.image;
 			}
 
-			let collapsibleState = TreeItemCollapsibleState.Expanded;
-			item.collapsibleState = collapsibleState;
+			item.collapsibleState = element.collapsibleState;
 		}
 		else {
 			let name = element.name;
