@@ -1,9 +1,11 @@
-## v1.6.0 - 2022-11-03
+## v1.6.0 - 2022-11-25
 
 ### Added
 
 - Group by folder option
+- Remember collapsed folder state
 - New Dockerfile icon
+- Updated macOS permissions instructions in README
 
 ### Changed
 

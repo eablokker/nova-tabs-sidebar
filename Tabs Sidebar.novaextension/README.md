@@ -31,7 +31,7 @@ It was inspired by the [Tab List](https://extensions.panic.com/extensions/gerard
 
 - Tabs Sidebar uses AppleScript to read and activate certain menubar items such as "Close Tab", "Show in Files Sidebar", and "Clean Up By Tab Bar Order". Accessibility permissions must be granted to Nova to perform these actions.
 
-> To give Nova accessibility permissions, open System Preferences → Security & Privacy → Accessibility, click the lock to make changes, and check on Nova in the list.
+> To give Nova accessibility permissions, open System Preferences → Security & Privacy → Privacy, and click the lock to make changes. Scroll down to Accessibility and check on Nova in the list. Then scroll down to Automation and check on System Events under Nova.
 
 - Git >= 2.15 is required to show Git status
 
