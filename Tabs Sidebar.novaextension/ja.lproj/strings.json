@@ -4,6 +4,10 @@
 	"Open Files": "開いているファイル",
 	"No files are open yet.": "まだ開いているファイルはありません。",
 
+	"Local": "ローカル",
+	"Remote": "リモート",
+	"Project": "プロジェクト",
+
 	"Open": "開く",
 	"Close Tab": "タブを閉じる",
 	"Move Item Up": "アイテムを上に移動",

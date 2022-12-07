@@ -34,13 +34,14 @@ function __extends(d, b) {
 }
 
 var ListItem = /** @class */ (function () {
-    function ListItem(name) {
+    function ListItem(name, identifier) {
         this.name = name;
         this._syntax = null;
         this.path = '';
         this.uri = '';
         this.isRemote = false;
         this.collapsibleState = TreeItemCollapsibleState.None;
+        this.identifier = identifier;
     }
     Object.defineProperty(ListItem.prototype, "syntax", {
         get: function () {
@@ -57,7 +58,7 @@ var ListItem = /** @class */ (function () {
 var TabItem = /** @class */ (function (_super) {
     __extends(TabItem, _super);
     function TabItem(name, tab) {
-        var _this = _super.call(this, name) || this;
+        var _this = _super.call(this, name, tab.uri) || this;
         // Check if in .Trash folder
         var trashRegex = new RegExp('^file://' + nova.path.expanduser('~') + '/.Trash/');
         _this.name = name;
@@ -89,7 +90,7 @@ var TabItem = /** @class */ (function (_super) {
 var GroupItem = /** @class */ (function (_super) {
     __extends(GroupItem, _super);
     function GroupItem(name, options) {
-        var _this = _super.call(this, name) || this;
+        var _this = _super.call(this, name, (options === null || options === void 0 ? void 0 : options.syntax) || 'plaintext') || this;
         _this._syntax = (options === null || options === void 0 ? void 0 : options.syntax) || 'plaintext';
         _this.extension = options === null || options === void 0 ? void 0 : options.extName;
         _this.contextValue = 'kindGroup';
@@ -106,8 +107,8 @@ var GroupItem = /** @class */ (function (_super) {
 }(ListItem));
 var FolderItem = /** @class */ (function (_super) {
     __extends(FolderItem, _super);
-    function FolderItem(name) {
-        var _this = _super.call(this, name) || this;
+    function FolderItem(name, identifier) {
+        var _this = _super.call(this, name, identifier) || this;
         _this.contextValue = 'folderGroup';
         _this.children = [];
         _this.parent = null;
@@ -168,6 +169,7 @@ var TabDataProvider = /** @class */ (function () {
     });
     TabDataProvider.prototype.loadData = function (documentTabs, focusedTab) {
         var _this = this;
+        var _a, _b, _c;
         // Remove closed tabs from custom order
         if (this.customOrder.length) {
             this.customOrder = this.customOrder.filter(function (path) {
@@ -187,7 +189,7 @@ var TabDataProvider = /** @class */ (function () {
             folder.children.forEach(function (child, i2, self2) {
                 var tabIsClosed = documentTabs.every(function (tab) { return tab.uri !== child.uri; });
                 var syntaxChanged = child.syntax && folder.syntax !== child.syntax;
-                console.log(folder.syntax, child.syntax);
+                // console.log(folder.syntax, child.syntax);
                 if (tabIsClosed || syntaxChanged) {
                     self2.splice(i2, 1);
                 }
@@ -206,47 +208,112 @@ var TabDataProvider = /** @class */ (function () {
                 });
             });
         }
-        // Check if there are local and remote tabs
-        var localTabs = documentTabs.filter(function (tab) { return !tab.isRemote; });
-        var remoteTabs = documentTabs.filter(function (tab) { return tab.isRemote; });
+        // Sort out tabs into new arrays
+        var remoteTabs = [];
+        var projectTabs = [];
+        var trashTabs = [];
+        var localTabs = [];
+        documentTabs.forEach(function (tab) {
+            var _a, _b, _c;
+            if (tab.isRemote) {
+                remoteTabs.push(tab);
+                return;
+            }
+            if (nova.workspace && ((_a = tab.path) === null || _a === void 0 ? void 0 : _a.startsWith(((_b = nova.workspace) === null || _b === void 0 ? void 0 : _b.path) || ''))) {
+                projectTabs.push(tab);
+                return;
+            }
+            if ((_c = tab.path) === null || _c === void 0 ? void 0 : _c.startsWith(nova.path.expanduser('~') + '/.Trash/')) {
+                trashTabs.push(tab);
+                return;
+            }
+            localTabs.push(tab);
+        });
         // Reset folder items
         this.folderGroupItems = [];
-        // Add local and remote groups
-        if (localTabs.length && remoteTabs.length) {
-            var localFolder = new FolderItem('Local');
-            localFolder.path = '__LocalRootFolder__';
-            localFolder.uri = '__LocalRootFolder__';
-            localFolder.image = 'sidebar-files';
-            localFolder.tooltip = 'Local';
-            localFolder.contextValue = 'folderGroup-root';
-            localFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
-            if (this.collapsedFolders.indexOf(localFolder.path) > -1) {
-                localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
-            }
-            this.createNestedFolders(localTabs, localFolder);
-            var remoteFolder = new FolderItem('Remote');
-            remoteFolder.path = '__RemoteRootFolder__';
-            remoteFolder.uri = '__RemoteRootFolder__';
-            remoteFolder.image = 'sidebar-remote';
-            remoteFolder.tooltip = 'Remote';
-            remoteFolder.contextValue = 'folderGroup-root';
-            remoteFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
-            if (this.collapsedFolders.indexOf(remoteFolder.path) > -1) {
-                remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
-            }
-            this.createNestedFolders(remoteTabs, remoteFolder);
-            this.folderGroupItems.push(localFolder);
-            this.folderGroupItems.push(remoteFolder);
+        var groupsCount = 0;
+        if (remoteTabs.length) {
+            groupsCount++;
         }
-        else {
+        if (projectTabs.length) {
+            groupsCount++;
+        }
+        if (trashTabs.length) {
+            groupsCount++;
+        }
+        if (localTabs.length) {
+            groupsCount++;
+        }
+        // Add all tabs if not more than one group
+        if (groupsCount < 2) {
             var tabs = documentTabs.slice(0);
-            var rootFolder = new FolderItem('Root');
+            var rootFolder = new FolderItem('Root', '__RootFolder__');
             rootFolder.path = '__RootFolder__';
             rootFolder.uri = '__RootFolder__';
             this.createNestedFolders(tabs, rootFolder);
             rootFolder.children.forEach(function (child) {
                 _this.folderGroupItems.push(child);
             });
+        }
+        else {
+            // Add top level groups
+            if (projectTabs.length) {
+                var projectName = ((_a = nova.workspace) === null || _a === void 0 ? void 0 : _a.config.get('workspace.name', 'string')) || nova.path.basename(((_b = nova.workspace) === null || _b === void 0 ? void 0 : _b.path) || '') || nova.localize('Project');
+                var projectFolder = new FolderItem(projectName, '__LocalProjectFolder__');
+                projectFolder.path = '__LocalProjectFolder__';
+                projectFolder.uri = '__LocalProjectFolder__';
+                projectFolder.image = 'sidebar-files';
+                projectFolder.tooltip = ((_c = nova.workspace) === null || _c === void 0 ? void 0 : _c.path) || nova.localize('Project');
+                projectFolder.contextValue = 'folderGroup-root';
+                projectFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+                if (this.collapsedFolders.indexOf(projectFolder.path) > -1) {
+                    projectFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+                }
+                this.createNestedFolders(projectTabs, projectFolder);
+                this.folderGroupItems.push(projectFolder);
+            }
+            if (localTabs.length) {
+                var localFolder = new FolderItem(nova.localize('Local'), '__LocalRootFolder__');
+                localFolder.path = '__LocalRootFolder__';
+                localFolder.uri = '__LocalRootFolder__';
+                localFolder.image = 'sidebar-files';
+                localFolder.tooltip = 'Local';
+                localFolder.contextValue = 'folderGroup-root';
+                localFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+                if (this.collapsedFolders.indexOf(localFolder.path) > -1) {
+                    localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+                }
+                this.createNestedFolders(localTabs, localFolder);
+                this.folderGroupItems.push(localFolder);
+            }
+            if (remoteTabs.length) {
+                var remoteFolder = new FolderItem(nova.localize('Remote'), '__RemoteRootFolder__');
+                remoteFolder.path = '__RemoteRootFolder__';
+                remoteFolder.uri = '__RemoteRootFolder__';
+                remoteFolder.image = 'sidebar-remote';
+                remoteFolder.tooltip = 'Remote';
+                remoteFolder.contextValue = 'folderGroup-root';
+                remoteFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+                if (this.collapsedFolders.indexOf(remoteFolder.path) > -1) {
+                    remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+                }
+                this.createNestedFolders(remoteTabs, remoteFolder);
+                this.folderGroupItems.push(remoteFolder);
+            }
+            if (trashTabs.length) {
+                var trashFolder = new FolderItem(nova.localize('Trash'), '__LocalTrashFolder__');
+                trashFolder.path = '__LocalTrashFolder__';
+                trashFolder.uri = '__LocalTrashFolder__';
+                trashFolder.image = 'sidebar-files';
+                trashFolder.tooltip = 'Trash';
+                trashFolder.contextValue = 'folderGroup-root';
+                trashFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+                if (this.collapsedFolders.indexOf(trashFolder.path) > -1) {
+                    trashFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+                }
+                this.createNestedFolders(trashTabs, trashFolder);
+                this.folderGroupItems.push(trashFolder);
+            }
         }
         // Add newly opened tabs
         documentTabs.forEach(function (tab) {
@@ -352,7 +419,7 @@ var TabDataProvider = /** @class */ (function () {
                 var childFolder = parentFolder.children.find(function (child) { return child instanceof FolderItem && child.path === folderPath; });
                 // Add new folder if it doesn't exist yet
                 if (!childFolder) {
-                    var subFolder = new FolderItem(dir);
+                    var subFolder = new FolderItem(dir, folderUri);
                     subFolder.path = folderPath;
                     subFolder.uri = folderUri;
                     subFolder.tooltip = folderPath;
@@ -859,11 +926,12 @@ var TabDataProvider = /** @class */ (function () {
     TabDataProvider.prototype.getTreeItem = function (element) {
         // Converts an element into its display (TreeItem) representation
         var item;
+        // console.log('id:', element.identifier);
         if (element instanceof GroupItem) {
             item = new TreeItem(element.name);
             item.contextValue = element.contextValue;
             item.descriptiveText = this.app.showGroupCount ? '(' + element.children.length + ')' : '';
-            item.identifier = element.syntax || element.extension;
+            item.identifier = element.identifier;
             item.image = '__filetype.' + element.extension;
             if (!element.extension) {
                 item.image = '__filetype.blank';
@@ -885,7 +953,7 @@ var TabDataProvider = /** @class */ (function () {
             item = new TreeItem(element.name);
             item.tooltip = element.tooltip;
             item.contextValue = element.contextValue;
-            item.identifier = element.uri;
+            item.identifier = element.identifier;
             if (element.image) {
                 item.image = element.image;
             }
@@ -1001,7 +1069,7 @@ var TabDataProvider = /** @class */ (function () {
             item.path = element.path;
             item.command = 'tabs-sidebar.doubleClick';
             item.contextValue = element.contextValue;
-            item.identifier = element.uri;
+            item.identifier = element.identifier;
         }
         return item;
     };
@@ -1220,7 +1288,7 @@ var App = /** @class */ (function () {
                 // Only highlight tab if it's the same as the current active tab
                 if (document.uri === ((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri)) {
                     _this.focusedTab = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-                    _this.highlightTab(_this.focusedTab || null, { focus: true });
+                    _this.highlightTab(_this.focusedTab || null, { focus: true, reveal: 3 });
                 }
             });
             editor.onDidStopChanging(function (changedEditor) {

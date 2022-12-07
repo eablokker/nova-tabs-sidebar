@@ -4,6 +4,10 @@
 	"Open Files": "打开的文件",
 	"No files are open yet.": "尚未打开任何文件。",
 
+	"Local": "本地",
+	"Remote": "远程",
+	"Project": "项目",
+
 	"Open": "打开",
 	"Close Tab": "关闭标签页",
 	"Move Item Up": "向上移动项目",

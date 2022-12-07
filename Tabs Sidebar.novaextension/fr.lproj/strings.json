@@ -4,6 +4,10 @@
 	"Open Files": "Fichiers Ouverts",
 	"No files are open yet.": "Aucun fichier n'est encore ouvert.",
 
+	"Local": "Local",
+	"Remote": "Distant",
+	"Project": "Projet",
+
 	"Open": "Ouvrir",
 	"Close Tab": "Fermer l’onglet",
 	"Move Item Up": "Déplacer vers le haut",

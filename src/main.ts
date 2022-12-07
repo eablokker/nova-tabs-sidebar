@@ -265,7 +265,7 @@ class App {
 				// Only highlight tab if it's the same as the current active tab
 				if (document.uri === nova.workspace.activeTextEditor?.document.uri) {
 					this.focusedTab = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-					this.highlightTab(this.focusedTab || null, { focus: true });
+					this.highlightTab(this.focusedTab || null, { focus: true, reveal: 3 });
 				}
 			});
 

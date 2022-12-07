@@ -17,14 +17,16 @@ class ListItem {
 	tooltip: string | undefined;
 	isRemote: boolean;
 	collapsibleState: TreeItemCollapsibleState;
+	identifier: string;
 
-	constructor(name: string) {
+	constructor(name: string, identifier: string) {
 		this.name = name;
 		this._syntax = null;
 		this.path = '';
 		this.uri = '';
 		this.isRemote = false;
 		this.collapsibleState = TreeItemCollapsibleState.None;
+		this.identifier = identifier;
 	}
 
 	get syntax() {
@@ -47,7 +49,7 @@ class TabItem extends ListItem {
 	count: number | undefined;
 
 	constructor(name: string, tab: TextDocument) {
-		super(name);
+		super(name, tab.uri);
 
 		// Check if in .Trash folder
 		const trashRegex = new RegExp('^file://' + nova.path.expanduser('~') + '/.Trash/');
@@ -82,7 +84,7 @@ class GroupItem extends ListItem {
 	image: string | undefined;
 
 	constructor(name: string, options?: { syntax?: string | null, extName?: string }) {
-		super(name);
+		super(name, options?.syntax || 'plaintext');
 
 		this._syntax = options?.syntax || 'plaintext';
 		this.extension = options?.extName;
@@ -104,8 +106,8 @@ class FolderItem extends ListItem {
 	count: number | undefined;
 	image: string | undefined;
 
-	constructor(name: string) {
-		super(name);
+	constructor(name: string, identifier: string) {
+		super(name, identifier);
 
 		this.contextValue = 'folderGroup';
 		this.children = [];
@@ -200,7 +202,7 @@ class TabDataProvider {
 				const tabIsClosed = documentTabs.every(tab => tab.uri !== child.uri);
 				const syntaxChanged = child.syntax && folder.syntax !== child.syntax;
 
-				console.log(folder.syntax, child.syntax);
+				// console.log(folder.syntax, child.syntax);
 
 				if (tabIsClosed || syntaxChanged) {
 					self2.splice(i2, 1);
@@ -223,50 +225,56 @@ class TabDataProvider {
 			});
 		}
 
-		// Check if there are local and remote tabs
-		const localTabs = documentTabs.filter(tab => !tab.isRemote);
-		const remoteTabs = documentTabs.filter(tab => tab.isRemote);
+		// Sort out tabs into new arrays
+		const remoteTabs: TextDocument[] = [];
+		const projectTabs: TextDocument[] = [];
+		const trashTabs: TextDocument[] = [];
+		const localTabs: TextDocument[] = [];
+
+		documentTabs.forEach(tab => {
+			if (tab.isRemote) {
+				remoteTabs.push(tab);
+				return;
+			}
+
+			if (nova.workspace && tab.path?.startsWith(nova.workspace?.path || '')) {
+				projectTabs.push(tab);
+				return;
+			}
+
+			if (tab.path?.startsWith(nova.path.expanduser('~') + '/.Trash/')) {
+				trashTabs.push(tab);
+				return;
+			}
+
+			localTabs.push(tab);
+		});
 
 		// Reset folder items
 		this.folderGroupItems = [];
 
-		// Add local and remote groups
-		if (localTabs.length && remoteTabs.length) {
-			const localFolder = new FolderItem('Local');
-			localFolder.path = '__LocalRootFolder__';
-			localFolder.uri = '__LocalRootFolder__';
-			localFolder.image = 'sidebar-files';
-			localFolder.tooltip = 'Local';
-			localFolder.contextValue = 'folderGroup-root';
-			localFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+		let groupsCount = 0;
 
-			if (this.collapsedFolders.indexOf(localFolder.path) > -1) {
-				localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
-			}
+		if (remoteTabs.length) {
+			groupsCount++;
+		}
 
-			this.createNestedFolders(localTabs, localFolder);
+		if (projectTabs.length) {
+			groupsCount++;
+		}
 
-			const remoteFolder = new FolderItem('Remote');
-			remoteFolder.path = '__RemoteRootFolder__';
-			remoteFolder.uri = '__RemoteRootFolder__';
-			remoteFolder.image = 'sidebar-remote';
-			remoteFolder.tooltip = 'Remote';
-			remoteFolder.contextValue = 'folderGroup-root';
-			remoteFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+		if (trashTabs.length) {
+			groupsCount++;
+		}
 
-			if (this.collapsedFolders.indexOf(remoteFolder.path) > -1) {
-				remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
-			}
+		if (localTabs.length) {
+			groupsCount++;
+		}
 
-			this.createNestedFolders(remoteTabs, remoteFolder);
-
-			this.folderGroupItems.push(localFolder);
-			this.folderGroupItems.push(remoteFolder);
-
-
-		} else {
+		// Add all tabs if not more than one group
+		if (groupsCount < 2) {
 			const tabs = documentTabs.slice(0);
-			const rootFolder = new FolderItem('Root');
+			const rootFolder = new FolderItem('Root', '__RootFolder__');
 			rootFolder.path = '__RootFolder__';
 			rootFolder.uri = '__RootFolder__';
 
@@ -275,6 +283,80 @@ class TabDataProvider {
 			rootFolder.children.forEach(child => {
 				this.folderGroupItems.push(child);
 			});
+
+		} else {
+
+			// Add top level groups
+			if (projectTabs.length) {
+				const projectName = nova.workspace?.config.get('workspace.name', 'string') || nova.path.basename(nova.workspace?.path || '') || nova.localize('Project');
+
+				const projectFolder = new FolderItem(projectName, '__LocalProjectFolder__');
+				projectFolder.path = '__LocalProjectFolder__';
+				projectFolder.uri = '__LocalProjectFolder__';
+				projectFolder.image = 'sidebar-files';
+				projectFolder.tooltip = nova.workspace?.path || nova.localize('Project');
+				projectFolder.contextValue = 'folderGroup-root';
+				projectFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+
+				if (this.collapsedFolders.indexOf(projectFolder.path) > -1) {
+					projectFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+				}
+
+				this.createNestedFolders(projectTabs, projectFolder);
+				this.folderGroupItems.push(projectFolder);
+			}
+
+			if (localTabs.length) {
+				const localFolder = new FolderItem(nova.localize('Local'), '__LocalRootFolder__');
+				localFolder.path = '__LocalRootFolder__';
+				localFolder.uri = '__LocalRootFolder__';
+				localFolder.image = 'sidebar-files';
+				localFolder.tooltip = 'Local';
+				localFolder.contextValue = 'folderGroup-root';
+				localFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+
+				if (this.collapsedFolders.indexOf(localFolder.path) > -1) {
+					localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+				}
+
+				this.createNestedFolders(localTabs, localFolder);
+				this.folderGroupItems.push(localFolder);
+			}
+
+			if (remoteTabs.length) {
+				const remoteFolder = new FolderItem(nova.localize('Remote'), '__RemoteRootFolder__');
+				remoteFolder.path = '__RemoteRootFolder__';
+				remoteFolder.uri = '__RemoteRootFolder__';
+				remoteFolder.image = 'sidebar-remote';
+				remoteFolder.tooltip = 'Remote';
+				remoteFolder.contextValue = 'folderGroup-root';
+				remoteFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+
+				if (this.collapsedFolders.indexOf(remoteFolder.path) > -1) {
+					remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+				}
+
+				this.createNestedFolders(remoteTabs, remoteFolder);
+				this.folderGroupItems.push(remoteFolder);
+			}
+
+			if (trashTabs.length) {
+				const trashFolder = new FolderItem(nova.localize('Trash'), '__LocalTrashFolder__');
+				trashFolder.path = '__LocalTrashFolder__';
+				trashFolder.uri = '__LocalTrashFolder__';
+				trashFolder.image = 'sidebar-files';
+				trashFolder.tooltip = 'Trash';
+				trashFolder.contextValue = 'folderGroup-root';
+				trashFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
+
+				if (this.collapsedFolders.indexOf(trashFolder.path) > -1) {
+					trashFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+				}
+
+				this.createNestedFolders(trashTabs, trashFolder);
+				this.folderGroupItems.push(trashFolder);
+			}
+
 		}
 
 		// Add newly opened tabs
@@ -408,7 +490,7 @@ class TabDataProvider {
 
 				// Add new folder if it doesn't exist yet
 				if (!childFolder) {
-					const subFolder = new FolderItem(dir);
+					const subFolder = new FolderItem(dir, folderUri);
 					subFolder.path = folderPath;
 					subFolder.uri = folderUri;
 					subFolder.tooltip = folderPath;
@@ -1021,12 +1103,14 @@ class TabDataProvider {
 		// Converts an element into its display (TreeItem) representation
 		let item: TreeItem;
 
+		// console.log('id:', element.identifier);
+
 		if (element instanceof GroupItem) {
 			item = new TreeItem(element.name);
 
 			item.contextValue = element.contextValue;
 			item.descriptiveText = this.app.showGroupCount ? '(' + element.children.length + ')' : '';
-			item.identifier = element.syntax || element.extension;
+			item.identifier = element.identifier;
 			item.image = '__filetype.' + element.extension;
 
 			if (!element.extension) {
@@ -1056,7 +1140,7 @@ class TabDataProvider {
 
 			item.tooltip = element.tooltip;
 			item.contextValue = element.contextValue;
-			item.identifier = element.uri;
+			item.identifier = element.identifier;
 
 			if (element.image) {
 				item.image = element.image;
@@ -1194,7 +1278,7 @@ class TabDataProvider {
 			item.path = element.path;
 			item.command = 'tabs-sidebar.doubleClick';
 			item.contextValue = element.contextValue;
-			item.identifier = element.uri;
+			item.identifier = element.identifier;
 		}
 		return item;
 	}
