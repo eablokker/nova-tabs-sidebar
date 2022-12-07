@@ -21,6 +21,11 @@
 	"Refresh": "Rafraîchir",
 	"Refresh Tab List": "Rafraîchir la liste des onglets",
 
+	"Group By": "Grouper par",
+	"None": "Aucun",
+	"Type": "Type",
+	"Folder": "Dossier",
+
 	"Open tabs with a single click": "Ouvrir les onglets en un seul clic",
 	"When disabled, tabs will only open on double-click or context menu.": "Lorsqu'ils sont désactivés, les onglets ne s'ouvrent que par double-clic ou menu contextuel.",
 

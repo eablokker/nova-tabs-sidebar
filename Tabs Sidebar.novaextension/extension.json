@@ -250,7 +250,7 @@
     "config-workspace": [
         {
             "key": "eablokker.tabsSidebar.config.sortAlpha",
-            "title": "Sort Alphabetically",
+            "title": "Sort By Name",
             "type": "boolean",
             "default": false
         },

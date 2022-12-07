@@ -26,6 +26,6 @@
 - [x] Remember collapsed state of folders by path
 - [x] Refresh folder tree when adding/removing tabs
 - [x] Update macOS permissions instructions in readme
-- [ ] Add new text translations (group by type, clean up by type, config options)
+- [x] Add new text translations (group by type, clean up by type, config options)
 - [ ] Group local files into "project", "other local", and "trash"
 - [ ] Add updated screenshots

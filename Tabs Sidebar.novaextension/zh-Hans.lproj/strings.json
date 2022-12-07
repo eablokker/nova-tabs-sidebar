@@ -21,6 +21,11 @@
 	"Refresh": "刷新",
 	"Refresh Tab List": "刷新标签列表",
 
+	"Group By": "通过...分组",
+	"None": "无",
+	"Type": "类型",
+	"Folder": "文件夹",
+
 	"Open tabs with a single click": "一键打开签页",
 	"When disabled, tabs will only open on double-click or context menu.": "禁用时，选项卡只会在双击或上下文菜单中打开。",
 

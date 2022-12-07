@@ -21,6 +21,11 @@
 	"Refresh": "Aktualisierung",
 	"Refresh Tab List": "Tab-Liste aktualisieren",
 
+	"Group By": "Gruppiere nach",
+	"None": "Keine",
+	"Type": "Typ",
+	"Folder": "Ordner",
+
 	"Open tabs with a single click": "Öffnen Sie Tabs mit einem einzigen Klick",
 	"When disabled, tabs will only open on double-click or context menu.": "Wenn deaktiviert, öffnen sich Registerkarten nur per Doppelklick oder Kontextmenü.",
 
