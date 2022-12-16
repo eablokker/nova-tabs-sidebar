@@ -187,6 +187,32 @@ class TabDataProvider {
 			});
 		}
 
+		// Remove closed folders from collapsed folders list
+		if (this.collapsedFolders.length) {
+			this.collapsedFolders = this.collapsedFolders.filter(path => {
+				return documentTabs.some(tab => {
+					// Handle special root folders
+					if (path === '__RemoteRootFolder__' && tab.isRemote) {
+						return true;
+					}
+
+					if (path === '__LocalProjectFolder__' && nova.workspace && tab.path?.startsWith(nova.workspace?.path || '')) {
+						return true;
+					}
+
+					if (path === '__LocalTrashFolder__' && tab.path?.startsWith(nova.path.expanduser('~') + '/.Trash/')) {
+						return true;
+					}
+
+					if (path === '__LocalRootFolder__') {
+						return true;
+					}
+
+					return tab.path?.startsWith(path);
+				});
+			});
+		}
+
 		// Remove closed tabs from flat list
 		this.flatItems.forEach((item, i, self) => {
 			const tabIsClosed = documentTabs.every(tab => tab.uri !== item.uri);
@@ -446,6 +472,7 @@ class TabDataProvider {
 
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customKindGroupsOrder', this.customKindGroupsOrder);
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
+		nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', this.collapsedFolders);
 
 		this.sortItems();
 	}

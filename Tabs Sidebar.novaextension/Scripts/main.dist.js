@@ -176,6 +176,28 @@ var TabDataProvider = /** @class */ (function () {
                 return documentTabs.some(function (tab) { return tab.path === path; });
             });
         }
+        // Remove closed folders from collapsed folders list
+        if (this.collapsedFolders.length) {
+            this.collapsedFolders = this.collapsedFolders.filter(function (path) {
+                return documentTabs.some(function (tab) {
+                    var _a, _b, _c, _d;
+                    // Handle special root folders
+                    if (path === '__RemoteRootFolder__' && tab.isRemote) {
+                        return true;
+                    }
+                    if (path === '__LocalProjectFolder__' && nova.workspace && ((_a = tab.path) === null || _a === void 0 ? void 0 : _a.startsWith(((_b = nova.workspace) === null || _b === void 0 ? void 0 : _b.path) || ''))) {
+                        return true;
+                    }
+                    if (path === '__LocalTrashFolder__' && ((_c = tab.path) === null || _c === void 0 ? void 0 : _c.startsWith(nova.path.expanduser('~') + '/.Trash/'))) {
+                        return true;
+                    }
+                    if (path === '__LocalRootFolder__') {
+                        return true;
+                    }
+                    return (_d = tab.path) === null || _d === void 0 ? void 0 : _d.startsWith(path);
+                });
+            });
+        }
         // Remove closed tabs from flat list
         this.flatItems.forEach(function (item, i, self) {
             var tabIsClosed = documentTabs.every(function (tab) { return tab.uri !== item.uri; });
@@ -304,7 +326,7 @@ var TabDataProvider = /** @class */ (function () {
                 var trashFolder = new FolderItem(nova.localize('Trash'), '__LocalTrashFolder__');
                 trashFolder.path = '__LocalTrashFolder__';
                 trashFolder.uri = '__LocalTrashFolder__';
-                trashFolder.image = 'sidebar-files';
+                trashFolder.image = 'sidebar-trash';
                 trashFolder.tooltip = 'Trash';
                 trashFolder.contextValue = 'folderGroup-root';
                 trashFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
@@ -384,6 +406,7 @@ var TabDataProvider = /** @class */ (function () {
         });
         nova.workspace.config.set('eablokker.tabsSidebar.config.customKindGroupsOrder', this.customKindGroupsOrder);
         nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
+        nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', this.collapsedFolders);
         this.sortItems();
     };
     TabDataProvider.prototype.createNestedFolders = function (tabs, rootFolder) {

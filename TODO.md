@@ -14,6 +14,7 @@
 - [ ] Update list when file is moved
 - [ ] Show loading indicator when AppleScript action is waiting to finish
 - [ ] Ability to move selected range of tabs up and down
+- [ ] Option to not save tab order in workspace config
 
 
 # Group by folder
@@ -28,5 +29,6 @@
 - [x] Update macOS permissions instructions in readme
 - [x] Add new text translations (group by type, clean up by type, config options)
 - [x] Group local files into "project", "other local", and "trash"
-- [ ] Add icons for folder groups (trash, project)
+- [x] Add icon for trash group
+- [x] Remove collapsed folders from config if files inside are closed
 - [ ] Add updated screenshots
