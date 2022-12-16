@@ -344,7 +344,7 @@ class TabDataProvider {
 				const trashFolder = new FolderItem(nova.localize('Trash'), '__LocalTrashFolder__');
 				trashFolder.path = '__LocalTrashFolder__';
 				trashFolder.uri = '__LocalTrashFolder__';
-				trashFolder.image = 'sidebar-files';
+				trashFolder.image = 'sidebar-trash';
 				trashFolder.tooltip = 'Trash';
 				trashFolder.contextValue = 'folderGroup-root';
 				trashFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
