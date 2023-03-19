@@ -770,41 +770,43 @@ class App {
 		if (nova.inDevMode()) console.log('System has Git executable at', this.gitPath);
 
 		// Check if workspace has git repo
-		this.tabDataProvider.runProcess(this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse', '--show-toplevel'])
-			.then(result => {
-				const repoPath = result;
-
-				if (nova.inDevMode()) console.log('Workspace has Git repo at', repoPath);
-
-				this.updateGitStatus();
-
-				// Prevent excessive watch events
-				let watchTimeoutID = setTimeout(() => {
-					//
-				});
-
-				this.fileWatcher = nova.fs.watch(null, () => { /**/ });
-
-				this.fileWatcher.onDidChange(path => {
-					clearTimeout(watchTimeoutID);
-					watchTimeoutID = setTimeout(() => {
-						if (nova.inDevMode()) console.log('File changed', path);
-
-						const pathSplit = nova.path.split(nova.path.dirname(path));
-
-						// Don't respond to changes to nova config
-						if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-							if (nova.inDevMode()) console.log('Dont respond to config changes');
-							return;
-						}
-
-						this.updateGitStatus();
-					}, 200);
-				});
-			})
+		const repoPath = await this.tabDataProvider.runProcess(this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse', '--show-toplevel'])
 			.catch(err => {
 				console.warn('Could not find Git repo in current workspace', err);
+				return null;
 			});
+
+		if (!repoPath) {
+			return;
+		}
+
+		if (nova.inDevMode()) console.log('Workspace has Git repo at', repoPath);
+
+		this.updateGitStatus();
+
+		// Prevent excessive watch events
+		let watchTimeoutID = setTimeout(() => {
+			//
+		});
+
+		this.fileWatcher = nova.fs.watch(null, () => { /**/ });
+
+		this.fileWatcher.onDidChange(path => {
+			clearTimeout(watchTimeoutID);
+			watchTimeoutID = setTimeout(() => {
+				if (nova.inDevMode()) console.log('File changed', path);
+
+				const pathSplit = nova.path.split(nova.path.dirname(path));
+
+				// Don't respond to changes to nova config
+				if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+					if (nova.inDevMode()) console.log('Dont respond to config changes');
+					return;
+				}
+
+				this.updateGitStatus();
+			}, 200);
+		});
 	}
 
 	openRemoteTab(uri: string): Promise<TextEditor | null | undefined> {

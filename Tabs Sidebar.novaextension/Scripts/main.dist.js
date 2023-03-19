@@ -1450,7 +1450,7 @@ var App = /** @class */ (function () {
     };
     App.prototype.initFileWatcher = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var gitPath;
+            var gitPath, repoPath, watchTimeoutID;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1472,36 +1472,37 @@ var App = /** @class */ (function () {
                         this.gitPath = gitPath.trim();
                         if (nova.inDevMode())
                             console.log('System has Git executable at', this.gitPath);
-                        // Check if workspace has git repo
-                        this.tabDataProvider.runProcess(this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse', '--show-toplevel'])
-                            .then(function (result) {
-                            var repoPath = result;
-                            if (nova.inDevMode())
-                                console.log('Workspace has Git repo at', repoPath);
-                            _this.updateGitStatus();
-                            // Prevent excessive watch events
-                            var watchTimeoutID = setTimeout(function () {
-                                //
-                            });
-                            _this.fileWatcher = nova.fs.watch(null, function () { });
-                            _this.fileWatcher.onDidChange(function (path) {
-                                clearTimeout(watchTimeoutID);
-                                watchTimeoutID = setTimeout(function () {
+                        return [4 /*yield*/, this.tabDataProvider.runProcess(this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse', '--show-toplevel'])
+                                .catch(function (err) {
+                                console.warn('Could not find Git repo in current workspace', err);
+                                return null;
+                            })];
+                    case 2:
+                        repoPath = _a.sent();
+                        if (!repoPath) {
+                            return [2 /*return*/];
+                        }
+                        if (nova.inDevMode())
+                            console.log('Workspace has Git repo at', repoPath);
+                        this.updateGitStatus();
+                        watchTimeoutID = setTimeout(function () {
+                            //
+                        });
+                        this.fileWatcher = nova.fs.watch(null, function () { });
+                        this.fileWatcher.onDidChange(function (path) {
+                            clearTimeout(watchTimeoutID);
+                            watchTimeoutID = setTimeout(function () {
+                                if (nova.inDevMode())
+                                    console.log('File changed', path);
+                                var pathSplit = nova.path.split(nova.path.dirname(path));
+                                // Don't respond to changes to nova config
+                                if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
                                     if (nova.inDevMode())
-                                        console.log('File changed', path);
-                                    var pathSplit = nova.path.split(nova.path.dirname(path));
-                                    // Don't respond to changes to nova config
-                                    if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-                                        if (nova.inDevMode())
-                                            console.log('Dont respond to config changes');
-                                        return;
-                                    }
-                                    _this.updateGitStatus();
-                                }, 200);
-                            });
-                        })
-                            .catch(function (err) {
-                            console.warn('Could not find Git repo in current workspace', err);
+                                        console.log('Dont respond to config changes');
+                                    return;
+                                }
+                                _this.updateGitStatus();
+                            }, 200);
                         });
                         return [2 /*return*/];
                 }
