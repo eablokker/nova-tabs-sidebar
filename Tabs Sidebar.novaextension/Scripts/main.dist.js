@@ -1450,7 +1450,7 @@ var App = /** @class */ (function () {
     };
     App.prototype.initFileWatcher = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var gitPath, repoPath, watchTimeoutID;
+            var gitPath, repoPath, filePath, gitignoreFile, watchTimeoutID;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1484,6 +1484,9 @@ var App = /** @class */ (function () {
                         }
                         if (nova.inDevMode())
                             console.log('Workspace has Git repo at', repoPath);
+                        filePath = repoPath.trim() + '/.gitignore';
+                        gitignoreFile = nova.fs.open(filePath);
+                        console.log(gitignoreFile.read());
                         this.updateGitStatus();
                         watchTimeoutID = setTimeout(function () {
                             //

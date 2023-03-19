@@ -782,6 +782,13 @@ class App {
 
 		if (nova.inDevMode()) console.log('Workspace has Git repo at', repoPath);
 
+		// Get .gitignore
+		const filePath = repoPath.trim() + '/.gitignore';
+		const gitignoreFile = nova.fs.open(filePath);
+
+		console.log(gitignoreFile.read());
+
+
 		this.updateGitStatus();
 
 		// Prevent excessive watch events
