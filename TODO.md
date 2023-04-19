@@ -8,6 +8,7 @@
 - [x] Localize text
 - [x] Show git status
 - [x] Custom ordering for grouped by kind
+- [x] Ignore changed files in .gitignore for git change watcher
 - [ ] When switching to remote tab with same name as local, check if active document is remote and switch to next one
 - [ ] Update list when file is moved or syntax changed
 - [ ] Group by folder option

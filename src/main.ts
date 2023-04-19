@@ -780,14 +780,7 @@ class App {
 			return;
 		}
 
-		if (nova.inDevMode()) console.log('Workspace has Git repo at', repoPath);
-
-		// Get .gitignore
-		const filePath = repoPath.trim() + '/.gitignore';
-		const gitignoreFile = nova.fs.open(filePath);
-
-		console.log(gitignoreFile.read());
-
+		if (nova.inDevMode()) console.log('Workspace has Git repo at', repoPath.trim());
 
 		this.updateGitStatus();
 
@@ -811,7 +804,19 @@ class App {
 					return;
 				}
 
-				this.updateGitStatus();
+				// Check if file is ignored in Git
+				this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+					.then(status => {
+						if (nova.inDevMode()) console.log('Git ignored status', status);
+
+						// Update git status if changed file is not ignored
+						if (status === '1') {
+							this.updateGitStatus();
+						}
+					})
+					.catch(err => {
+						console.error('Could not check Git ignore status', err);
+					});
 			}, 200);
 		});
 	}

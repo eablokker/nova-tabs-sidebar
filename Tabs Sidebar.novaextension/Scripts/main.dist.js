@@ -49,7 +49,7 @@ function __generator(thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -305,6 +305,10 @@ var TabDataProvider = /** @class */ (function () {
             }, timeout);
             process.onDidExit(function (status) {
                 clearTimeout(timeoutID);
+                // Return error status when checking if file is ignored in Git
+                if (args[2] === 'check-ignore') {
+                    resolve(status.toString());
+                }
                 if (status > 0) {
                     reject(new Error('Process returned error status ' + status + ' when executing ' + scriptPath + ' ' + args.join(' ')));
                 }
@@ -1450,7 +1454,7 @@ var App = /** @class */ (function () {
     };
     App.prototype.initFileWatcher = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var gitPath, repoPath, filePath, gitignoreFile, watchTimeoutID;
+            var gitPath, repoPath, watchTimeoutID;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1483,10 +1487,7 @@ var App = /** @class */ (function () {
                             return [2 /*return*/];
                         }
                         if (nova.inDevMode())
-                            console.log('Workspace has Git repo at', repoPath);
-                        filePath = repoPath.trim() + '/.gitignore';
-                        gitignoreFile = nova.fs.open(filePath);
-                        console.log(gitignoreFile.read());
+                            console.log('Workspace has Git repo at', repoPath.trim());
                         this.updateGitStatus();
                         watchTimeoutID = setTimeout(function () {
                             //
@@ -1504,7 +1505,19 @@ var App = /** @class */ (function () {
                                         console.log('Dont respond to config changes');
                                     return;
                                 }
-                                _this.updateGitStatus();
+                                // Check if file is ignored in Git
+                                _this.tabDataProvider.runProcess(_this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+                                    .then(function (status) {
+                                    if (nova.inDevMode())
+                                        console.log('Git ignored status', status);
+                                    // Update git status if changed file is not ignored
+                                    if (status === '1') {
+                                        _this.updateGitStatus();
+                                    }
+                                })
+                                    .catch(function (err) {
+                                    console.error('Could not check Git ignore status', err);
+                                });
                             }, 200);
                         });
                         return [2 /*return*/];
