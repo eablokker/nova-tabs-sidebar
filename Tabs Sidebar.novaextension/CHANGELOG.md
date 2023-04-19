@@ -1,3 +1,9 @@
+## v1.5.4 - 2023-04-18
+
+### Changed
+
+- Don't reload Git status if changed file is ignored by .gitignore
+
 ## v1.5.3 - 2022-10-28
 
 ### Added

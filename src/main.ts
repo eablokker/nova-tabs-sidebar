@@ -748,57 +748,77 @@ class App {
 		});
 	}
 
-	initFileWatcher() {
+	async initFileWatcher() {
 		// Don't watch files if workspace is not bound to folder
 		if (this.showGitStatus === 'never' || !nova.workspace.path) {
 			return;
 		}
 
 		// Find git executable
-		this.tabDataProvider.runProcess('/usr/bin/which', ['git'])
-			.then(result => {
-				this.gitPath = result.trim();
-
-				if (nova.inDevMode()) console.log('System has Git executable at', this.gitPath);
-
-				// Check if workspace has git repo
-				this.tabDataProvider.runProcess(this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse'])
-					.then(() => {
-						if (nova.inDevMode()) console.log('Workspace has Git repo');
-
-						this.updateGitStatus();
-
-						// Prevent excessive watch events
-						let watchTimeoutID = setTimeout(() => {
-							//
-						});
-
-						this.fileWatcher = nova.fs.watch(null, () => { /**/ });
-
-						this.fileWatcher.onDidChange(path => {
-							clearTimeout(watchTimeoutID);
-							watchTimeoutID = setTimeout(() => {
-								if (nova.inDevMode()) console.log('File changed', path);
-
-								const pathSplit = nova.path.split(nova.path.dirname(path));
-
-								// Don't respond to changes to nova config
-								if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-									if (nova.inDevMode()) console.log('Dont respond to config changes');
-									return;
-								}
-
-								this.updateGitStatus();
-							}, 200);
-						});
-					})
-					.catch(err => {
-						console.warn('Could not find Git repo in current workspace', err);
-					});
-			})
+		const gitPath = await this.tabDataProvider.runProcess('/usr/bin/which', ['git'])
 			.catch(err => {
 				console.error('Could not find git executable', err);
+				return null;
 			});
+
+		if (!gitPath) {
+			return;
+		}
+
+		this.gitPath = gitPath.trim();
+
+		if (nova.inDevMode()) console.log('System has Git executable at', this.gitPath);
+
+		// Check if workspace has git repo
+		const repoPath = await this.tabDataProvider.runProcess(this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse', '--show-toplevel'])
+			.catch(err => {
+				console.warn('Could not find Git repo in current workspace', err);
+				return null;
+			});
+
+		if (!repoPath) {
+			return;
+		}
+
+		if (nova.inDevMode()) console.log('Workspace has Git repo at', repoPath.trim());
+
+		this.updateGitStatus();
+
+		// Prevent excessive watch events
+		let watchTimeoutID = setTimeout(() => {
+			//
+		});
+
+		this.fileWatcher = nova.fs.watch(null, () => { /**/ });
+
+		this.fileWatcher.onDidChange(path => {
+			clearTimeout(watchTimeoutID);
+			watchTimeoutID = setTimeout(() => {
+				if (nova.inDevMode()) console.log('File changed', path);
+
+				const pathSplit = nova.path.split(nova.path.dirname(path));
+
+				// Don't respond to changes to nova config
+				if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+					if (nova.inDevMode()) console.log('Dont respond to config changes');
+					return;
+				}
+
+				// Check if file is ignored in Git
+				this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+					.then(status => {
+						if (nova.inDevMode()) console.log('Git ignored status', status);
+
+						// Update git status if changed file is not ignored
+						if (status === '1') {
+							this.updateGitStatus();
+						}
+					})
+					.catch(err => {
+						console.error('Could not check Git ignore status', err);
+					});
+			}, 200);
+		});
 	}
 
 	openRemoteTab(uri: string): Promise<TextEditor | null | undefined> {

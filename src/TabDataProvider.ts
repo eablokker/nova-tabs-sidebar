@@ -300,6 +300,11 @@ class TabDataProvider {
 			process.onDidExit(status => {
 				clearTimeout(timeoutID);
 
+				// Return error status when checking if file is ignored in Git
+				if (args[2] === 'check-ignore') {
+					resolve(status.toString());
+				}
+
 				if (status > 0) {
 					reject(new Error('Process returned error status ' + status + ' when executing ' + scriptPath + ' ' + args.join(' ')));
 				}
