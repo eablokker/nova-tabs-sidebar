@@ -45,6 +45,7 @@ class App {
 			'less': 'Less',
 			'lua': 'Lua',
 			'markdown': 'Markdown',
+			'objc': 'Objective-C',
 			'perl': 'Perl',
 			'php': 'PHP-HTML',
 			'python': 'Python',
