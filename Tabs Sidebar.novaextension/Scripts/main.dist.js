@@ -773,25 +773,30 @@ var TabDataProvider = /** @class */ (function () {
                 if (foundStatus) {
                     // console.log('status', foundStatus.status);
                     if (foundStatus.status.length && (this.app.showGitStatus === 'text' || this.app.showGitStatus === 'both')) {
-                        description_1 += '[' + foundStatus.status.trim() + '] ';
+                        description_1 += '[' + foundStatus.status.replace(' ', '•') + '] ';
                     }
                     if (this.app.showGitStatus === 'icon' || this.app.showGitStatus === 'both') {
                         switch (foundStatus.status) {
                             case ' M':
-                            case 'M ':
                             case 'MM':
                             case 'RM':
+                            case 'AM':
+                                item.image = 'git-modified-inverted';
+                                break;
+                            case 'M ':
                                 item.image = 'git-modified';
                                 break;
                             case 'A ':
-                            case 'AM':
                                 item.image = 'git-added';
                                 break;
                             case 'R ':
                                 item.image = 'git-renamed';
                                 break;
+                            case ' R':
+                                item.image = 'git-renamed-inverted';
+                                break;
                             case '??':
-                                item.image = 'git-untracked';
+                                item.image = 'git-untracked-inverted';
                                 break;
                         }
                     }
