@@ -1,3 +1,11 @@
+## v1.5.5 - 2023-05-20
+
+### Added
+
+- Dockerfile icon
+- Objective-C group name
+- Inverted Git status icons for working tree status
+
 ## v1.5.4 - 2023-04-18
 
 ### Changed
