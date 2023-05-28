@@ -840,6 +840,7 @@ var TabDataProvider = /** @class */ (function () {
     return TabDataProvider;
 }());
 
+var app;
 var App = /** @class */ (function () {
     function App() {
         this.openTabWhenFocusSidebar = true;
@@ -921,6 +922,10 @@ var App = /** @class */ (function () {
         });
         // TreeView implements the Disposable interface
         nova.subscriptions.add(this.treeView);
+    };
+    App.prototype.deactivate = function () {
+        var _a;
+        (_a = this.fileWatcher) === null || _a === void 0 ? void 0 : _a.dispose();
     };
     App.prototype.initConfig = function () {
         var _this = this;
@@ -1612,10 +1617,11 @@ var App = /** @class */ (function () {
 }());
 exports.activate = function () {
     // Do work when the extension is activated
-    new App();
+    app = new App();
 };
 exports.deactivate = function () {
     // Clean up state before the extension is deactivated
+    app.deactivate();
 };
 
 exports.App = App;

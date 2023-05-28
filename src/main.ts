@@ -1,5 +1,7 @@
 import { SyntaxNames, TabItem, FolderItem, TabDataProvider } from './TabDataProvider';
 
+let app: App;
+
 class App {
 	treeView: TreeView<TabItem | FolderItem | null>;
 	tabDataProvider: TabDataProvider;
@@ -106,6 +108,10 @@ class App {
 
 		// TreeView implements the Disposable interface
 		nova.subscriptions.add(this.treeView);
+	}
+
+	deactivate() {
+		this.fileWatcher?.dispose();
 	}
 
 	initConfig() {
@@ -911,11 +917,12 @@ class App {
 
 exports.activate = function() {
 	// Do work when the extension is activated
-	new App();
+	app = new App();
 };
 
 exports.deactivate = function() {
 	// Clean up state before the extension is deactivated
+	app.deactivate();
 };
 
 export { App };
