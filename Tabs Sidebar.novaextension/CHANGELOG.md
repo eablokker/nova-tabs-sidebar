@@ -1,3 +1,9 @@
+## v1.5.6 - 2023-05-28
+
+### Fixed
+
+- Attempt to fix extension crash message on Nova launch by stopping filesystem watcher before quit
+
 ## v1.5.5 - 2023-05-20
 
 ### Added
