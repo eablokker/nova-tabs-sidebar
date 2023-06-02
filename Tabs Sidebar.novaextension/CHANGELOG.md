@@ -1,3 +1,9 @@
+## v1.5.7 - 2023-06-01
+
+### Fixed
+
+- Attempt to fix extension service crash by delaying start of filesystem watcher on launch
+
 ## v1.5.6 - 2023-05-28
 
 ### Fixed
