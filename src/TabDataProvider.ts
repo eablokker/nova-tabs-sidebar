@@ -162,7 +162,7 @@ class TabDataProvider {
 				const tabIsClosed = documentTabs.every(tab => tab.uri !== child.uri);
 				const syntaxChanged = child.syntax && folder.syntax !== child.syntax;
 
-				console.log(folder.syntax, child.syntax);
+				// if (nova.inDevMode()) console.log(folder.syntax, child.syntax);
 
 				if (tabIsClosed || syntaxChanged) {
 					self2.splice(i2, 1);

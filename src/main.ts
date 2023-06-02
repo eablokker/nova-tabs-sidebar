@@ -794,7 +794,7 @@ class App {
 		// Prevent excessive watch events
 		let watchTimeoutID = setTimeout(() => {
 			//
-		});
+		}, 200);
 
 		this.fileWatcher = nova.fs.watch(null, () => { /**/ });
 

@@ -196,7 +196,7 @@ var TabDataProvider = /** @class */ (function () {
             folder.children.forEach(function (child, i2, self2) {
                 var tabIsClosed = documentTabs.every(function (tab) { return tab.uri !== child.uri; });
                 var syntaxChanged = child.syntax && folder.syntax !== child.syntax;
-                console.log(folder.syntax, child.syntax);
+                // if (nova.inDevMode()) console.log(folder.syntax, child.syntax);
                 if (tabIsClosed || syntaxChanged) {
                     self2.splice(i2, 1);
                 }
@@ -1505,7 +1505,7 @@ var App = /** @class */ (function () {
                         this.updateGitStatus();
                         watchTimeoutID = setTimeout(function () {
                             //
-                        });
+                        }, 200);
                         this.fileWatcher = nova.fs.watch(null, function () { });
                         this.fileWatcher.onDidChange(function (path) {
                             clearTimeout(watchTimeoutID);
