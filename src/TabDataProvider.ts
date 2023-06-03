@@ -902,7 +902,7 @@ class TabDataProvider {
 				const tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
 				parentFolder = decodeURI(tabDirArray[tabDirArray.length - 1]);
 
-				if (parentFolder !== '.Trash') {
+				if (parentFolder !== '.Trash' && isUnique) {
 					description += '‹ ' + parentFolder;
 				}
 			}
@@ -915,10 +915,18 @@ class TabDataProvider {
 					.reverse();
 
 				parentPathSplit
-					.filter(dir => dir.length)
+					// .filter(dir => dir.length)
 					.forEach((dir, i) => {
 						// Don't show trash folder as parent
 						if (i === 0 && dir === '.Trash') {
+							return;
+						}
+
+						// Make sure items with empty parent dir still show parent when
+						// always show parent option is enabled
+						if (this.app.alwaysShowParentFolder && !dir.length) {
+							dir = parentFolder;
+						} else if (!dir.length) {
 							return;
 						}
 

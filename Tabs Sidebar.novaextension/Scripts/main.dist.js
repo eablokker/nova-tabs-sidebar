@@ -697,6 +697,7 @@ var TabDataProvider = /** @class */ (function () {
         return element.parent;
     };
     TabDataProvider.prototype.getTreeItem = function (element) {
+        var _this = this;
         // Converts an element into its display (TreeItem) representation
         var item;
         if (element instanceof FolderItem) {
@@ -803,14 +804,14 @@ var TabDataProvider = /** @class */ (function () {
                 }
             }
             // Calculate parent folder path for description
-            var parentFolder = '';
+            var parentFolder_1 = '';
             var isUnique = this.isUniqueName(element);
             // Always show parent folder if config setting is toggled on
             if (this.app.alwaysShowParentFolder) {
                 var tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
-                parentFolder = decodeURI(tabDirArray[tabDirArray.length - 1]);
-                if (parentFolder !== '.Trash') {
-                    description_1 += '‹ ' + parentFolder;
+                parentFolder_1 = decodeURI(tabDirArray[tabDirArray.length - 1]);
+                if (parentFolder_1 !== '.Trash' && isUnique) {
+                    description_1 += '‹ ' + parentFolder_1;
                 }
             }
             // Show parent path if filename is not unique
@@ -820,10 +821,18 @@ var TabDataProvider = /** @class */ (function () {
                     .split('/')
                     .reverse();
                 parentPathSplit
-                    .filter(function (dir) { return dir.length; })
+                    // .filter(dir => dir.length)
                     .forEach(function (dir, i) {
                     // Don't show trash folder as parent
                     if (i === 0 && dir === '.Trash') {
+                        return;
+                    }
+                    // Make sure items with empty parent dir still show parent when
+                    // always show parent option is enabled
+                    if (_this.app.alwaysShowParentFolder && !dir.length) {
+                        dir = parentFolder_1;
+                    }
+                    else if (!dir.length) {
                         return;
                     }
                     description_1 += '‹ ' + dir + ' ';
