@@ -818,8 +818,12 @@ var TabDataProvider = /** @class */ (function () {
             if (!isUnique) {
                 var commonBasePath = this.getCommonBasePath(element);
                 var parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
-                    .split('/')
-                    .reverse();
+                    .split('/');
+                var separatorChar_1 = '/';
+                if (this.app.showParentPathInReverse) {
+                    parentPathSplit = parentPathSplit.reverse();
+                    separatorChar_1 = '‹';
+                }
                 parentPathSplit
                     // .filter(dir => dir.length)
                     .forEach(function (dir, i) {
@@ -835,7 +839,12 @@ var TabDataProvider = /** @class */ (function () {
                     else if (!dir.length) {
                         return;
                     }
-                    description_1 += '‹ ' + dir + ' ';
+                    if (i === 0 && !_this.app.showParentPathInReverse) {
+                        description_1 += '‹ ' + dir + ' ';
+                    }
+                    else {
+                        description_1 += separatorChar_1 + ' ' + dir + ' ';
+                    }
                 });
             }
             item.descriptiveText = description_1;
@@ -857,6 +866,7 @@ var App = /** @class */ (function () {
         this.openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
         this.showGitStatus = nova.config.get('eablokker.tabs-sidebar.show-git-status', 'string');
         this.alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'boolean');
+        this.showParentPathInReverse = nova.config.get('eablokker.tabs-sidebar.show-parent-path-reverse', 'boolean');
         this.showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
         this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
         this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
@@ -955,6 +965,10 @@ var App = /** @class */ (function () {
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', function (newVal, oldVal) {
             _this.alwaysShowParentFolder = newVal;
+            _this.treeView.reload();
+        });
+        nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', function (newVal, oldVal) {
+            _this.showParentPathInReverse = newVal;
             _this.treeView.reload();
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', function (newVal, oldVal) {

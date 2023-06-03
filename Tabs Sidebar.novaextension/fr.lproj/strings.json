@@ -26,6 +26,9 @@
 	"Always show parent folder next to file name": "Toujours afficher le dossier parent à côté du nom du fichier",
 	"When disabled, parent folder will only be shown if multiple files with the same name are opened.": "Lorsqu'il est désactivé, le dossier parent ne s'affiche que si plusieurs fichiers portant le même nom sont ouverts.",
 
+	"Show parent folder paths in reverse order": "Afficher le chemin du dossier parent dans l'ordre inverse",
+	"When disabled, parent folder paths will display in forward order.": "Lorsqu'il est désactivé, le chemin du dossier parent s'affichera dans l'ordre direct.",
+
 	"Show files count when grouping by kind": "Afficher le nombre de fichiers lors du regroupement par type",
 	"Enable to show the number of files in each group next to the group's name.": "Activez cette option pour afficher le nombre de fichiers dans chaque groupe à côté du nom du groupe.",
 

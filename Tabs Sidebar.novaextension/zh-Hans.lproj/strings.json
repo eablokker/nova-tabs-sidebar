@@ -26,6 +26,9 @@
 	"Always show parent folder next to file name": "始终在文件名旁边显示父文件夹",
 	"When disabled, parent folder will only be shown if multiple files with the same name are opened.": "禁用时，仅当打开多个同名文件时才会显示父文件夹。",
 
+	"Show parent folder paths in reverse order": "以相反的顺序显示父文件夹路径",
+	"When disabled, parent folder paths will display in forward order.": "禁用时，父文件夹路径将按正序显示。",
+
 	"Show files count when grouping by kind": "按种类分组时显示文件数",
 	"Enable to show the number of files in each group next to the group's name.": "启用以在组名称旁边显示每个组中的文件数。",
 

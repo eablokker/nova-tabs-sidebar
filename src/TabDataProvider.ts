@@ -910,9 +910,14 @@ class TabDataProvider {
 			// Show parent path if filename is not unique
 			if (!isUnique) {
 				const commonBasePath = this.getCommonBasePath(element);
-				const parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
-					.split('/')
-					.reverse();
+				let parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
+					.split('/');
+				let separatorChar = '/';
+
+				if (this.app.showParentPathInReverse) {
+					parentPathSplit = parentPathSplit.reverse();
+					separatorChar = '‹';
+				}
 
 				parentPathSplit
 					// .filter(dir => dir.length)
@@ -930,7 +935,11 @@ class TabDataProvider {
 							return;
 						}
 
-						description += '‹ ' + dir + ' ';
+						if (i === 0 && !this.app.showParentPathInReverse) {
+							description += '‹ ' + dir + ' ';
+						} else {
+							description += separatorChar + ' ' + dir + ' ';
+						}
 					});
 			}
 

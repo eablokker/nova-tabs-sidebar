@@ -3,7 +3,7 @@
     "name": "Tabs Sidebar",
     "organization": "Austen Blokker",
     "description": "Manage open document tabs from the sidebar.",
-    "version": "1.5.7",
+    "version": "1.5.8",
     "categories": ["sidebars"],
     "license": "MIT",
     "repository": "https://github.com/eablokker/nova-tabs-sidebar",
@@ -203,6 +203,13 @@
             "description": "When disabled, parent folder will only be shown if multiple files with the same name are opened.",
             "type": "boolean",
             "default": false
+        },
+        {
+            "key": "eablokker.tabs-sidebar.show-parent-path-reverse",
+            "title": "Show parent folder paths in reverse order",
+            "description": "When disabled, parent folder paths will display in forward order.",
+            "type": "boolean",
+            "default": true
         },
         {
             "key": "eablokker.tabs-sidebar.show-group-count",

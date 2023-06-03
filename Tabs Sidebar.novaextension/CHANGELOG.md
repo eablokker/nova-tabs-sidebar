@@ -1,3 +1,13 @@
+## v1.5.8 - 2023-06-03
+
+### Added
+
+- Preference to show folder path in forward or reverse order
+
+### Fixed
+
+- Parent folder displaying twice in sidebar when always show parent folder option is selected
+
 ## v1.5.7 - 2023-06-01
 
 ### Fixed

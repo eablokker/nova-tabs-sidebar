@@ -13,6 +13,7 @@ class App {
 	openOnSingleClick: boolean | null;
 	showGitStatus: string | null;
 	alwaysShowParentFolder: boolean | null;
+	showParentPathInReverse: boolean | null;
 	showGroupCount: boolean | null;
 	unsavedSymbol: string | null;
 	unsavedSymbolLocation: string | null;
@@ -27,6 +28,7 @@ class App {
 		this.openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
 		this.showGitStatus = nova.config.get('eablokker.tabs-sidebar.show-git-status', 'string');
 		this.alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'boolean');
+		this.showParentPathInReverse = nova.config.get('eablokker.tabs-sidebar.show-parent-path-reverse', 'boolean');
 		this.showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
 		this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
 		this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
@@ -134,6 +136,12 @@ class App {
 
 		nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal: boolean, oldVal: boolean) => {
 			this.alwaysShowParentFolder = newVal;
+
+			this.treeView.reload();
+		});
+
+		nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', (newVal: boolean, oldVal: boolean) => {
+			this.showParentPathInReverse = newVal;
 
 			this.treeView.reload();
 		});
