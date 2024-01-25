@@ -785,6 +785,14 @@ class TabDataProvider {
 				item.image = '__filetype.blank';
 			}
 
+			if (element.syntax === 'ruby') {
+				item.image = '__filetype.rb';
+			}
+
+			// if (element.syntax === 'objcpp') {
+			// 	item.image = '__filetype.objcpp';
+			// }
+
 			item.tooltip = '';
 
 			let collapsibleState = TreeItemCollapsibleState.Expanded;

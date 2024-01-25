@@ -50,6 +50,7 @@ class App {
 			'lua': 'Lua',
 			'markdown': 'Markdown',
 			'objc': 'Objective-C',
+			'objcpp': 'Objective-C++',
 			'perl': 'Perl',
 			'php': 'PHP-HTML',
 			'python': 'Python',

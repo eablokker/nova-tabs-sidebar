@@ -1,3 +1,10 @@
+## v1.5.9 - 2024-12-25
+
+### Added
+
+- Objective-C++ folder name
+- Ruby folder icon when grouping by kind
+
 ## v1.5.8 - 2023-06-03
 
 ### Added

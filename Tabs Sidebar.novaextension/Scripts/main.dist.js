@@ -712,6 +712,12 @@ var TabDataProvider = /** @class */ (function () {
             if (element.syntax === 'plaintext') {
                 item.image = '__filetype.blank';
             }
+            if (element.syntax === 'ruby') {
+                item.image = '__filetype.rb';
+            }
+            // if (element.syntax === 'objcpp') {
+            // 	item.image = '__filetype.objcpp';
+            // }
             item.tooltip = '';
             var collapsibleState = TreeItemCollapsibleState.Expanded;
             if (this.collapsedKindGroups.indexOf(element.syntax || '') > -1) {
@@ -887,6 +893,7 @@ var App = /** @class */ (function () {
             'lua': 'Lua',
             'markdown': 'Markdown',
             'objc': 'Objective-C',
+            'objcpp': 'Objective-C++',
             'perl': 'Perl',
             'php': 'PHP-HTML',
             'python': 'Python',
