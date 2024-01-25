@@ -1045,10 +1045,11 @@ var App = /** @class */ (function () {
                     .catch(function (err) {
                     console.error('Could not reload treeView.', err);
                 });
-            }, 1);
+            }, 100);
             // Remove tab from sidebar when editor closed
             editor.onDidDestroy(function (destroyedEditor) {
-                //console.log('Document closed');
+                if (nova.inDevMode())
+                    console.log('Document closed');
                 setTimeout(function () {
                     var reload;
                     var folder = _this.tabDataProvider.getFolderBySyntax(destroyedEditor.document.syntax || 'plaintext');
@@ -1070,7 +1071,7 @@ var App = /** @class */ (function () {
                         .catch(function (err) {
                         console.error('Could not reload treeView.', err);
                     });
-                }, 1);
+                }, 100);
             });
             // Focus tab in sidebar when clicking in document
             editor.onDidChangeSelection(function (changedEditor) {
@@ -1595,7 +1596,7 @@ var App = /** @class */ (function () {
                 setTimeout(function () {
                     var editor = nova.workspace.activeTextEditor;
                     resolve(editor);
-                }, 1);
+                }, 100);
             })
                 .catch(function (err) {
                 console.error('Could not click project item by filename.', err);

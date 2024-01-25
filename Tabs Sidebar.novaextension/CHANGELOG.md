@@ -1,9 +1,13 @@
-## v1.5.9 - 2024-12-25
+## v1.5.10 - 2024-12-25
 
 ### Added
 
 - Objective-C++ folder name
 - Ruby folder icon when grouping by kind
+
+### Fixed
+
+- Attempt to fix documents in sidebar not updating properly when adding/removing editors
 
 ## v1.5.8 - 2023-06-03
 
