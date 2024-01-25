@@ -1090,11 +1090,15 @@ var App = /** @class */ (function () {
                 }
             });
             editor.onDidStopChanging(function (changedEditor) {
-                //console.log('Document stopped changing');
-                var element = _this.tabDataProvider.getElementByUri(editor.document.uri);
+                if (nova.inDevMode())
+                    console.log('Document did stop changing');
+                if (changedEditor.document.isUntitled) {
+                    return;
+                }
+                var element = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
                 _this.focusedTab = element;
                 if (element) {
-                    element.isDirty = editor.document.isDirty;
+                    element.isDirty = changedEditor.document.isDirty;
                 }
                 _this.treeView.reload(_this.focusedTab)
                     .then(function () {
@@ -1106,19 +1110,24 @@ var App = /** @class */ (function () {
             });
             // Focus tab in sidebar when saving document
             editor.onDidSave(function (savedEditor) {
-                //console.log('Document saved');
-                var element = _this.tabDataProvider.getElementByUri(savedEditor.document.uri);
-                _this.focusedTab = element;
-                if (element) {
-                    element.isDirty = editor.document.isDirty;
-                }
-                _this.treeView.reload(_this.focusedTab)
-                    .then(function () {
-                    _this.highlightTab(_this.focusedTab || null, { focus: true });
-                })
-                    .catch(function (err) {
-                    console.error('Could not reload treeView.', err);
-                });
+                if (nova.inDevMode())
+                    console.log('Document did save');
+                setTimeout(function () {
+                    var element = _this.tabDataProvider.getElementByUri(savedEditor.document.uri);
+                    _this.focusedTab = element;
+                    if (element) {
+                        element.isDirty = editor.document.isDirty;
+                    }
+                    // Refresh tab data
+                    _this.tabDataProvider.loadData(nova.workspace.textDocuments, element);
+                    _this.treeView.reload(_this.focusedTab)
+                        .then(function () {
+                        _this.highlightTab(_this.focusedTab || null, { focus: true });
+                    })
+                        .catch(function (err) {
+                        console.error('Could not reload treeView.', err);
+                    });
+                }, 100);
             });
             var document = editor.document;
             document.onDidChangePath(function (changedDocument, path) {

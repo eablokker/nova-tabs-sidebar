@@ -280,13 +280,17 @@ class App {
 			});
 
 			editor.onDidStopChanging(changedEditor => {
-				//console.log('Document stopped changing');
+				if (nova.inDevMode()) console.log('Document did stop changing');
 
-				const element = this.tabDataProvider.getElementByUri(editor.document.uri);
+				if (changedEditor.document.isUntitled) {
+					return;
+				}
+
+				const element = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
 				this.focusedTab = element;
 
 				if (element) {
-					element.isDirty = editor.document.isDirty;
+					element.isDirty = changedEditor.document.isDirty;
 				}
 
 				this.treeView.reload(this.focusedTab)
@@ -300,22 +304,27 @@ class App {
 
 			// Focus tab in sidebar when saving document
 			editor.onDidSave(savedEditor => {
-				//console.log('Document saved');
+				if (nova.inDevMode()) console.log('Document did save');
 
-				const element = this.tabDataProvider.getElementByUri(savedEditor.document.uri);
-				this.focusedTab = element;
+				setTimeout(() => {
+					const element = this.tabDataProvider.getElementByUri(savedEditor.document.uri);
+					this.focusedTab = element;
 
-				if (element) {
-					element.isDirty = editor.document.isDirty;
-				}
+					if (element) {
+						element.isDirty = editor.document.isDirty;
+					}
 
-				this.treeView.reload(this.focusedTab)
-					.then(() => {
-						this.highlightTab(this.focusedTab || null, { focus: true });
-					})
-					.catch(err => {
-						console.error('Could not reload treeView.', err);
-					});
+					// Refresh tab data
+					this.tabDataProvider.loadData(nova.workspace.textDocuments, element);
+
+					this.treeView.reload(this.focusedTab)
+						.then(() => {
+							this.highlightTab(this.focusedTab || null, { focus: true });
+						})
+						.catch(err => {
+							console.error('Could not reload treeView.', err);
+						});
+				}, 100);
 			});
 
 			const document = editor.document;

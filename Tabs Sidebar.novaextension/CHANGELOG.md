@@ -1,4 +1,4 @@
-## v1.5.10 - 2024-12-25
+## v1.5.11 - 2024-12-25
 
 ### Added
 
@@ -8,6 +8,7 @@
 ### Fixed
 
 - Attempt to fix documents in sidebar not updating properly when adding/removing editors
+- Fix tree view reloading every time new untitled document is edited
 
 ## v1.5.8 - 2023-06-03
 
