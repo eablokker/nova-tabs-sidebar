@@ -33,6 +33,44 @@ function __extends(d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
 
+function __awaiter(thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
+
+function __generator(thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+}
+
 var ListItem = /** @class */ (function () {
     function ListItem(name, identifier) {
         this.name = name;
@@ -211,7 +249,7 @@ var TabDataProvider = /** @class */ (function () {
             folder.children.forEach(function (child, i2, self2) {
                 var tabIsClosed = documentTabs.every(function (tab) { return tab.uri !== child.uri; });
                 var syntaxChanged = child.syntax && folder.syntax !== child.syntax;
-                // console.log(folder.syntax, child.syntax);
+                // if (nova.inDevMode()) console.log(folder.syntax, child.syntax);
                 if (tabIsClosed || syntaxChanged) {
                     self2.splice(i2, 1);
                 }
@@ -525,6 +563,10 @@ var TabDataProvider = /** @class */ (function () {
             }, timeout);
             process.onDidExit(function (status) {
                 clearTimeout(timeoutID);
+                // Return error status when checking if file is ignored in Git
+                if (args[2] === 'check-ignore') {
+                    resolve(status.toString());
+                }
                 if (status > 0) {
                     reject(new Error('Process returned error status ' + status + ' when executing ' + scriptPath + ' ' + args.join(' ')));
                 }
@@ -947,6 +989,7 @@ var TabDataProvider = /** @class */ (function () {
         return element.parent;
     };
     TabDataProvider.prototype.getTreeItem = function (element) {
+        var _this = this;
         // Converts an element into its display (TreeItem) representation
         var item;
         // console.log('id:', element.identifier);
@@ -959,8 +1002,9 @@ var TabDataProvider = /** @class */ (function () {
             if (!element.extension) {
                 item.image = '__filetype.blank';
             }
-            if (element.syntax === 'plaintext') {
-                item.image = '__filetype.blank';
+            var syntaxImage = this.app.syntaxImages[element.syntax];
+            if (syntaxImage) {
+                item.image = syntaxImage;
             }
             if (element.image) {
                 item.image = element.image;
@@ -1037,55 +1081,77 @@ var TabDataProvider = /** @class */ (function () {
                 if (foundStatus) {
                     // console.log('status', foundStatus.status);
                     if (foundStatus.status.length && (this.app.showGitStatus === 'text' || this.app.showGitStatus === 'both')) {
-                        description_1 += '[' + foundStatus.status.trim() + '] ';
+                        description_1 += '[' + foundStatus.status.replace(' ', '•') + '] ';
                     }
                     if (this.app.showGitStatus === 'icon' || this.app.showGitStatus === 'both') {
                         switch (foundStatus.status) {
                             case ' M':
-                            case 'M ':
                             case 'MM':
                             case 'RM':
+                            case 'AM':
+                                item.image = 'git-modified-inverted';
+                                break;
+                            case 'M ':
                                 item.image = 'git-modified';
                                 break;
                             case 'A ':
-                            case 'AM':
                                 item.image = 'git-added';
                                 break;
                             case 'R ':
                                 item.image = 'git-renamed';
                                 break;
+                            case ' R':
+                                item.image = 'git-renamed-inverted';
+                                break;
                             case '??':
-                                item.image = 'git-untracked';
+                                item.image = 'git-untracked-inverted';
                                 break;
                         }
                     }
                 }
             }
             // Calculate parent folder path for description
-            var parentFolder = '';
+            var parentFolder_1 = '';
             var isUnique = this.isUniqueName(element);
             // Always show parent folder if config setting is toggled on, unless grouping by folder
             if (this.groupBy !== 'folder' && this.app.alwaysShowParentFolder) {
                 var tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
-                parentFolder = decodeURI(tabDirArray[tabDirArray.length - 1]);
-                if (parentFolder !== '.Trash') {
-                    description_1 += '‹ ' + parentFolder;
+                parentFolder_1 = decodeURI(tabDirArray[tabDirArray.length - 1]);
+                if (parentFolder_1 !== '.Trash' && isUnique) {
+                    description_1 += '‹ ' + parentFolder_1;
                 }
             }
             // Show parent path if filename is not unique, unless grouping by folder
             if (this.groupBy !== 'folder' && !isUnique) {
                 var commonBasePath = this.getCommonBasePath(element);
                 var parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
-                    .split('/')
-                    .reverse();
+                    .split('/');
+                var separatorChar_1 = '/';
+                if (this.app.showParentPathInReverse) {
+                    parentPathSplit = parentPathSplit.reverse();
+                    separatorChar_1 = '‹';
+                }
                 parentPathSplit
-                    .filter(function (dir) { return dir.length; })
+                    // .filter(dir => dir.length)
                     .forEach(function (dir, i) {
                     // Don't show trash folder as parent
                     if (i === 0 && dir === '.Trash') {
                         return;
                     }
-                    description_1 += '‹ ' + dir + ' ';
+                    // Make sure items with empty parent dir still show parent when
+                    // always show parent option is enabled
+                    if (_this.app.alwaysShowParentFolder && !dir.length) {
+                        dir = parentFolder_1;
+                    }
+                    else if (!dir.length) {
+                        return;
+                    }
+                    if (i === 0 && !_this.app.showParentPathInReverse) {
+                        description_1 += '‹ ' + dir + ' ';
+                    }
+                    else {
+                        description_1 += separatorChar_1 + ' ' + dir + ' ';
+                    }
                 });
             }
             item.descriptiveText = description_1;
@@ -1099,6 +1165,7 @@ var TabDataProvider = /** @class */ (function () {
     return TabDataProvider;
 }());
 
+var app;
 var App = /** @class */ (function () {
     function App() {
         this.openTabWhenFocusSidebar = true;
@@ -1106,6 +1173,7 @@ var App = /** @class */ (function () {
         this.openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
         this.showGitStatus = nova.config.get('eablokker.tabs-sidebar.show-git-status', 'string');
         this.alwaysShowParentFolder = nova.config.get('eablokker.tabs-sidebar.always-show-parent-folder', 'boolean');
+        this.showParentPathInReverse = nova.config.get('eablokker.tabs-sidebar.show-parent-path-reverse', 'boolean');
         this.showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
         this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
         this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
@@ -1116,11 +1184,14 @@ var App = /** @class */ (function () {
         this.syntaxNames = {
             'plaintext': nova.localize('Plain Text'),
             'coffeescript': 'CoffeeScript',
+            'cpp': 'C++',
             'css': 'CSS',
             'diff': 'Diff',
             'erb': 'ERB',
             'haml': 'Haml',
             'html': 'HTML',
+            'html+ejs': 'HTML + EJS',
+            'html+erb': 'HTML + ERB',
             'ini': 'INI',
             'javascript': 'JavaScript',
             'json': 'JSON',
@@ -1128,6 +1199,8 @@ var App = /** @class */ (function () {
             'less': 'Less',
             'lua': 'Lua',
             'markdown': 'Markdown',
+            'objc': 'Objective-C',
+            'objcpp': 'Objective-C++',
             'perl': 'Perl',
             'php': 'PHP-HTML',
             'python': 'Python',
@@ -1137,6 +1210,7 @@ var App = /** @class */ (function () {
             'shell': 'Shell Script',
             'smarty': 'Smarty',
             'sql': 'SQL',
+            'tsq': 'Tree Sitter Query',
             'tsx': 'TSX',
             'twig': 'Twig-HTML',
             'twig-markdown': 'Twig-Markdown',
@@ -1144,6 +1218,39 @@ var App = /** @class */ (function () {
             'vue': 'Vue',
             'xml': 'XML',
             'yaml': 'YAML'
+        };
+        this.syntaxImages = {
+            'plaintext': '__filetype.blank',
+            'c': '__filetype.c',
+            'cpp': '__filetype.cc',
+            'css': '__filetype.css',
+            'diff': '__filetype.diff',
+            'html': '__filetype.html',
+            'html+ejs': '__filetype.ejs',
+            'html+erb': '__filetype.erb',
+            'ini': '__filetype.ini',
+            'javascript': '__filetype.js',
+            'json': '__filetype.json',
+            'less': '__filetype.less',
+            'lua': '__filetype.lua',
+            'markdown': '__filetype.md',
+            'objc': '__filetype.m',
+            'objcpp': '__filetype.mm',
+            'perl': '__filetype.pl',
+            'php': '__filetype.php',
+            'python': '__filetype.py',
+            'ruby': '__filetype.rb',
+            'sass': '__filetype.sass',
+            'scss': '__filetype.scss',
+            'shell': '__filetype.sh',
+            'sql': '__filetype.sql',
+            'swift': '__filetype.swift',
+            'tsx': '__filetype.tsx',
+            'typescript': '__filetype.ts',
+            'typescript-cts': '__filetype.ts',
+            'typescript-mts': '__filetype.ts',
+            'xml': '__filetype.xml',
+            'yaml': '__filetype.yml'
         };
         this.tabDataProvider = new TabDataProvider(this);
         this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
@@ -1183,6 +1290,10 @@ var App = /** @class */ (function () {
         // TreeView implements the Disposable interface
         nova.subscriptions.add(this.treeView);
     };
+    App.prototype.deactivate = function () {
+        var _a;
+        (_a = this.fileWatcher) === null || _a === void 0 ? void 0 : _a.dispose();
+    };
     App.prototype.initConfig = function () {
         var _this = this;
         // Watch for config changes
@@ -1202,6 +1313,10 @@ var App = /** @class */ (function () {
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', function (newVal, oldVal) {
             _this.alwaysShowParentFolder = newVal;
+            _this.treeView.reload();
+        });
+        nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', function (newVal, oldVal) {
+            _this.showParentPathInReverse = newVal;
             _this.treeView.reload();
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', function (newVal, oldVal) {
@@ -1271,10 +1386,11 @@ var App = /** @class */ (function () {
                     .catch(function (err) {
                     console.error('Could not reload treeView.', err);
                 });
-            }, 1);
+            }, 100);
             // Remove tab from sidebar when editor closed
             editor.onDidDestroy(function (destroyedEditor) {
-                //console.log('Document closed');
+                if (nova.inDevMode())
+                    console.log('Document closed');
                 setTimeout(function () {
                     var reload;
                     var folder = _this.tabDataProvider.getFolderBySyntax(destroyedEditor.document.syntax || 'plaintext');
@@ -1296,7 +1412,7 @@ var App = /** @class */ (function () {
                         .catch(function (err) {
                         console.error('Could not reload treeView.', err);
                     });
-                }, 1);
+                }, 100);
             });
             // Focus tab in sidebar when clicking in document
             editor.onDidChangeSelection(function (changedEditor) {
@@ -1315,11 +1431,15 @@ var App = /** @class */ (function () {
                 }
             });
             editor.onDidStopChanging(function (changedEditor) {
-                //console.log('Document stopped changing');
-                var element = _this.tabDataProvider.getElementByUri(editor.document.uri);
+                if (nova.inDevMode())
+                    console.log('Document did stop changing');
+                if (changedEditor.document.isUntitled) {
+                    return;
+                }
+                var element = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
                 _this.focusedTab = element;
                 if (element) {
-                    element.isDirty = editor.document.isDirty;
+                    element.isDirty = changedEditor.document.isDirty;
                 }
                 _this.treeView.reload(_this.focusedTab)
                     .then(function () {
@@ -1331,19 +1451,24 @@ var App = /** @class */ (function () {
             });
             // Focus tab in sidebar when saving document
             editor.onDidSave(function (savedEditor) {
-                //console.log('Document saved');
-                var element = _this.tabDataProvider.getElementByUri(savedEditor.document.uri);
-                _this.focusedTab = element;
-                if (element) {
-                    element.isDirty = editor.document.isDirty;
-                }
-                _this.treeView.reload(_this.focusedTab)
-                    .then(function () {
-                    _this.highlightTab(_this.focusedTab || null, { focus: true });
-                })
-                    .catch(function (err) {
-                    console.error('Could not reload treeView.', err);
-                });
+                if (nova.inDevMode())
+                    console.log('Document did save');
+                setTimeout(function () {
+                    var element = _this.tabDataProvider.getElementByUri(savedEditor.document.uri);
+                    _this.focusedTab = element;
+                    if (element) {
+                        element.isDirty = editor.document.isDirty;
+                    }
+                    // Refresh tab data
+                    _this.tabDataProvider.loadData(nova.workspace.textDocuments, element);
+                    _this.treeView.reload(_this.focusedTab)
+                        .then(function () {
+                        _this.highlightTab(_this.focusedTab || null, { focus: true });
+                    })
+                        .catch(function (err) {
+                        console.error('Could not reload treeView.', err);
+                    });
+                }, 100);
             });
             var document = editor.document;
             document.onDidChangePath(function (changedDocument, path) {
@@ -1773,50 +1898,76 @@ var App = /** @class */ (function () {
         });
     };
     App.prototype.initFileWatcher = function () {
-        var _this = this;
-        // Don't watch files if workspace is not bound to folder
-        if (this.showGitStatus === 'never' || !nova.workspace.path) {
-            return;
-        }
-        // Find git executable
-        this.tabDataProvider.runProcess('/usr/bin/which', ['git'])
-            .then(function (result) {
-            _this.gitPath = result.trim();
-            if (nova.inDevMode())
-                console.log('System has Git executable at', _this.gitPath);
-            // Check if workspace has git repo
-            _this.tabDataProvider.runProcess(_this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse'])
-                .then(function () {
-                if (nova.inDevMode())
-                    console.log('Workspace has Git repo');
-                _this.updateGitStatus();
-                // Prevent excessive watch events
-                var watchTimeoutID = setTimeout(function () {
-                    //
-                });
-                _this.fileWatcher = nova.fs.watch(null, function () { });
-                _this.fileWatcher.onDidChange(function (path) {
-                    clearTimeout(watchTimeoutID);
-                    watchTimeoutID = setTimeout(function () {
-                        if (nova.inDevMode())
-                            console.log('File changed', path);
-                        var pathSplit = nova.path.split(nova.path.dirname(path));
-                        // Don't respond to changes to nova config
-                        if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-                            if (nova.inDevMode())
-                                console.log('Dont respond to config changes');
-                            return;
+        return __awaiter(this, void 0, void 0, function () {
+            var gitPath, repoPath, watchTimeoutID;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        // Don't watch files if workspace is not bound to folder
+                        if (this.showGitStatus === 'never' || !nova.workspace.path) {
+                            return [2 /*return*/];
                         }
-                        _this.updateGitStatus();
-                    }, 200);
-                });
-            })
-                .catch(function (err) {
-                console.warn('Could not find Git repo in current workspace', err);
+                        return [4 /*yield*/, this.tabDataProvider.runProcess('/usr/bin/which', ['git'])
+                                .catch(function (err) {
+                                console.error('Could not find git executable', err);
+                                return null;
+                            })];
+                    case 1:
+                        gitPath = _a.sent();
+                        if (!gitPath) {
+                            return [2 /*return*/];
+                        }
+                        this.gitPath = gitPath.trim();
+                        if (nova.inDevMode())
+                            console.log('System has Git executable at', this.gitPath);
+                        return [4 /*yield*/, this.tabDataProvider.runProcess(this.gitPath, ['-C', nova.workspace.path || '', 'rev-parse', '--show-toplevel'])
+                                .catch(function (err) {
+                                console.warn('Could not find Git repo in current workspace', err);
+                                return null;
+                            })];
+                    case 2:
+                        repoPath = _a.sent();
+                        if (!repoPath) {
+                            return [2 /*return*/];
+                        }
+                        if (nova.inDevMode())
+                            console.log('Workspace has Git repo at', repoPath.trim());
+                        this.updateGitStatus();
+                        watchTimeoutID = setTimeout(function () {
+                            //
+                        }, 200);
+                        this.fileWatcher = nova.fs.watch(null, function () { });
+                        this.fileWatcher.onDidChange(function (path) {
+                            clearTimeout(watchTimeoutID);
+                            watchTimeoutID = setTimeout(function () {
+                                if (nova.inDevMode())
+                                    console.log('File changed', path);
+                                var pathSplit = nova.path.split(nova.path.dirname(path));
+                                // Don't respond to changes to nova config
+                                if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+                                    if (nova.inDevMode())
+                                        console.log('Dont respond to config changes');
+                                    return;
+                                }
+                                // Check if file is ignored in Git
+                                _this.tabDataProvider.runProcess(_this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+                                    .then(function (status) {
+                                    if (nova.inDevMode())
+                                        console.log('Git ignored status', status);
+                                    // Update git status if changed file is not ignored
+                                    if (status === '1') {
+                                        _this.updateGitStatus();
+                                    }
+                                })
+                                    .catch(function (err) {
+                                    console.error('Could not check Git ignore status', err);
+                                });
+                            }, 200);
+                        });
+                        return [2 /*return*/];
+                }
             });
-        })
-            .catch(function (err) {
-            console.error('Could not find git executable', err);
         });
     };
     App.prototype.openRemoteTab = function (uri) {
@@ -1845,7 +1996,7 @@ var App = /** @class */ (function () {
                 setTimeout(function () {
                     var editor = nova.workspace.activeTextEditor;
                     resolve(editor);
-                }, 1);
+                }, 100);
             })
                 .catch(function (err) {
                 console.error('Could not click project item by filename.', err);
@@ -1897,10 +2048,11 @@ var App = /** @class */ (function () {
 }());
 exports.activate = function () {
     // Do work when the extension is activated
-    new App();
+    app = new App();
 };
 exports.deactivate = function () {
     // Clean up state before the extension is deactivated
+    app.deactivate();
 };
 
 exports.App = App;
