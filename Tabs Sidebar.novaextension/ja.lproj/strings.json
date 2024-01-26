@@ -36,6 +36,9 @@
 	"Always show parent folder next to file name": "ファイル名の横に常に親フォルダーを表示する",
 	"When disabled, parent folder will only be shown if multiple files with the same name are opened.": "無効にすると、同じ名前の複数のファイルが開かれている場合にのみ、親フォルダーが表示されます。",
 
+	"Show parent folder paths in reverse order": "親フォルダのパスを逆順で表示する",
+	"When disabled, parent folder paths will display in forward order.": "無効にすると、親フォルダのパスは順方向で表示されます。",
+
 	"Show files count when grouping by kind": "種類別にグループ化するときにファイル数を表示する",
 	"Enable to show the number of files in each group next to the group's name.": "グループ名の横に各グループのファイル数を表示できるようにします。",
 

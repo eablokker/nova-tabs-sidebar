@@ -1,4 +1,4 @@
-## v1.6.0 - 2022-11-25
+## v1.6.0 - 2024-12-26
 
 ### Added
 
@@ -10,6 +10,56 @@
 ### Changed
 
 - Disabled open/close context menu items on type group folders
+
+## v1.5.12 - 2024-12-25
+
+### Added
+
+- Objective-C++ folder name
+- Ruby folder icon when grouping by kind
+- Add syntax icons for group folders when file extension doesn't match syntax
+
+### Fixed
+
+- Attempt to fix documents in sidebar not updating properly when adding/removing editors
+- Fix tree view reloading every time new untitled document is edited
+- Disable Show In... and Copy Path context menu items for group folders
+
+## v1.5.8 - 2023-06-03
+
+### Added
+
+- Preference to show folder path in forward or reverse order
+
+### Fixed
+
+- Parent folder displaying twice in sidebar when always show parent folder option is selected
+
+## v1.5.7 - 2023-06-01
+
+### Fixed
+
+- Attempt to fix extension service crash by delaying start of filesystem watcher on launch
+
+## v1.5.6 - 2023-05-28
+
+### Fixed
+
+- Attempt to fix extension crash message on Nova launch by stopping filesystem watcher before quit
+
+## v1.5.5 - 2023-05-20
+
+### Added
+
+- Dockerfile icon
+- Objective-C group name
+- Inverted Git status icons for working tree status
+
+## v1.5.4 - 2023-04-18
+
+### Changed
+
+- Don't reload Git status if changed file is ignored by .gitignore
 
 ## v1.5.3 - 2022-10-28
 

@@ -10,6 +10,7 @@
 - [x] Custom ordering for grouped by kind
 - [x] Update list when syntax changed
 - [x] Group by folder option
+- [x] Ignore changed files in .gitignore for git change watcher
 - [ ] When switching to remote tab with same name as local, check if active document is remote and switch to next one
 - [ ] Update list when file is moved
 - [ ] Show loading indicator when AppleScript action is waiting to finish

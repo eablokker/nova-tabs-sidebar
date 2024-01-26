@@ -6,6 +6,7 @@ type GitStatus = {
 };
 
 type SyntaxNames = {[name: string]: string};
+type SyntaxImages = {[name: string]: string};
 
 class ListItem {
 	name: string;
@@ -228,7 +229,7 @@ class TabDataProvider {
 				const tabIsClosed = documentTabs.every(tab => tab.uri !== child.uri);
 				const syntaxChanged = child.syntax && folder.syntax !== child.syntax;
 
-				// console.log(folder.syntax, child.syntax);
+				// if (nova.inDevMode()) console.log(folder.syntax, child.syntax);
 
 				if (tabIsClosed || syntaxChanged) {
 					self2.splice(i2, 1);
@@ -621,6 +622,11 @@ class TabDataProvider {
 
 			process.onDidExit(status => {
 				clearTimeout(timeoutID);
+
+				// Return error status when checking if file is ignored in Git
+				if (args[2] === 'check-ignore') {
+					resolve(status.toString());
+				}
 
 				if (status > 0) {
 					reject(new Error('Process returned error status ' + status + ' when executing ' + scriptPath + ' ' + args.join(' ')));
@@ -1144,8 +1150,10 @@ class TabDataProvider {
 				item.image = '__filetype.blank';
 			}
 
-			if (element.syntax === 'plaintext') {
-				item.image = '__filetype.blank';
+			const syntaxImage = this.app.syntaxImages[element.syntax as keyof SyntaxImages];
+
+			if (syntaxImage) {
+				item.image = syntaxImage;
 			}
 
 			if (element.image) {
@@ -1242,26 +1250,31 @@ class TabDataProvider {
 					// console.log('status', foundStatus.status);
 
 					if (foundStatus.status.length && (this.app.showGitStatus === 'text' || this.app.showGitStatus === 'both')) {
-						description += '[' + foundStatus.status.trim() + '] ';
+						description += '[' + foundStatus.status.replace(' ', '•') + '] ';
 					}
 
 					if (this.app.showGitStatus === 'icon' || this.app.showGitStatus === 'both') {
 						switch (foundStatus.status) {
 						case ' M':
-						case 'M ':
 						case 'MM':
 						case 'RM':
+						case 'AM':
+							item.image = 'git-modified-inverted';
+							break;
+						case 'M ':
 							item.image = 'git-modified';
 							break;
 						case 'A ':
-						case 'AM':
 							item.image = 'git-added';
 							break;
 						case 'R ':
 							item.image = 'git-renamed';
 							break;
+						case ' R':
+							item.image = 'git-renamed-inverted';
+							break;
 						case '??':
-							item.image = 'git-untracked';
+							item.image = 'git-untracked-inverted';
 							break;
 						}
 					}
@@ -1277,7 +1290,7 @@ class TabDataProvider {
 				const tabDirArray = nova.path.split(nova.path.dirname(element.path || ''));
 				parentFolder = decodeURI(tabDirArray[tabDirArray.length - 1]);
 
-				if (parentFolder !== '.Trash') {
+				if (parentFolder !== '.Trash' && isUnique) {
 					description += '‹ ' + parentFolder;
 				}
 			}
@@ -1285,19 +1298,36 @@ class TabDataProvider {
 			// Show parent path if filename is not unique, unless grouping by folder
 			if (this.groupBy !== 'folder' && !isUnique) {
 				const commonBasePath = this.getCommonBasePath(element);
-				const parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
-					.split('/')
-					.reverse();
+				let parentPathSplit = decodeURI(nova.path.dirname(element.path || '').substring(commonBasePath.length))
+					.split('/');
+				let separatorChar = '/';
+
+				if (this.app.showParentPathInReverse) {
+					parentPathSplit = parentPathSplit.reverse();
+					separatorChar = '‹';
+				}
 
 				parentPathSplit
-					.filter(dir => dir.length)
+					// .filter(dir => dir.length)
 					.forEach((dir, i) => {
 						// Don't show trash folder as parent
 						if (i === 0 && dir === '.Trash') {
 							return;
 						}
 
-						description += '‹ ' + dir + ' ';
+						// Make sure items with empty parent dir still show parent when
+						// always show parent option is enabled
+						if (this.app.alwaysShowParentFolder && !dir.length) {
+							dir = parentFolder;
+						} else if (!dir.length) {
+							return;
+						}
+
+						if (i === 0 && !this.app.showParentPathInReverse) {
+							description += '‹ ' + dir + ' ';
+						} else {
+							description += separatorChar + ' ' + dir + ' ';
+						}
 					});
 			}
 
@@ -1311,4 +1341,4 @@ class TabDataProvider {
 	}
 }
 
-export { SyntaxNames, TabItem, GroupItem, FolderItem, TabDataProvider };
+export { SyntaxNames, SyntaxImages, TabItem, GroupItem, FolderItem, TabDataProvider };
