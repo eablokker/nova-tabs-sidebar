@@ -10,6 +10,7 @@
 ### Changed
 
 - Disabled open/close context menu items on type group folders
+- Track custom order by file URI instead of path
 
 ## v1.5.12 - 2024-12-25
 

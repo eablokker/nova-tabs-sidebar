@@ -427,8 +427,8 @@ class App {
 				// console.log('Collapsed: ' + element?.name, element?.collapsibleState);
 
 				// Handle Folder Items
-				if (element instanceof FolderItem && element.path) {
-					this.tabDataProvider.collapsedFolders.push(element.path);
+				if (element instanceof FolderItem && element.uri) {
+					this.tabDataProvider.collapsedFolders.push(element.uri);
 					nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', this.tabDataProvider.collapsedFolders);
 					return;
 				}
@@ -445,8 +445,8 @@ class App {
 			// console.log('Expanded: ' + element?.name, element?.collapsibleState);
 
 			// Handle Folder Items
-			if (element instanceof FolderItem && element.path) {
-				const index = this.tabDataProvider.collapsedFolders.indexOf(element.path);
+			if (element instanceof FolderItem && element.uri) {
+				const index = this.tabDataProvider.collapsedFolders.indexOf(element.uri);
 
 				if (index > -1) {
 					this.tabDataProvider.collapsedFolders.splice(index, 1);
@@ -759,6 +759,12 @@ class App {
 			if (nova.inDevMode()) console.log('Sort alphabetically');
 
 			workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', !this.tabDataProvider.sortAlpha);
+		});
+
+		nova.commands.register('tabs-sidebar.groupByNone', (workspace: Workspace) => {
+			if (nova.inDevMode()) console.log('groupByNone');
+
+			workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
 		});
 
 		nova.commands.register('tabs-sidebar.groupByType', (workspace: Workspace) => {

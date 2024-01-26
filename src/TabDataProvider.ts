@@ -40,7 +40,6 @@ class ListItem {
 }
 
 class TabItem extends ListItem {
-	path: string | undefined;
 	_isDirty: boolean;
 	isUntitled: boolean;
 	isTrashed: boolean;
@@ -183,33 +182,33 @@ class TabDataProvider {
 	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
 		// Remove closed tabs from custom order
 		if (this.customOrder.length) {
-			this.customOrder = this.customOrder.filter(path => {
-				return documentTabs.some(tab => tab.path === path);
+			this.customOrder = this.customOrder.filter(uri => {
+				return documentTabs.some(tab => tab.uri === uri);
 			});
 		}
 
 		// Remove closed folders from collapsed folders list
 		if (this.collapsedFolders.length) {
-			this.collapsedFolders = this.collapsedFolders.filter(path => {
+			this.collapsedFolders = this.collapsedFolders.filter(uri => {
 				return documentTabs.some(tab => {
 					// Handle special root folders
-					if (path === '__RemoteRootFolder__' && tab.isRemote) {
+					if (uri === '__RemoteRootFolder__' && tab.isRemote) {
 						return true;
 					}
 
-					if (path === '__LocalProjectFolder__' && nova.workspace && tab.path?.startsWith(nova.workspace?.path || '')) {
+					if (uri === '__LocalProjectFolder__' && nova.workspace && tab.path?.startsWith(nova.workspace?.path || '')) {
 						return true;
 					}
 
-					if (path === '__LocalTrashFolder__' && tab.path?.startsWith(nova.path.expanduser('~') + '/.Trash/')) {
+					if (uri === '__LocalTrashFolder__' && tab.path?.startsWith(nova.path.expanduser('~') + '/.Trash/')) {
 						return true;
 					}
 
-					if (path === '__LocalRootFolder__') {
+					if (uri === '__LocalRootFolder__') {
 						return true;
 					}
 
-					return tab.path?.startsWith(path);
+					return tab.uri?.startsWith(uri);
 				});
 			});
 		}
@@ -298,7 +297,7 @@ class TabDataProvider {
 			groupsCount++;
 		}
 
-		// Add all tabs if not more than one group
+		// Add all tabs if more than one group
 		if (groupsCount < 2) {
 			const tabs = documentTabs.slice(0);
 			const rootFolder = new FolderItem('Root', '__RootFolder__');
@@ -325,7 +324,7 @@ class TabDataProvider {
 				projectFolder.contextValue = 'folderGroup-root';
 				projectFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
 
-				if (this.collapsedFolders.indexOf(projectFolder.path) > -1) {
+				if (this.collapsedFolders.indexOf(projectFolder.uri) > -1) {
 					projectFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 				}
 
@@ -342,7 +341,7 @@ class TabDataProvider {
 				localFolder.contextValue = 'folderGroup-root';
 				localFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
 
-				if (this.collapsedFolders.indexOf(localFolder.path) > -1) {
+				if (this.collapsedFolders.indexOf(localFolder.uri) > -1) {
 					localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 				}
 
@@ -359,7 +358,7 @@ class TabDataProvider {
 				remoteFolder.contextValue = 'folderGroup-root';
 				remoteFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
 
-				if (this.collapsedFolders.indexOf(remoteFolder.path) > -1) {
+				if (this.collapsedFolders.indexOf(remoteFolder.uri) > -1) {
 					remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 				}
 
@@ -376,7 +375,7 @@ class TabDataProvider {
 				trashFolder.contextValue = 'folderGroup-root';
 				trashFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
 
-				if (this.collapsedFolders.indexOf(trashFolder.path) > -1) {
+				if (this.collapsedFolders.indexOf(trashFolder.uri) > -1) {
 					trashFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 				}
 
@@ -394,20 +393,20 @@ class TabDataProvider {
 			}
 
 			// Check if tab is new in custom order
-			const tabIsNewInCustomOrder = this.customOrder.every(path => path !== tab.path);
+			const tabIsNewInCustomOrder = this.customOrder.every(uri => uri !== tab.uri);
 
 			// Add new tab to custom order
 			if (tabIsNewInCustomOrder) {
 				// Splice new tab into array just after active editor or las focused tab
 				let tabIndex = -1;
 				if (focusedTab) {
-					tabIndex = this.customOrder.findIndex(path => path === focusedTab.path);
+					tabIndex = this.customOrder.findIndex(uri => uri === focusedTab.uri);
 				}
 
 				if (tabIndex > -1) {
-					this.customOrder.splice(tabIndex + 1, 0, tab.path);
+					this.customOrder.splice(tabIndex + 1, 0, tab.uri);
 				} else {
-					this.customOrder.push(tab.path);
+					this.customOrder.push(tab.uri);
 				}
 			}
 
@@ -503,8 +502,9 @@ class TabDataProvider {
 			let parentFolder = rootFolder;
 			tabDirArray.forEach((dir, i, arr) => {
 				const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
-				const folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1))
-				const folderUri = folderUriSliced.length ? nova.path.join(...folderUriSliced) : nova.path.dirname(tab.uri);
+				const folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1));
+				const folderUriJoined = folderUriSliced.length ? nova.path.join(...folderUriSliced) : nova.path.dirname(tab.uri);
+				const folderUri = folderUriJoined.replace(/^file:/, 'file://').replace(/^sftp:\/:/, 'sftp://:').replace(/^ftp:\/:/, 'ftp://:');
 
 				// console.log('folderPath', folderPath);
 				// console.log('folderUri', folderUri);
@@ -544,7 +544,7 @@ class TabDataProvider {
 						subFolder.image = '__filetype.novaextension';
 					}
 
-					if (folderPath && this.collapsedFolders.indexOf(folderPath) > -1) {
+					if (folderPath && this.collapsedFolders.indexOf(folderUri) > -1) {
 						subFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 					}
 
@@ -725,7 +725,7 @@ class TabDataProvider {
 			});
 
 		// Update custom order
-		const fromIndex = this.customOrder.indexOf(path || '');
+		const fromIndex = this.customOrder.indexOf(uri || '');
 		const toIndex = fromIndex + distance;
 
 		if (toIndex < 0 || toIndex >= this.customOrder.length) {
@@ -815,11 +815,11 @@ class TabDataProvider {
 		});
 
 		this.customOrder.sort((a, b) => {
-			// Sort by parent path if filename is not unique
-			const paths = [a, b].map(path => {
-				let basename = nova.path.basename(path);
+			// Sort by parent uri if filename is not unique
+			const uris = [a, b].map(uri => {
+				let basename = nova.path.basename(uri);
 				let parentPath = '';
-				const element = this.getElementByPath(path);
+				const element = this.getElementByUri(uri);
 
 				if (!element) {
 					return basename;
@@ -845,13 +845,13 @@ class TabDataProvider {
 				return 0;
 			}
 
-			if (currentWindow.indexOf(paths[0]) < 0) {
+			if (currentWindow.indexOf(uris[0]) < 0) {
 				return 1;
 			}
 
 			return (
-				currentWindow.indexOf(paths[0]) -
-				currentWindow.indexOf(paths[1])
+				currentWindow.indexOf(uris[0]) -
+				currentWindow.indexOf(uris[1])
 			);
 		});
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
@@ -869,13 +869,13 @@ class TabDataProvider {
 	}
 
 	cleanUpByType() {
-		const elementArray = this.customOrder.map(path => {
-			return this.getElementByPath(path);
+		const elementArray = this.customOrder.map(uri => {
+			return this.getElementByUri(uri);
 		});
 
 		this.customOrder.sort((a, b) => {
-			const aElement = elementArray.find(item => item?.path === a);
-			const bElement = elementArray.find(item => item?.path === b);
+			const aElement = elementArray.find(item => item?.uri === a);
+			const bElement = elementArray.find(item => item?.uri === b);
 
 			if (!aElement || !bElement || !aElement.syntax || !bElement.syntax ) {
 				return 0;
@@ -952,10 +952,10 @@ class TabDataProvider {
 
 	// Sorting function
 	byCustomOrder(a: TabItem, b: TabItem) {
-		if (this.customOrder.indexOf(a.path || '') < 0) {
+		if (this.customOrder.indexOf(a.uri || '') < 0) {
 			return 1;
 		}
-		return this.customOrder.indexOf(a.path || '') - this.customOrder.indexOf(b.path || '');
+		return this.customOrder.indexOf(a.uri || '') - this.customOrder.indexOf(b.uri || '');
 	}
 
 	// Sorting function

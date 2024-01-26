@@ -210,29 +210,29 @@ var TabDataProvider = /** @class */ (function () {
         var _a, _b, _c;
         // Remove closed tabs from custom order
         if (this.customOrder.length) {
-            this.customOrder = this.customOrder.filter(function (path) {
-                return documentTabs.some(function (tab) { return tab.path === path; });
+            this.customOrder = this.customOrder.filter(function (uri) {
+                return documentTabs.some(function (tab) { return tab.uri === uri; });
             });
         }
         // Remove closed folders from collapsed folders list
         if (this.collapsedFolders.length) {
-            this.collapsedFolders = this.collapsedFolders.filter(function (path) {
+            this.collapsedFolders = this.collapsedFolders.filter(function (uri) {
                 return documentTabs.some(function (tab) {
                     var _a, _b, _c, _d;
                     // Handle special root folders
-                    if (path === '__RemoteRootFolder__' && tab.isRemote) {
+                    if (uri === '__RemoteRootFolder__' && tab.isRemote) {
                         return true;
                     }
-                    if (path === '__LocalProjectFolder__' && nova.workspace && ((_a = tab.path) === null || _a === void 0 ? void 0 : _a.startsWith(((_b = nova.workspace) === null || _b === void 0 ? void 0 : _b.path) || ''))) {
+                    if (uri === '__LocalProjectFolder__' && nova.workspace && ((_a = tab.path) === null || _a === void 0 ? void 0 : _a.startsWith(((_b = nova.workspace) === null || _b === void 0 ? void 0 : _b.path) || ''))) {
                         return true;
                     }
-                    if (path === '__LocalTrashFolder__' && ((_c = tab.path) === null || _c === void 0 ? void 0 : _c.startsWith(nova.path.expanduser('~') + '/.Trash/'))) {
+                    if (uri === '__LocalTrashFolder__' && ((_c = tab.path) === null || _c === void 0 ? void 0 : _c.startsWith(nova.path.expanduser('~') + '/.Trash/'))) {
                         return true;
                     }
-                    if (path === '__LocalRootFolder__') {
+                    if (uri === '__LocalRootFolder__') {
                         return true;
                     }
-                    return (_d = tab.path) === null || _d === void 0 ? void 0 : _d.startsWith(path);
+                    return (_d = tab.uri) === null || _d === void 0 ? void 0 : _d.startsWith(uri);
                 });
             });
         }
@@ -304,7 +304,7 @@ var TabDataProvider = /** @class */ (function () {
         if (localTabs.length) {
             groupsCount++;
         }
-        // Add all tabs if not more than one group
+        // Add all tabs if more than one group
         if (groupsCount < 2) {
             var tabs = documentTabs.slice(0);
             var rootFolder = new FolderItem('Root', '__RootFolder__');
@@ -326,7 +326,7 @@ var TabDataProvider = /** @class */ (function () {
                 projectFolder.tooltip = ((_c = nova.workspace) === null || _c === void 0 ? void 0 : _c.path) || nova.localize('Project');
                 projectFolder.contextValue = 'folderGroup-root';
                 projectFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
-                if (this.collapsedFolders.indexOf(projectFolder.path) > -1) {
+                if (this.collapsedFolders.indexOf(projectFolder.uri) > -1) {
                     projectFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
                 }
                 this.createNestedFolders(projectTabs, projectFolder);
@@ -340,7 +340,7 @@ var TabDataProvider = /** @class */ (function () {
                 localFolder.tooltip = 'Local';
                 localFolder.contextValue = 'folderGroup-root';
                 localFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
-                if (this.collapsedFolders.indexOf(localFolder.path) > -1) {
+                if (this.collapsedFolders.indexOf(localFolder.uri) > -1) {
                     localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
                 }
                 this.createNestedFolders(localTabs, localFolder);
@@ -354,7 +354,7 @@ var TabDataProvider = /** @class */ (function () {
                 remoteFolder.tooltip = 'Remote';
                 remoteFolder.contextValue = 'folderGroup-root';
                 remoteFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
-                if (this.collapsedFolders.indexOf(remoteFolder.path) > -1) {
+                if (this.collapsedFolders.indexOf(remoteFolder.uri) > -1) {
                     remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
                 }
                 this.createNestedFolders(remoteTabs, remoteFolder);
@@ -368,7 +368,7 @@ var TabDataProvider = /** @class */ (function () {
                 trashFolder.tooltip = 'Trash';
                 trashFolder.contextValue = 'folderGroup-root';
                 trashFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
-                if (this.collapsedFolders.indexOf(trashFolder.path) > -1) {
+                if (this.collapsedFolders.indexOf(trashFolder.uri) > -1) {
                     trashFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
                 }
                 this.createNestedFolders(trashTabs, trashFolder);
@@ -382,19 +382,19 @@ var TabDataProvider = /** @class */ (function () {
                 return;
             }
             // Check if tab is new in custom order
-            var tabIsNewInCustomOrder = _this.customOrder.every(function (path) { return path !== tab.path; });
+            var tabIsNewInCustomOrder = _this.customOrder.every(function (uri) { return uri !== tab.uri; });
             // Add new tab to custom order
             if (tabIsNewInCustomOrder) {
                 // Splice new tab into array just after active editor or las focused tab
                 var tabIndex = -1;
                 if (focusedTab) {
-                    tabIndex = _this.customOrder.findIndex(function (path) { return path === focusedTab.path; });
+                    tabIndex = _this.customOrder.findIndex(function (uri) { return uri === focusedTab.uri; });
                 }
                 if (tabIndex > -1) {
-                    _this.customOrder.splice(tabIndex + 1, 0, tab.path);
+                    _this.customOrder.splice(tabIndex + 1, 0, tab.uri);
                 }
                 else {
-                    _this.customOrder.push(tab.path);
+                    _this.customOrder.push(tab.uri);
                 }
             }
             // Check if tab is new in flat items
@@ -470,7 +470,8 @@ var TabDataProvider = /** @class */ (function () {
                 var _a, _b;
                 var folderPath = '/' + (_a = nova.path).join.apply(_a, arr.slice(0, i + 1));
                 var folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1));
-                var folderUri = folderUriSliced.length ? (_b = nova.path).join.apply(_b, folderUriSliced) : nova.path.dirname(tab.uri);
+                var folderUriJoined = folderUriSliced.length ? (_b = nova.path).join.apply(_b, folderUriSliced) : nova.path.dirname(tab.uri);
+                var folderUri = folderUriJoined.replace(/^file:/, 'file://').replace(/^sftp:\/:/, 'sftp://:').replace(/^ftp:\/:/, 'ftp://:');
                 // console.log('folderPath', folderPath);
                 // console.log('folderUri', folderUri);
                 // Exclude common parent folders from tree
@@ -500,7 +501,7 @@ var TabDataProvider = /** @class */ (function () {
                     if (dir.endsWith('.novaextension')) {
                         subFolder.image = '__filetype.novaextension';
                     }
-                    if (folderPath && _this.collapsedFolders.indexOf(folderPath) > -1) {
+                    if (folderPath && _this.collapsedFolders.indexOf(folderUri) > -1) {
                         subFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
                     }
                     // console.log('folderPath', folderPath, subFolder.collapsibleState);
@@ -621,7 +622,7 @@ var TabDataProvider = /** @class */ (function () {
         var _this = this;
         // Original tab path
         var uri = tab.uri;
-        var path = tab.path;
+        tab.path;
         // Get item indexes
         var fromItemIndex = this.flatItems.findIndex(function (item) { return item.uri === uri; });
         var toItemIndex = fromItemIndex + distance;
@@ -649,7 +650,7 @@ var TabDataProvider = /** @class */ (function () {
             fromItem[tabItemKey] = oldVal;
         });
         // Update custom order
-        var fromIndex = this.customOrder.indexOf(path || '');
+        var fromIndex = this.customOrder.indexOf(uri || '');
         var toIndex = fromIndex + distance;
         if (toIndex < 0 || toIndex >= this.customOrder.length) {
             return;
@@ -722,11 +723,11 @@ var TabDataProvider = /** @class */ (function () {
             return true;
         });
         this.customOrder.sort(function (a, b) {
-            // Sort by parent path if filename is not unique
-            var paths = [a, b].map(function (path) {
-                var basename = nova.path.basename(path);
+            // Sort by parent uri if filename is not unique
+            var uris = [a, b].map(function (uri) {
+                var basename = nova.path.basename(uri);
                 var parentPath = '';
-                var element = _this.getElementByPath(path);
+                var element = _this.getElementByUri(uri);
                 if (!element) {
                     return basename;
                 }
@@ -744,11 +745,11 @@ var TabDataProvider = /** @class */ (function () {
             if (!currentWindow.length) {
                 return 0;
             }
-            if (currentWindow.indexOf(paths[0]) < 0) {
+            if (currentWindow.indexOf(uris[0]) < 0) {
                 return 1;
             }
-            return (currentWindow.indexOf(paths[0]) -
-                currentWindow.indexOf(paths[1]));
+            return (currentWindow.indexOf(uris[0]) -
+                currentWindow.indexOf(uris[1]));
         });
         nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
         this.sortItems();
@@ -762,12 +763,12 @@ var TabDataProvider = /** @class */ (function () {
     };
     TabDataProvider.prototype.cleanUpByType = function () {
         var _this = this;
-        var elementArray = this.customOrder.map(function (path) {
-            return _this.getElementByPath(path);
+        var elementArray = this.customOrder.map(function (uri) {
+            return _this.getElementByUri(uri);
         });
         this.customOrder.sort(function (a, b) {
-            var aElement = elementArray.find(function (item) { return (item === null || item === void 0 ? void 0 : item.path) === a; });
-            var bElement = elementArray.find(function (item) { return (item === null || item === void 0 ? void 0 : item.path) === b; });
+            var aElement = elementArray.find(function (item) { return (item === null || item === void 0 ? void 0 : item.uri) === a; });
+            var bElement = elementArray.find(function (item) { return (item === null || item === void 0 ? void 0 : item.uri) === b; });
             if (!aElement || !bElement || !aElement.syntax || !bElement.syntax) {
                 return 0;
             }
@@ -839,10 +840,10 @@ var TabDataProvider = /** @class */ (function () {
     };
     // Sorting function
     TabDataProvider.prototype.byCustomOrder = function (a, b) {
-        if (this.customOrder.indexOf(a.path || '') < 0) {
+        if (this.customOrder.indexOf(a.uri || '') < 0) {
             return 1;
         }
-        return this.customOrder.indexOf(a.path || '') - this.customOrder.indexOf(b.path || '');
+        return this.customOrder.indexOf(a.uri || '') - this.customOrder.indexOf(b.uri || '');
     };
     // Sorting function
     TabDataProvider.prototype.byCustomKindGroupsOrder = function (a, b) {
@@ -1515,8 +1516,8 @@ var App = /** @class */ (function () {
             _this.collapseTimeoutID = setTimeout(function () {
                 // console.log('Collapsed: ' + element?.name, element?.collapsibleState);
                 // Handle Folder Items
-                if (element instanceof FolderItem && element.path) {
-                    _this.tabDataProvider.collapsedFolders.push(element.path);
+                if (element instanceof FolderItem && element.uri) {
+                    _this.tabDataProvider.collapsedFolders.push(element.uri);
                     nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', _this.tabDataProvider.collapsedFolders);
                     return;
                 }
@@ -1530,8 +1531,8 @@ var App = /** @class */ (function () {
         this.treeView.onDidExpandElement(function (element) {
             // console.log('Expanded: ' + element?.name, element?.collapsibleState);
             // Handle Folder Items
-            if (element instanceof FolderItem && element.path) {
-                var index = _this.tabDataProvider.collapsedFolders.indexOf(element.path);
+            if (element instanceof FolderItem && element.uri) {
+                var index = _this.tabDataProvider.collapsedFolders.indexOf(element.uri);
                 if (index > -1) {
                     _this.tabDataProvider.collapsedFolders.splice(index, 1);
                     nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', _this.tabDataProvider.collapsedFolders);
@@ -1795,6 +1796,11 @@ var App = /** @class */ (function () {
             if (nova.inDevMode())
                 console.log('Sort alphabetically');
             workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', !_this.tabDataProvider.sortAlpha);
+        });
+        nova.commands.register('tabs-sidebar.groupByNone', function (workspace) {
+            if (nova.inDevMode())
+                console.log('groupByNone');
+            workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
         });
         nova.commands.register('tabs-sidebar.groupByType', function (workspace) {
             if (nova.inDevMode())
