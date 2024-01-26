@@ -1,4 +1,4 @@
-import { SyntaxNames, TabItem, FolderItem, TabDataProvider } from './TabDataProvider';
+import { SyntaxNames, SyntaxImages, TabItem, FolderItem, TabDataProvider } from './TabDataProvider';
 
 let app: App;
 
@@ -20,6 +20,7 @@ class App {
 	groupByKind: boolean | null;
 
 	syntaxNames: SyntaxNames;
+	syntaxImages: SyntaxImages;
 
 	constructor() {
 		this.openTabWhenFocusSidebar = true;
@@ -37,11 +38,14 @@ class App {
 		this.syntaxNames = {
 			'plaintext': nova.localize('Plain Text'),
 			'coffeescript': 'CoffeeScript',
+			'cpp': 'C++',
 			'css': 'CSS',
 			'diff': 'Diff',
 			'erb': 'ERB',
 			'haml': 'Haml',
 			'html': 'HTML',
+			'html+ejs': 'HTML + EJS',
+			'html+erb': 'HTML + ERB',
 			'ini': 'INI',
 			'javascript': 'JavaScript',
 			'json': 'JSON',
@@ -60,6 +64,7 @@ class App {
 			'shell': 'Shell Script',
 			'smarty': 'Smarty',
 			'sql': 'SQL',
+			'tsq': 'Tree Sitter Query',
 			'tsx': 'TSX',
 			'twig': 'Twig-HTML',
 			'twig-markdown': 'Twig-Markdown',
@@ -67,6 +72,40 @@ class App {
 			'vue': 'Vue',
 			'xml': 'XML',
 			'yaml': 'YAML'
+		};
+
+		this.syntaxImages = {
+			'plaintext': '__filetype.blank',
+			'c': '__filetype.c',
+			'cpp': '__filetype.cc',
+			'css': '__filetype.css',
+			'diff': '__filetype.diff',
+			'html': '__filetype.html',
+			'html+ejs': '__filetype.ejs',
+			'html+erb': '__filetype.erb',
+			'ini': '__filetype.ini',
+			'javascript': '__filetype.js',
+			'json': '__filetype.json',
+			'less': '__filetype.less',
+			'lua': '__filetype.lua',
+			'markdown': '__filetype.md',
+			'objc': '__filetype.m',
+			'objcpp': '__filetype.mm',
+			'perl': '__filetype.pl',
+			'php': '__filetype.php',
+			'python': '__filetype.py',
+			'ruby': '__filetype.rb',
+			'sass': '__filetype.sass',
+			'scss': '__filetype.scss',
+			'shell': '__filetype.sh',
+			'sql': '__filetype.sql',
+			'swift': '__filetype.swift',
+			'tsx': '__filetype.tsx',
+			'typescript': '__filetype.ts',
+			'typescript-cts': '__filetype.ts',
+			'typescript-mts': '__filetype.ts',
+			'xml': '__filetype.xml',
+			'yaml': '__filetype.yml'
 		};
 
 		this.tabDataProvider = new TabDataProvider(this);

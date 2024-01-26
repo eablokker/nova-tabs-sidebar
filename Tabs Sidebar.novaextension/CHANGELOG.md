@@ -1,14 +1,16 @@
-## v1.5.11 - 2024-12-25
+## v1.5.12 - 2024-12-25
 
 ### Added
 
 - Objective-C++ folder name
 - Ruby folder icon when grouping by kind
+- Add syntax icons for group folders when file extension doesn't match syntax
 
 ### Fixed
 
 - Attempt to fix documents in sidebar not updating properly when adding/removing editors
 - Fix tree view reloading every time new untitled document is edited
+- Disable Show In... and Copy Path context menu items for group folders
 
 ## v1.5.8 - 2023-06-03
 

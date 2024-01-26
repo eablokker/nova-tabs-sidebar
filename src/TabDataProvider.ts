@@ -6,6 +6,7 @@ type GitStatus = {
 };
 
 type SyntaxNames = {[name: string]: string};
+type SyntaxImages = {[name: string]: string};
 
 class ListItem {
 	name: string;
@@ -781,17 +782,11 @@ class TabDataProvider {
 				item.image = '__filetype.blank';
 			}
 
-			if (element.syntax === 'plaintext') {
-				item.image = '__filetype.blank';
-			}
+			const syntaxImage = this.app.syntaxImages[element.syntax as keyof SyntaxImages];
 
-			if (element.syntax === 'ruby') {
-				item.image = '__filetype.rb';
+			if (syntaxImage) {
+				item.image = syntaxImage;
 			}
-
-			// if (element.syntax === 'objcpp') {
-			// 	item.image = '__filetype.objcpp';
-			// }
 
 			item.tooltip = '';
 
@@ -961,4 +956,4 @@ class TabDataProvider {
 	}
 }
 
-export { SyntaxNames, TabItem, FolderItem, TabDataProvider };
+export { SyntaxNames, SyntaxImages, TabItem, FolderItem, TabDataProvider };

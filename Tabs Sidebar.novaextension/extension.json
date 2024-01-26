@@ -3,7 +3,7 @@
     "name": "Tabs Sidebar",
     "organization": "Austen Blokker",
     "description": "Manage open document tabs from the sidebar.",
-    "version": "1.5.11",
+    "version": "1.5.12",
     "categories": ["sidebars"],
     "license": "MIT",
     "repository": "https://github.com/eablokker/nova-tabs-sidebar",
@@ -121,23 +121,23 @@
                         {
                             "title": "Show in Files Sidebar",
                             "command": "tabs-sidebar.showInFilesSidebar",
-                            "when": "viewItem != null && viewItem != 'kindGroup' && viewItem != 'remote-tab' && viewItem != 'remote-first' && viewItem != 'remote-last' && viewItem != 'remote-only'"
+                            "when": "viewItem != null && viewItem != 'kindGroup' && viewItem != 'kindGroup-first' && viewItem != 'kindGroup-last' && viewItem != 'kindGroup-only' && viewItem != 'remote-tab' && viewItem != 'remote-first' && viewItem != 'remote-last' && viewItem != 'remote-only'"
                         },
                         {
                             "title": "Show in Finder",
                             "command": "tabs-sidebar.showInFinder",
-                            "when": "viewItem != null && viewItem != 'kindGroup' && viewItem != 'remote-tab' && viewItem != 'remote-first' && viewItem != 'remote-last' && viewItem != 'remote-only'"
+                            "when": "viewItem != null && viewItem != 'kindGroup' && viewItem != 'kindGroup-first' && viewItem != 'kindGroup-last' && viewItem != 'kindGroup-only' && viewItem != 'remote-tab' && viewItem != 'remote-first' && viewItem != 'remote-last' && viewItem != 'remote-only'"
                         },
                         {"separator": true},
                         {
                             "title": "Copy Path",
                             "command": "tabs-sidebar.copyPath",
-                            "when": "viewItem != null && viewItem != 'kindGroup'"
+                            "when": "viewItem != null && viewItem != 'kindGroup' && viewItem != 'kindGroup-first' && viewItem != 'kindGroup-last' && viewItem != 'kindGroup-only'"
                         },
                         {
                             "title": "Copy Relative Path",
                             "command": "tabs-sidebar.copyRelativePath",
-                            "when": "viewItem != null && viewItem != 'kindGroup' && viewItem != 'remote-tab' && viewItem != 'remote-first' && viewItem != 'remote-last' && viewItem != 'remote-only'"
+                            "when": "viewItem != null && viewItem != 'kindGroup' && viewItem != 'kindGroup-first' && viewItem != 'kindGroup-last' && viewItem != 'kindGroup-only' && viewItem != 'remote-tab' && viewItem != 'remote-first' && viewItem != 'remote-last' && viewItem != 'remote-only'"
                         },
                         {"separator": true},
                         {
