@@ -61,5 +61,13 @@
 	"Window": "窗口",
 	"Trash": "废纸篓",
 
-	"missing value": "missing value"
+	"missing value": "missing value",
+
+	"Failed to Close Tab": "关闭选项卡失败",
+	"Failed to Clean Up By Tab Bar Order": "无法按选项卡栏顺序进行清理",
+	"Failed to Show in Files Sidebar": "无法在文件边栏中显示",
+	"Failed to Open Remote Tab": "无法打开远程选项卡",
+	"Make sure Nova has permissions for Accessibility and System Events.": "确保 Nova 具有可访问性和系统事件的权限。",
+	"More Info": "更多信息",
+	"Dismiss": "解雇"
 }

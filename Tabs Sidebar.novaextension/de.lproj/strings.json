@@ -58,5 +58,13 @@
 	"Window": "Fenster",
 	"Trash": "Papierkorb",
 
-	"missing value": "missing value"
+	"missing value": "missing value",
+
+	"Failed to Close Tab": "Das Schließen des Tabs ist fehlgeschlagen",
+	"Failed to Clean Up By Tab Bar Order": "Bereinigen nach Reihenfolge der Tableiste fehlgeschlagen",
+	"Failed to Show in Files Sidebar": "Fehler beim Anzeigen in der Dateien-Seitenleiste",
+	"Failed to Open Remote Tab": "Öffnen der Remote-Registerkarte fehlgeschlagen",
+	"Make sure Nova has permissions for Accessibility and System Events.": "Stellen Sie sicher, dass Nova über Berechtigungen für Barrierefreiheit und Systemereignisse verfügt.",
+	"More Info": "Mehr Info",
+	"Dismiss": "Verwerfen"
 }

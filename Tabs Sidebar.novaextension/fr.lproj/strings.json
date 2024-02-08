@@ -61,5 +61,13 @@
 	"Window": "Fenêtre",
 	"Trash": "Corbeille",
 
-	"missing value": "missing value"
+	"missing value": "missing value",
+
+	"Failed to Close Tab": "Échec de la fermeture de l'onglet",
+	"Failed to Clean Up By Tab Bar Order": "Échec du nettoyage par ordre de la barre d'onglets",
+	"Failed to Show in Files Sidebar": "Échec de l'affichage dans la barre latérale des fichiers",
+	"Failed to Open Remote Tab": "Échec de l'ouverture de l'onglet Distant",
+	"Make sure Nova has permissions for Accessibility and System Events.": "Assurez-vous que Nova dispose des autorisations pour l'accessibilité et les événements système.",
+	"More Info": "Plus d'infos",
+	"Dismiss": "Rejeter"
 }

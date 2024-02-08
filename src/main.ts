@@ -504,6 +504,9 @@ class App {
 					})
 					.catch(err => {
 						console.error('Could not click menu item.', err);
+
+						const title = nova.localize('Failed to Close Tab');
+						this.showPermissionsNotification(title);
 					});
 
 				return;
@@ -551,6 +554,9 @@ class App {
 							})
 							.catch(err => {
 								console.error('Could not click menu item.', err);
+
+								const title = nova.localize('Failed to Close Tab');
+								this.showPermissionsNotification(title);
 							});
 					})
 					.catch((err: string) => {
@@ -601,6 +607,9 @@ class App {
 						})
 						.catch(err => {
 							console.error('Could not click menu item.', err);
+
+							const title = nova.localize('Failed to Close Tab');
+							this.showPermissionsNotification(title);
 						});
 				})
 				.catch(err => {
@@ -726,6 +735,9 @@ class App {
 				})
 				.catch(err => {
 					console.error(err);
+
+					const title = nova.localize('Failed to Clean Up By Tab Bar Order');
+					this.showPermissionsNotification(title);
 				});
 		});
 
@@ -806,6 +818,9 @@ class App {
 						})
 						.catch(err => {
 							console.error('Could not click menu item.', err);
+
+							const title = nova.localize('Failed to Show in Files Sidebar');
+							this.showPermissionsNotification(title);
 						});
 				})
 				.catch((err: string) => {
@@ -989,6 +1004,10 @@ class App {
 				})
 				.catch(err => {
 					console.error('Could not click project item by filename.', err);
+
+					const title = nova.localize('Failed to Open Remote Tab');
+					this.showPermissionsNotification(title);
+
 					reject(err);
 				});
 		});
@@ -1037,6 +1056,24 @@ class App {
 			.catch((err: Error) => {
 				console.error('Could not update git statuses', err);
 			});
+	}
+
+	showPermissionsNotification(title: string) {
+		const request = new NotificationRequest('osascript-failed');
+
+		request.title = title;
+		request.body = nova.localize('Make sure Nova has permissions for Accessibility and System Events.');
+
+		request.actions = [nova.localize('Dismiss'), nova.localize('More Info')];
+
+		const promise = nova.notifications.add(request);
+		promise.then(response => {
+			if (response.actionIdx === 1) {
+				nova.openURL('https://github.com/eablokker/nova-tabs-sidebar?tab=readme-ov-file#accessibility-permissions');
+			}
+		}, error => {
+			console.error(error);
+		});
 	}
 }
 

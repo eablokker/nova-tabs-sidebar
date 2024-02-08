@@ -10,7 +10,7 @@
 - Remember collapsed folder state
 - New Dockerfile icon
 - Updated macOS permissions instructions in README
-- Added popup notification if Nova is unable to execute Applescript commands
+- Popup notification when Nova is unable to execute Applescript commands
 
 ### Changed
 

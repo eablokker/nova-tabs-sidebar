@@ -61,5 +61,13 @@
 	"Window": "ウインドウ",
 	"Trash": "ごみ箱",
 
-	"missing value": "missing value"
+	"missing value": "missing value",
+
+	"Failed to Close Tab": "タブを閉じるのに失敗しました",
+	"Failed to Clean Up By Tab Bar Order": "「タブバーの順序によるクリーンアップに失敗しました」",
+	"Failed to Show in Files Sidebar": "サイドバーでのファイルの表示に失敗しました",
+	"Failed to Open Remote Tab": "リモートタブを開けませんでした",
+	"Make sure Nova has permissions for Accessibility and System Events.": "Nova にアクセシビリティとシステム イベントの権限があることを確認してください。",
+	"More Info": "より詳しい情報",
+	"Dismiss": "却下する"
 }

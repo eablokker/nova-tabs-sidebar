@@ -1580,6 +1580,8 @@ var App = /** @class */ (function () {
                 })
                     .catch(function (err) {
                     console.error('Could not click menu item.', err);
+                    var title = nova.localize('Failed to Close Tab');
+                    _this.showPermissionsNotification(title);
                 });
                 return;
             }
@@ -1621,6 +1623,8 @@ var App = /** @class */ (function () {
                     })
                         .catch(function (err) {
                         console.error('Could not click menu item.', err);
+                        var title = nova.localize('Failed to Close Tab');
+                        _this.showPermissionsNotification(title);
                     });
                 })
                     .catch(function (err) {
@@ -1664,6 +1668,8 @@ var App = /** @class */ (function () {
                 })
                     .catch(function (err) {
                     console.error('Could not click menu item.', err);
+                    var title = nova.localize('Failed to Close Tab');
+                    _this.showPermissionsNotification(title);
                 });
             })
                 .catch(function (err) {
@@ -1766,6 +1772,8 @@ var App = /** @class */ (function () {
             })
                 .catch(function (err) {
                 console.error(err);
+                var title = nova.localize('Failed to Clean Up By Tab Bar Order');
+                _this.showPermissionsNotification(title);
             });
         });
         nova.commands.register('tabs-sidebar.cleanUpByAlpha', function () {
@@ -1839,6 +1847,8 @@ var App = /** @class */ (function () {
                 })
                     .catch(function (err) {
                     console.error('Could not click menu item.', err);
+                    var title = nova.localize('Failed to Show in Files Sidebar');
+                    _this.showPermissionsNotification(title);
                 });
             })
                 .catch(function (err) {
@@ -2006,6 +2016,8 @@ var App = /** @class */ (function () {
             })
                 .catch(function (err) {
                 console.error('Could not click project item by filename.', err);
+                var title = nova.localize('Failed to Open Remote Tab');
+                _this.showPermissionsNotification(title);
                 reject(err);
             });
         });
@@ -2048,6 +2060,20 @@ var App = /** @class */ (function () {
         })
             .catch(function (err) {
             console.error('Could not update git statuses', err);
+        });
+    };
+    App.prototype.showPermissionsNotification = function (title) {
+        var request = new NotificationRequest('osascript-failed');
+        request.title = title;
+        request.body = nova.localize('Make sure Nova has permissions for Accessibility and System Events.');
+        request.actions = [nova.localize('Dismiss'), nova.localize('More Info')];
+        var promise = nova.notifications.add(request);
+        promise.then(function (response) {
+            if (response.actionIdx === 1) {
+                nova.openURL('https://github.com/eablokker/nova-tabs-sidebar?tab=readme-ov-file#accessibility-permissions');
+            }
+        }, function (error) {
+            console.error(error);
         });
     };
     return App;
