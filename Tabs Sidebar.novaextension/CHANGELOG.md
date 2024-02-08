@@ -1,4 +1,8 @@
-## v1.6.0 - 2024-12-26
+## v1.6.0 - 2024-02-07
+
+### Breaking
+
+- Tab order is now saved by URI instead of path. Saved tab order from previous versions will be lost.
 
 ### Added
 
@@ -6,13 +10,14 @@
 - Remember collapsed folder state
 - New Dockerfile icon
 - Updated macOS permissions instructions in README
+- Added popup notification if Nova is unable to execute Applescript commands
 
 ### Changed
 
 - Disabled open/close context menu items on type group folders
 - Track custom order by file URI instead of path
 
-## v1.5.12 - 2024-12-25
+## v1.5.12 - 2024-01-25
 
 ### Added
 
