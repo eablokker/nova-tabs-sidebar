@@ -1,5 +1,11 @@
 ## v1.6.0 - 2024-02-08
 
+### Fixed
+
+- Collapsed folders not being remembered after switching out of Group By Folder
+
+## v1.6.0 - 2024-02-08
+
 ### Added
 
 - Group by folder option

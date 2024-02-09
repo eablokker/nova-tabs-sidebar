@@ -1202,7 +1202,13 @@ class TabDataProvider {
 				item.image = element.image;
 			}
 
-			item.collapsibleState = element.collapsibleState;
+			let collapsibleState = TreeItemCollapsibleState.Expanded;
+
+			if (this.collapsedFolders.indexOf(element.uri || '') > -1) {
+				collapsibleState = TreeItemCollapsibleState.Collapsed;
+			}
+
+			item.collapsibleState = collapsibleState;
 		}
 		else {
 			let name = element.name;
