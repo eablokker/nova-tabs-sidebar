@@ -1,8 +1,4 @@
-## v1.6.0 - 2024-02-07
-
-### Breaking
-
-- Tab order is now saved by URI instead of path. Saved tab order from previous versions will be lost.
+## v1.6.0 - 2024-02-08
 
 ### Added
 

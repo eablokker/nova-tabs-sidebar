@@ -182,6 +182,7 @@ var TabDataProvider = /** @class */ (function () {
         this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
         this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
         this.collapsedFolders = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedFolders', 'array') || [];
+        this.uriRegex = /^(file:\/\/|sftp:\/\/|ftp:\/\/)/;
     }
     Object.defineProperty(TabDataProvider.prototype, "sortAlpha", {
         get: function () {
@@ -208,6 +209,20 @@ var TabDataProvider = /** @class */ (function () {
     TabDataProvider.prototype.loadData = function (documentTabs, focusedTab) {
         var _this = this;
         var _a, _b, _c;
+        // Convert paths to uris in custom order
+        if (this.customOrder.length) {
+            var hasUri = this.customOrder.some(function (uriOrPath) { return _this.uriRegex.test(uriOrPath); });
+            if (!hasUri) {
+                this.customOrder = this.customOrder.map(function (uriOrPath) {
+                    var isPath = !_this.uriRegex.test(uriOrPath);
+                    if (isPath) {
+                        var foundTab = documentTabs.find(function (tab) { return tab.path === uriOrPath; });
+                        return (foundTab === null || foundTab === void 0 ? void 0 : foundTab.uri) || uriOrPath;
+                    }
+                    return uriOrPath;
+                });
+            }
+        }
         // Remove closed tabs from custom order
         if (this.customOrder.length) {
             this.customOrder = this.customOrder.filter(function (uri) {
@@ -385,7 +400,7 @@ var TabDataProvider = /** @class */ (function () {
             var tabIsNewInCustomOrder = _this.customOrder.every(function (uri) { return uri !== tab.uri; });
             // Add new tab to custom order
             if (tabIsNewInCustomOrder) {
-                // Splice new tab into array just after active editor or las focused tab
+                // Splice new tab into array just after active editor or last focused tab
                 var tabIndex = -1;
                 if (focusedTab) {
                     tabIndex = _this.customOrder.findIndex(function (uri) { return uri === focusedTab.uri; });
@@ -622,7 +637,7 @@ var TabDataProvider = /** @class */ (function () {
         var _this = this;
         // Original tab path
         var uri = tab.uri;
-        tab.path;
+        // const path = tab.path;
         // Get item indexes
         var fromItemIndex = this.flatItems.findIndex(function (item) { return item.uri === uri; });
         var toItemIndex = fromItemIndex + distance;

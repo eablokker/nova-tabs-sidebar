@@ -142,6 +142,7 @@ class TabDataProvider {
 	_groupBy: string | null;
 	collapsedKindGroups: string[];
 	collapsedFolders: string[];
+	uriRegex: RegExp;
 
 	constructor(app: App) {
 		this.app = app;
@@ -157,6 +158,8 @@ class TabDataProvider {
 		this.customKindGroupsOrder = nova.workspace.config.get('eablokker.tabsSidebar.config.customKindGroupsOrder', 'array') || [];
 		this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
 		this.collapsedFolders = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedFolders', 'array') || [];
+
+		this.uriRegex = /^(file:\/\/|sftp:\/\/|ftp:\/\/)/;
 	}
 
 	get sortAlpha() {
@@ -180,6 +183,24 @@ class TabDataProvider {
 	}
 
 	loadData(documentTabs: readonly TextDocument[], focusedTab?: TabItem) {
+		// Convert paths to uris in custom order
+		if (this.customOrder.length) {
+			const hasUri = this.customOrder.some(uriOrPath => this.uriRegex.test(uriOrPath));
+
+			if (!hasUri) {
+				this.customOrder = this.customOrder.map(uriOrPath => {
+					const isPath = !this.uriRegex.test(uriOrPath);
+
+					if (isPath) {
+						const foundTab = documentTabs.find(tab => tab.path === uriOrPath);
+						return foundTab?.uri || uriOrPath;
+					}
+
+					return uriOrPath;
+				});
+			}
+		}
+
 		// Remove closed tabs from custom order
 		if (this.customOrder.length) {
 			this.customOrder = this.customOrder.filter(uri => {
@@ -397,7 +418,7 @@ class TabDataProvider {
 
 			// Add new tab to custom order
 			if (tabIsNewInCustomOrder) {
-				// Splice new tab into array just after active editor or las focused tab
+				// Splice new tab into array just after active editor or last focused tab
 				let tabIndex = -1;
 				if (focusedTab) {
 					tabIndex = this.customOrder.findIndex(uri => uri === focusedTab.uri);
@@ -689,7 +710,7 @@ class TabDataProvider {
 	moveTab(tab: TabItem, distance: number) {
 		// Original tab path
 		const uri = tab.uri;
-		const path = tab.path;
+		// const path = tab.path;
 
 		// Get item indexes
 		const fromItemIndex = this.flatItems.findIndex(item => item.uri === uri);
