@@ -1040,7 +1040,11 @@ var TabDataProvider = /** @class */ (function () {
             if (element.image) {
                 item.image = element.image;
             }
-            item.collapsibleState = element.collapsibleState;
+            var collapsibleState = TreeItemCollapsibleState.Expanded;
+            if (this.collapsedFolders.indexOf(element.uri || '') > -1) {
+                collapsibleState = TreeItemCollapsibleState.Collapsed;
+            }
+            item.collapsibleState = collapsibleState;
         }
         else {
             var name_1 = element.name;
