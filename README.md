@@ -18,7 +18,8 @@ It was inspired by the [Tab List](https://extensions.panic.com/extensions/gerard
 - Sort by tab bar order, file kind, or alphabetically
 - Sort by custom order using up/down buttons and context menu
 - Custom sort order is saved in project config
-- Group by kind, based on syntax
+- Group by type, based on syntax
+- Group by folder hierarchy
 - Indicators for unsaved tab, remote tab, and in trash
 - Shows Git status as icon and/or text
 - Right-click context menu with options to "Close Tab", "Show in Finder", "Copy Path", etc.
@@ -29,13 +30,19 @@ It was inspired by the [Tab List](https://extensions.panic.com/extensions/gerard
 
 ## Requirements
 
-- Tabs Sidebar uses AppleScript to read and activate certain menubar items such as "Close Tab", "Show in Files Sidebar", and "Clean Up By Tab Bar Order". Accessibility permissions must be granted to Nova to perform these actions.
-
-> To give Nova accessibility permissions, open System Preferences → Security & Privacy → Accessibility, click the lock to make changes, and check on Nova in the list.
-
-- Git >= 2.15 is required to show Git status
+Git >= 2.15 is required to show Git status
 
 > In order to use the Git status feature, Git must be installed and available on the command line, and your Nova project folder must be a Git repo.
+
+## Accessibility Permissions
+
+Tabs Sidebar uses AppleScript to read and activate certain menubar items such as "Close Tab", "Show in Files Sidebar", and "Clean Up By Tab Bar Order". Accessibility permissions must be granted to Nova to perform these actions.
+
+To give Nova accessibility permissions:
+
+> - Open System Preferences → Security & Privacy → Privacy, and click the lock to make changes.
+> - Scroll down to Accessibility and check on Nova in the list.
+> - Scroll down to Automation and check on System Events under Nova.
 
 ## Usage
 

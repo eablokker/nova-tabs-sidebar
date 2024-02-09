@@ -8,9 +8,28 @@
 - [x] Localize text
 - [x] Show git status
 - [x] Custom ordering for grouped by kind
+- [x] Update list when syntax changed
+- [x] Group by folder option
 - [x] Ignore changed files in .gitignore for git change watcher
 - [ ] When switching to remote tab with same name as local, check if active document is remote and switch to next one
-- [ ] Update list when file is moved or syntax changed
-- [ ] Group by folder option
+- [ ] Update list when file is moved
 - [ ] Show loading indicator when AppleScript action is waiting to finish
-- [ ] Ability to move selected group of tabs up and down
+- [ ] Ability to move selected range of tabs up and down
+- [ ] Option to not save tab order in workspace config
+
+
+# Group by folder
+
+- [x] Show saved status in folder tree
+- [x] Never show parent folder in description when grouping by folder
+- [x] Show Git status in folder tree
+- [x] Update "alphabetically" to "by name" to match Nova's terminology
+- [x] Sort items in alpha order with folders on top
+- [x] Remember collapsed state of folders by path
+- [x] Refresh folder tree when adding/removing tabs
+- [x] Update macOS permissions instructions in readme
+- [x] Add new text translations (group by type, clean up by type, config options)
+- [x] Group local files into "project", "other local", and "trash"
+- [x] Add icon for trash group
+- [x] Remove collapsed folders from config if files inside are closed
+- [ ] Add updated screenshots

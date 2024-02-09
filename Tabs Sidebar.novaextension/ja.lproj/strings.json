@@ -4,6 +4,10 @@
 	"Open Files": "開いているファイル",
 	"No files are open yet.": "まだ開いているファイルはありません。",
 
+	"Local": "ローカル",
+	"Remote": "リモート",
+	"Project": "プロジェクト",
+
 	"Open": "開く",
 	"Close Tab": "タブを閉じる",
 	"Move Item Up": "アイテムを上に移動",
@@ -13,12 +17,18 @@
 	"Copy Path": "パスをコピー",
 	"Copy Relative Path": "相対パスをコピー",
 	"Clean Up By Tab Bar Order": "タブバーの順序でクリーンアップ",
-	"Clean Up Alphabetically": "アルファベット順にクリーンアップ",
-	"Clean Up By Kind": "種類ごとにクリーンアップ",
-	"Sort Alphabetically": "アルファベット順に並べ替え",
-	"Group By Kind": "種類別にグループ化",
+	"Clean Up By Name": "名前でクリーンアップ",
+	"Clean Up By Type": "タイプ別クリーンアップ",
+	"Sort By Name": "名前順",
+	"Group By Type": "タイプ別にグループ化",
+	"Group By Folder": "フォルダごとにグループ化",
 	"Refresh": "リフレッシュ",
 	"Refresh Tab List": "タブ リストの更新",
+
+	"Group By": "グループ化",
+	"None": "なし",
+	"Type": "タイプ",
+	"Folder": "フォルダ",
 
 	"Open tabs with a single click": "ワンクリックでタブを開く",
 	"When disabled, tabs will only open on double-click or context menu.": "無効にすると、ダブルクリックまたはコンテキスト メニューでのみタブが開きます。",
@@ -51,5 +61,13 @@
 	"Window": "ウインドウ",
 	"Trash": "ごみ箱",
 
-	"missing value": "missing value"
+	"missing value": "missing value",
+
+	"Failed to Close Tab": "タブを閉じるのに失敗しました",
+	"Failed to Clean Up By Tab Bar Order": "「タブバーの順序によるクリーンアップに失敗しました」",
+	"Failed to Show in Files Sidebar": "サイドバーでのファイルの表示に失敗しました",
+	"Failed to Open Remote Tab": "リモートタブを開けませんでした",
+	"Make sure Nova has permissions for Accessibility and System Events.": "Nova にアクセシビリティとシステム イベントの権限があることを確認してください。",
+	"More Info": "より詳しい情報",
+	"Dismiss": "却下する"
 }

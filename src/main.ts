@@ -1,9 +1,9 @@
-import { SyntaxNames, SyntaxImages, TabItem, FolderItem, TabDataProvider } from './TabDataProvider';
+import { SyntaxNames, SyntaxImages, TabItem, GroupItem, FolderItem, TabDataProvider } from './TabDataProvider';
 
 let app: App;
 
 class App {
-	treeView: TreeView<TabItem | FolderItem | null>;
+	treeView: TreeView<TabItem | GroupItem | FolderItem | null>;
 	tabDataProvider: TabDataProvider;
 	fileWatcher: FileSystemWatcher | undefined;
 	focusedTab: TabItem | undefined;
@@ -17,7 +17,9 @@ class App {
 	showGroupCount: boolean | null;
 	unsavedSymbol: string | null;
 	unsavedSymbolLocation: string | null;
-	groupByKind: boolean | null;
+	groupBy: string | null;
+
+	collapseTimeoutID: NodeJS.Timeout;
 
 	syntaxNames: SyntaxNames;
 	syntaxImages: SyntaxImages;
@@ -33,7 +35,11 @@ class App {
 		this.showGroupCount = nova.config.get('eablokker.tabs-sidebar.show-group-count', 'boolean');
 		this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
 		this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
-		this.groupByKind = nova.workspace.config.get('eablokker.tabsSidebar.config.groupByKind', 'boolean');
+		this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
+
+		this.collapseTimeoutID = setTimeout(() => {
+			//
+		});
 
 		this.syntaxNames = {
 			'plaintext': nova.localize('Plain Text'),
@@ -210,10 +216,10 @@ class App {
 			this.treeView.reload();
 		});
 
-		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupByKind', (newVal: boolean, oldVal: boolean) => {
-			this.groupByKind = newVal;
+		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupBy', (newVal: string, oldVal: string) => {
+			this.groupBy = newVal;
 
-			this.tabDataProvider.groupByKind = this.groupByKind;
+			this.tabDataProvider.groupBy = newVal;
 			this.treeView.reload();
 		});
 
@@ -248,7 +254,7 @@ class App {
 
 				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
 
-				if (folder && this.groupByKind) {
+				if (folder && this.groupBy === 'type') {
 					reload = this.treeView.reload(folder);
 				} else {
 					reload = this.treeView.reload();
@@ -276,7 +282,7 @@ class App {
 					let reload;
 					const folder = this.tabDataProvider.getFolderBySyntax(destroyedEditor.document.syntax || 'plaintext');
 
-					if (folder && folder.children.length > 1 && this.groupByKind) {
+					if (folder && folder.children.length > 1 && this.groupBy === 'type') {
 						reload = this.treeView.reload(folder);
 					} else {
 						reload = this.treeView.reload();
@@ -314,7 +320,7 @@ class App {
 				// Only highlight tab if it's the same as the current active tab
 				if (document.uri === nova.workspace.activeTextEditor?.document.uri) {
 					this.focusedTab = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-					this.highlightTab(this.focusedTab || null, { focus: true });
+					this.highlightTab(this.focusedTab || null, { focus: true, reveal: 3 });
 				}
 			});
 
@@ -415,8 +421,20 @@ class App {
 		});
 
 		this.treeView.onDidCollapseElement(element => {
-			// console.log('Collapsed: ' + element?.name);
 
+			clearTimeout(this.collapseTimeoutID);
+			this.collapseTimeoutID = setTimeout(() => {
+				// console.log('Collapsed: ' + element?.name, element?.collapsibleState);
+
+				// Handle Folder Items
+				if (element instanceof FolderItem && element.uri) {
+					this.tabDataProvider.collapsedFolders.push(element.uri);
+					nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', this.tabDataProvider.collapsedFolders);
+					return;
+				}
+			}, 1);
+
+			// Handle kind groups
 			if (element?.syntax) {
 				this.tabDataProvider.collapsedKindGroups.push(element.syntax);
 				nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedKindGroups', this.tabDataProvider.collapsedKindGroups);
@@ -424,7 +442,19 @@ class App {
 		});
 
 		this.treeView.onDidExpandElement(element => {
-			// console.log('Expanded: ' + element?.name);
+			// console.log('Expanded: ' + element?.name, element?.collapsibleState);
+
+			// Handle Folder Items
+			if (element instanceof FolderItem && element.uri) {
+				const index = this.tabDataProvider.collapsedFolders.indexOf(element.uri);
+
+				if (index > -1) {
+					this.tabDataProvider.collapsedFolders.splice(index, 1);
+					nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', this.tabDataProvider.collapsedFolders);
+				}
+
+				return;
+			}
 
 			if (element?.syntax) {
 				const index = this.tabDataProvider.collapsedKindGroups.indexOf(element.syntax);
@@ -451,6 +481,11 @@ class App {
 				return;
 			}
 
+			// Don't do anything with folders
+			if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
+				return;
+			}
+
 			let activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
 			const activeDocumentIsRemote = activeDocument ? activeDocument.isRemote : false;
 			const selectionIsRemote = selection[0].isRemote;
@@ -469,6 +504,9 @@ class App {
 					})
 					.catch(err => {
 						console.error('Could not click menu item.', err);
+
+						const title = nova.localize('Failed to Close Tab');
+						this.showPermissionsNotification(title);
 					});
 
 				return;
@@ -516,6 +554,9 @@ class App {
 							})
 							.catch(err => {
 								console.error('Could not click menu item.', err);
+
+								const title = nova.localize('Failed to Close Tab');
+								this.showPermissionsNotification(title);
 							});
 					})
 					.catch((err: string) => {
@@ -566,6 +607,9 @@ class App {
 						})
 						.catch(err => {
 							console.error('Could not click menu item.', err);
+
+							const title = nova.localize('Failed to Close Tab');
+							this.showPermissionsNotification(title);
 						});
 				})
 				.catch(err => {
@@ -582,7 +626,7 @@ class App {
 			}
 
 			// Don't do anything with folders
-			if (selection[0]?.contextValue?.startsWith('kindGroup')) {
+			if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
 				return;
 			}
 
@@ -629,8 +673,13 @@ class App {
 				return;
 			}
 
-			// Move kind group up
+			// Don't do anything with folders
 			if (selection[0] instanceof FolderItem) {
+				return;
+			}
+
+			// Move kind group up
+			if (selection[0] instanceof GroupItem) {
 				this.tabDataProvider.moveKindGroup(selection[0], -1);
 				return;
 			}
@@ -649,8 +698,13 @@ class App {
 				return;
 			}
 
-			// Move kind group down
+			// Don't do anything with folders
 			if (selection[0] instanceof FolderItem) {
+				return;
+			}
+
+			// Move kind group down
+			if (selection[0] instanceof GroupItem) {
 				this.tabDataProvider.moveKindGroup(selection[0], 1);
 				return;
 			}
@@ -681,6 +735,9 @@ class App {
 				})
 				.catch(err => {
 					console.error(err);
+
+					const title = nova.localize('Failed to Clean Up By Tab Bar Order');
+					this.showPermissionsNotification(title);
 				});
 		});
 
@@ -697,10 +754,10 @@ class App {
 				});
 		});
 
-		nova.commands.register('tabs-sidebar.cleanUpByKind', () => {
-			if (nova.inDevMode()) console.log('cleanUpByKind');
+		nova.commands.register('tabs-sidebar.cleanUpByType', () => {
+			if (nova.inDevMode()) console.log('cleanUpByType');
 
-			this.tabDataProvider.cleanUpByKind();
+			this.tabDataProvider.cleanUpByType();
 			this.treeView.reload()
 				.then(() => {
 					this.highlightTab(this.focusedTab || null, { focus: true });
@@ -716,10 +773,30 @@ class App {
 			workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', !this.tabDataProvider.sortAlpha);
 		});
 
-		nova.commands.register('tabs-sidebar.groupByKind', (workspace: Workspace) => {
-			if (nova.inDevMode()) console.log('groupByKind');
+		nova.commands.register('tabs-sidebar.groupByNone', (workspace: Workspace) => {
+			if (nova.inDevMode()) console.log('groupByNone');
 
-			workspace.config.set('eablokker.tabsSidebar.config.groupByKind', !this.groupByKind);
+			workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
+		});
+
+		nova.commands.register('tabs-sidebar.groupByType', (workspace: Workspace) => {
+			if (nova.inDevMode()) console.log('groupByType');
+
+			if (this.groupBy !== 'type') {
+				workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'type');
+			} else {
+				workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
+			}
+		});
+
+		nova.commands.register('tabs-sidebar.groupByFolder', (workspace: Workspace) => {
+			if (nova.inDevMode()) console.log('groupByFolder');
+
+			if (this.groupBy !== 'folder') {
+				workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'folder');
+			} else {
+				workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
+			}
 		});
 
 		nova.commands.register('tabs-sidebar.showInFilesSidebar', (workspace: Workspace) => {
@@ -741,6 +818,9 @@ class App {
 						})
 						.catch(err => {
 							console.error('Could not click menu item.', err);
+
+							const title = nova.localize('Failed to Show in Files Sidebar');
+							this.showPermissionsNotification(title);
 						});
 				})
 				.catch((err: string) => {
@@ -791,7 +871,11 @@ class App {
 			}
 
 			if (workspace.path) {
-				nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+				if (nova.version[0] >= 8) {
+					nova.clipboard.writeText(nova.path.relative(selection[0].path, workspace.path));
+				} else {
+					nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+				}
 			} else {
 				nova.clipboard.writeText(selection[0].path);
 			}
@@ -800,7 +884,7 @@ class App {
 		nova.commands.register('tabs-sidebar.refresh', (workspace: Workspace) => {
 			const selection = this.treeView.selection;
 
-			if (selection[0] instanceof FolderItem) {
+			if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
 				this.tabDataProvider.loadData(workspace.textDocuments);
 			} else {
 				this.tabDataProvider.loadData(workspace.textDocuments, selection[0] || undefined);
@@ -920,12 +1004,16 @@ class App {
 				})
 				.catch(err => {
 					console.error('Could not click project item by filename.', err);
+
+					const title = nova.localize('Failed to Open Remote Tab');
+					this.showPermissionsNotification(title);
+
 					reject(err);
 				});
 		});
 	}
 
-	highlightTab(tab: TabItem | FolderItem | null, options?: { select?: boolean | undefined, focus?: boolean | undefined, reveal?: number | undefined } | undefined) {
+	highlightTab(tab: TabItem | GroupItem | null, options?: { select?: boolean | undefined, focus?: boolean | undefined, reveal?: number | undefined } | undefined) {
 		const activeTabUri = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document.uri : undefined;
 		const gotoTabUri = tab?.uri;
 
@@ -968,6 +1056,24 @@ class App {
 			.catch((err: Error) => {
 				console.error('Could not update git statuses', err);
 			});
+	}
+
+	showPermissionsNotification(title: string) {
+		const request = new NotificationRequest('osascript-failed');
+
+		request.title = title;
+		request.body = nova.localize('Make sure Nova has permissions for Accessibility and System Events.');
+
+		request.actions = [nova.localize('Dismiss'), nova.localize('More Info')];
+
+		const promise = nova.notifications.add(request);
+		promise.then(response => {
+			if (response.actionIdx === 1) {
+				nova.openURL('https://github.com/eablokker/nova-tabs-sidebar?tab=readme-ov-file#accessibility-permissions');
+			}
+		}, error => {
+			console.error(error);
+		});
 	}
 }
 

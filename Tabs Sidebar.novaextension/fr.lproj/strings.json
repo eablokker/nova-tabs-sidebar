@@ -4,6 +4,10 @@
 	"Open Files": "Fichiers Ouverts",
 	"No files are open yet.": "Aucun fichier n'est encore ouvert.",
 
+	"Local": "Local",
+	"Remote": "Distant",
+	"Project": "Projet",
+
 	"Open": "Ouvrir",
 	"Close Tab": "Fermer l’onglet",
 	"Move Item Up": "Déplacer vers le haut",
@@ -13,12 +17,18 @@
 	"Copy Path": "Copier le chemin",
 	"Copy Relative Path": "Copier le chemin relatif",
 	"Clean Up By Tab Bar Order": "Nettoyer par ordre de barre d'onglets",
-	"Clean Up Alphabetically": "Nettoyer par ordre alphabétique",
-	"Clean Up By Kind": "Nettoyer par type",
-	"Sort Alphabetically": "Trier par ordre alphabétique",
-	"Group By Kind": "Regrouper par type",
+	"Clean Up By Name": "Nettoyer par le nom",
+	"Clean Up By Type": "Nettoyer par le type",
+	"Sort By Name": "Trier par nom",
+	"Group By Type": "Grouper par type",
+	"Group By Folder": "Grouper par dossier",
 	"Refresh": "Rafraîchir",
 	"Refresh Tab List": "Rafraîchir la liste des onglets",
+
+	"Group By": "Grouper par",
+	"None": "Aucun",
+	"Type": "Type",
+	"Folder": "Dossier",
 
 	"Open tabs with a single click": "Ouvrir les onglets en un seul clic",
 	"When disabled, tabs will only open on double-click or context menu.": "Lorsqu'ils sont désactivés, les onglets ne s'ouvrent que par double-clic ou menu contextuel.",
@@ -51,5 +61,13 @@
 	"Window": "Fenêtre",
 	"Trash": "Corbeille",
 
-	"missing value": "missing value"
+	"missing value": "missing value",
+
+	"Failed to Close Tab": "Échec de la fermeture de l'onglet",
+	"Failed to Clean Up By Tab Bar Order": "Échec du nettoyage par ordre de la barre d'onglets",
+	"Failed to Show in Files Sidebar": "Échec de l'affichage dans la barre latérale des fichiers",
+	"Failed to Open Remote Tab": "Échec de l'ouverture de l'onglet Distant",
+	"Make sure Nova has permissions for Accessibility and System Events.": "Assurez-vous que Nova dispose des autorisations pour l'accessibilité et les événements système.",
+	"More Info": "Plus d'infos",
+	"Dismiss": "Rejeter"
 }
