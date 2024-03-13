@@ -49,7 +49,7 @@ function __generator(thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+        while (_) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -1185,6 +1185,66 @@ var TabDataProvider = /** @class */ (function () {
     return TabDataProvider;
 }());
 
+var TabGroupItem = /** @class */ (function () {
+    function TabGroupItem(name) {
+        this.name = name;
+        this.uuid = this.randomUUID();
+        this.children = [];
+        this.parent = null;
+    }
+    TabGroupItem.prototype.randomUUID = function () {
+        var uuid;
+        if (nova.version[0] >= 10) {
+            // @ts-ignore
+            uuid = nova.crypto.randomUUID();
+        }
+        else {
+            var u = Date.now().toString(16) + Math.random().toString(16) + '0'.repeat(16);
+            uuid = [u.substr(0, 8), u.substr(8, 4), '4000-8' + u.substr(13, 3), u.substr(16, 12)].join('-');
+        }
+        return uuid;
+    };
+    return TabGroupItem;
+}());
+var TabGroupsDataProvider = /** @class */ (function () {
+    function TabGroupsDataProvider() {
+        this.flatItems = [];
+        var tabGroups = nova.workspace.config.get('tabGroups', 'array');
+        if (tabGroups) {
+            this.refresh(tabGroups);
+        }
+    }
+    TabGroupsDataProvider.prototype.refresh = function (tabGroups) {
+        var _this = this;
+        this.flatItems = [];
+        tabGroups === null || tabGroups === void 0 ? void 0 : tabGroups.forEach(function (item) {
+            _this.flatItems.push(new TabGroupItem(item));
+        });
+    };
+    TabGroupsDataProvider.prototype.getChildren = function (element) {
+        // Requests the children of an element
+        if (!element) {
+            return this.flatItems;
+        }
+        else {
+            return element.children;
+        }
+    };
+    TabGroupsDataProvider.prototype.getParent = function (element) {
+        // Requests the parent of an element, for use with the reveal() method
+        if (element === null) {
+            return null;
+        }
+        return element.parent;
+    };
+    TabGroupsDataProvider.prototype.getTreeItem = function (element) {
+        var item = new TreeItem(element.name);
+        // item.descriptiveText = 'Description';
+        return item;
+    };
+    return TabGroupsDataProvider;
+}());
+
 var app;
 var App = /** @class */ (function () {
     function App() {
@@ -1274,6 +1334,10 @@ var App = /** @class */ (function () {
         };
         this.tabDataProvider = new TabDataProvider(this);
         this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
+        this.tabGroupsDataProvider = new TabGroupsDataProvider();
+        this.groupsTreeView = new TreeView('tabs-sidebar-groups', {
+            dataProvider: this.tabGroupsDataProvider
+        });
         this.init();
         this.initConfig();
         this.initEditorEvents();
@@ -1309,6 +1373,7 @@ var App = /** @class */ (function () {
         });
         // TreeView implements the Disposable interface
         nova.subscriptions.add(this.treeView);
+        nova.subscriptions.add(this.groupsTreeView);
     };
     App.prototype.deactivate = function () {
         var _a;
@@ -1435,40 +1500,45 @@ var App = /** @class */ (function () {
                 }, 100);
             });
             // Focus tab in sidebar when clicking in document
-            editor.onDidChangeSelection(function (changedEditor) {
+            /*editor.onDidChangeSelection(changedEditor => {
                 // if (nova.inDevMode()) console.log('editor.onDidChangeSelection');
-                var _a;
-                var selection = _this.treeView.selection[0];
-                var document = changedEditor.document;
+
+                const selection = this.treeView.selection[0];
+                const document = changedEditor.document;
+
                 // Don't reveal in treeview if it's already selected
-                if ((selection === null || selection === void 0 ? void 0 : selection.uri) === document.uri) {
+                if (selection?.uri === document.uri) {
                     return;
                 }
+
                 // Only highlight tab if it's the same as the current active tab
-                if (document.uri === ((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri)) {
-                    _this.focusedTab = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-                    _this.highlightTab(_this.focusedTab || null, { focus: true, reveal: 3 });
+                if (document.uri === nova.workspace.activeTextEditor?.document.uri) {
+                    this.focusedTab = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
+                    this.highlightTab(this.focusedTab || null, { focus: true, reveal: 3 });
                 }
-            });
-            editor.onDidStopChanging(function (changedEditor) {
-                if (nova.inDevMode())
-                    console.log('Document did stop changing');
+            });*/
+            /*editor.onDidStopChanging(changedEditor => {
+                if (nova.inDevMode()) console.log('Document did stop changing');
+
                 if (changedEditor.document.isUntitled) {
                     return;
                 }
-                var element = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-                _this.focusedTab = element;
+
+                const element = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
+                this.focusedTab = element;
+
                 if (element) {
                     element.isDirty = changedEditor.document.isDirty;
                 }
-                _this.treeView.reload(_this.focusedTab)
-                    .then(function () {
-                    _this.highlightTab(_this.focusedTab || null, { focus: true });
-                })
-                    .catch(function (err) {
-                    console.error('Could not reload treeView.', err);
-                });
-            });
+
+                this.treeView.reload(this.focusedTab)
+                    .then(() => {
+                        this.highlightTab(this.focusedTab || null, { focus: true });
+                    })
+                    .catch(err => {
+                        console.error('Could not reload treeView.', err);
+                    });
+            });*/
             // Focus tab in sidebar when saving document
             editor.onDidSave(function (savedEditor) {
                 if (nova.inDevMode())
@@ -1930,6 +2000,79 @@ var App = /** @class */ (function () {
             }
             _this.initFileWatcher();
             _this.treeView.reload();
+        });
+        nova.commands.register('tabs-sidebar.openGlobalConfig', function (workspace) {
+            nova.openConfig();
+        });
+        // nova.commands.register('tabs-sidebar.newTabGroup', (workspace: Workspace) => {
+        // 	workspace.showInputPanel('New Tab Group', {
+        // 		label: 'Name',
+        // 		placeholder: 'Tab Group Name',
+        // 		prompt: 'OK'
+        // 	}, (value) => {
+        // 		console.log(value);
+        // 	});
+        // });
+        nova.commands.register('tabs-sidebar.newTabGroup', function (workspace) {
+            workspace.showInputPalette('New Tab Group', {
+                placeholder: 'Tab Group Name',
+            }, function (value) {
+                if (!value) {
+                    workspace.showInformativeMessage('A tab group name is required.');
+                    return;
+                }
+                var tabGroups = workspace.config.get('tabGroups', 'array') || [];
+                tabGroups.push(value);
+                workspace.config.set('tabGroups', tabGroups);
+                // @ts-ignore
+                workspace.context.set('hasTabGroups', true);
+                _this.tabGroupsDataProvider.refresh(tabGroups);
+                _this.groupsTreeView.reload();
+            });
+        });
+        nova.commands.register('tabs-sidebar.openTabGroupPalette', function (workspace) {
+            var tabGroups = workspace.config.get('tabGroups', 'array');
+            if (!tabGroups) {
+                workspace.showInformativeMessage('There are no tab groups yet.');
+                return;
+            }
+            workspace.showChoicePalette(tabGroups, {
+                placeholder: 'Open Tab Group'
+            }, function (choice, index) {
+                console.log(choice, index);
+            });
+        });
+        nova.commands.register('tabs-sidebar.deleteTabGroupPalette', function (workspace) {
+            var tabGroups = workspace.config.get('tabGroups', 'array');
+            if (!tabGroups) {
+                workspace.showInformativeMessage('There are no tab groups yet.');
+                return;
+            }
+            workspace.showChoicePalette(tabGroups, {
+                placeholder: 'Delete Tab Group'
+            }, function (choice, index) {
+                console.log(choice, index);
+                if (index === null) {
+                    workspace.showInformativeMessage('The tab group "' + choice + '" was not found.');
+                    return;
+                }
+                tabGroups.splice(index, 1);
+                workspace.config.set('tabGroups', tabGroups);
+                if (!tabGroups.length) {
+                    workspace.config.remove('tabGroups');
+                    // @ts-ignore
+                    workspace.context.remove('hasTabGroups');
+                }
+                _this.tabGroupsDataProvider.refresh(tabGroups);
+                _this.groupsTreeView.reload();
+            });
+        });
+        nova.commands.register('tabs-sidebar.deleteTabGroup', function (workspace) {
+            var selection = _this.groupsTreeView.selection;
+            if (!selection[0]) {
+                return;
+            }
+            console.log(selection[0]);
         });
     };
     App.prototype.initFileWatcher = function () {

@@ -1,10 +1,13 @@
 import { SyntaxNames, SyntaxImages, TabItem, GroupItem, FolderItem, TabDataProvider } from './TabDataProvider';
+import { TabGroupItem, TabGroupsDataProvider } from './TabGroupsDataProvider';
 
 let app: App;
 
 class App {
 	treeView: TreeView<TabItem | GroupItem | FolderItem | null>;
 	tabDataProvider: TabDataProvider;
+	groupsTreeView: TreeView<TabGroupItem | null>
+	tabGroupsDataProvider: TabGroupsDataProvider;
 	fileWatcher: FileSystemWatcher | undefined;
 	focusedTab: TabItem | undefined;
 	openTabWhenFocusSidebar: boolean;
@@ -116,6 +119,11 @@ class App {
 
 		this.tabDataProvider = new TabDataProvider(this);
 		this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
+		
+		this.tabGroupsDataProvider = new TabGroupsDataProvider();
+		this.groupsTreeView = new TreeView('tabs-sidebar-groups', {
+			dataProvider: this.tabGroupsDataProvider
+		});
 
 		this.init();
 		this.initConfig();
@@ -156,6 +164,7 @@ class App {
 
 		// TreeView implements the Disposable interface
 		nova.subscriptions.add(this.treeView);
+		nova.subscriptions.add(this.groupsTreeView);
 	}
 
 	deactivate() {
@@ -306,7 +315,7 @@ class App {
 			});
 
 			// Focus tab in sidebar when clicking in document
-			editor.onDidChangeSelection(changedEditor => {
+			/*editor.onDidChangeSelection(changedEditor => {
 				// if (nova.inDevMode()) console.log('editor.onDidChangeSelection');
 
 				const selection = this.treeView.selection[0];
@@ -322,9 +331,9 @@ class App {
 					this.focusedTab = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
 					this.highlightTab(this.focusedTab || null, { focus: true, reveal: 3 });
 				}
-			});
+			});*/
 
-			editor.onDidStopChanging(changedEditor => {
+			/*editor.onDidStopChanging(changedEditor => {
 				if (nova.inDevMode()) console.log('Document did stop changing');
 
 				if (changedEditor.document.isUntitled) {
@@ -345,7 +354,7 @@ class App {
 					.catch(err => {
 						console.error('Could not reload treeView.', err);
 					});
-			});
+			});*/
 
 			// Focus tab in sidebar when saving document
 			editor.onDidSave(savedEditor => {
@@ -893,6 +902,102 @@ class App {
 			this.initFileWatcher();
 
 			this.treeView.reload();
+		});
+		
+		nova.commands.register('tabs-sidebar.openGlobalConfig', (workspace: Workspace) => {
+			nova.openConfig();
+		});
+		
+		// nova.commands.register('tabs-sidebar.newTabGroup', (workspace: Workspace) => {
+		// 	workspace.showInputPanel('New Tab Group', {
+		// 		label: 'Name',
+		// 		placeholder: 'Tab Group Name',
+		// 		prompt: 'OK'
+		// 	}, (value) => {
+		// 		console.log(value);
+		// 	});
+		// });
+		
+		nova.commands.register('tabs-sidebar.newTabGroup', (workspace: Workspace) => {
+			workspace.showInputPalette('New Tab Group', {
+				placeholder: 'Tab Group Name',
+			}, (value) => {
+				
+				if (!value) {
+					workspace.showInformativeMessage('A tab group name is required.');
+					return;
+				}
+				
+				const tabGroups = workspace.config.get('tabGroups', 'array') || [];
+				tabGroups.push(value);
+				workspace.config.set('tabGroups', tabGroups);
+				// @ts-ignore
+				workspace.context.set('hasTabGroups', true);
+				
+				this.tabGroupsDataProvider.refresh(tabGroups);
+				this.groupsTreeView.reload();
+			});
+		});
+		
+		nova.commands.register('tabs-sidebar.openTabGroupPalette', (workspace: Workspace) => {
+			const tabGroups = workspace.config.get('tabGroups', 'array');
+			
+			if (!tabGroups) {
+				workspace.showInformativeMessage('There are no tab groups yet.');
+				return;
+			}
+			
+			workspace.showChoicePalette(tabGroups,
+			{
+				placeholder: 'Open Tab Group'
+			},
+			(choice, index) => {
+				console.log(choice, index);
+			});
+		});
+		
+		nova.commands.register('tabs-sidebar.deleteTabGroupPalette', (workspace: Workspace) => {
+			const tabGroups = workspace.config.get('tabGroups', 'array');
+			
+			if (!tabGroups) {
+				workspace.showInformativeMessage('There are no tab groups yet.');
+				return;
+			}
+			
+			workspace.showChoicePalette(tabGroups,
+			{
+				placeholder: 'Delete Tab Group'
+			},
+			(choice, index) => {
+				console.log(choice, index);
+				
+				if (index === null) {
+					workspace.showInformativeMessage('The tab group "' + choice + '" was not found.');
+					return;
+				}
+				
+				tabGroups.splice(index, 1);
+				workspace.config.set('tabGroups', tabGroups);
+				
+				if (!tabGroups.length) {
+					workspace.config.remove('tabGroups');
+					// @ts-ignore
+					workspace.context.remove('hasTabGroups');
+				}
+				
+				this.tabGroupsDataProvider.refresh(tabGroups);
+				this.groupsTreeView.reload();
+			});
+		});
+		
+		nova.commands.register('tabs-sidebar.deleteTabGroup', (workspace: Workspace) => {
+			const selection = this.groupsTreeView.selection;
+			
+			if (!selection[0]) {
+				return;
+			}
+			
+			console.log(selection[0]);
 		});
 	}
 
