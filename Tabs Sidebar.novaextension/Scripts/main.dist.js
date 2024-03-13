@@ -2072,8 +2072,10 @@ var App = /** @class */ (function () {
                     return;
                 }
                 tabGroups.splice(index, 1);
-                workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-                if (!tabGroups.length) {
+                if (tabGroups.length > 0) {
+                    workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
+                }
+                else {
                     workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
                 }
                 _this.tabGroupsDataProvider.refresh(tabGroups);
@@ -2081,11 +2083,24 @@ var App = /** @class */ (function () {
             });
         });
         nova.commands.register('tabs-sidebar.deleteTabGroup', function (workspace) {
-            var selection = _this.groupsTreeView.selection;
-            if (!selection[0]) {
+            var selections = _this.groupsTreeView.selection;
+            if (!selections[0]) {
                 return;
             }
-            console.log(selection[0]);
+            var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+            if (!tabGroups) {
+                return;
+            }
+            var selection = selections[0];
+            var filteredTabGroups = tabGroups.filter(function (name) { return name !== selection.name; });
+            if (filteredTabGroups.length > 0) {
+                workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
+            }
+            else {
+                workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
+            }
+            _this.tabGroupsDataProvider.refresh(filteredTabGroups);
+            _this.groupsTreeView.reload();
         });
     };
     App.prototype.initFileWatcher = function () {
