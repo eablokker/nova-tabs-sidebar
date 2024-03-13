@@ -369,6 +369,12 @@
             "Description": "Reloads Git repo",
             "type": "command",
             "command": "tabs-sidebar.refresh"
+        },
+        {
+            "key": "eablokker.tabsSidebar.config.tabGroups",
+            "title": "Tab Groups",
+            "description": "Saved tab groups.",
+            "type": "stringArray"
         }
     ]
 }

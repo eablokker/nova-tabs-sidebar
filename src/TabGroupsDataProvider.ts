@@ -35,7 +35,7 @@ class TabGroupsDataProvider {
 	constructor() {
 		this.flatItems = [];
 		
-		const tabGroups = nova.workspace.config.get('tabGroups', 'array');
+		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
 		
 		if (tabGroups) {
 			this.refresh(tabGroups);
