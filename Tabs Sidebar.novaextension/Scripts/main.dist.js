@@ -1374,6 +1374,12 @@ var App = /** @class */ (function () {
         // TreeView implements the Disposable interface
         nova.subscriptions.add(this.treeView);
         nova.subscriptions.add(this.groupsTreeView);
+        // Init Context
+        var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+        if (tabGroups && tabGroups.length > 0) {
+            // @ts-ignore
+            nova.workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
+        }
     };
     App.prototype.deactivate = function () {
         var _a;
@@ -1439,6 +1445,16 @@ var App = /** @class */ (function () {
                     console.error(err);
                 });
         });*/
+        nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.tabGroups', function (newVal, oldVal) {
+            if (newVal.length > 0) {
+                // @ts-ignore
+                nova.workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
+            }
+            else {
+                // @ts-ignore
+                nova.workspace.context.remove('eablokker.tabsSidebar.context.hasTabGroups');
+            }
+        });
     };
     App.prototype.initEditorEvents = function () {
         var _this = this;
@@ -2025,8 +2041,6 @@ var App = /** @class */ (function () {
                 var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
                 tabGroups.push(name);
                 workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-                // @ts-ignore
-                workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
                 _this.tabGroupsDataProvider.refresh(tabGroups);
                 _this.groupsTreeView.reload();
             });
@@ -2061,8 +2075,6 @@ var App = /** @class */ (function () {
                 workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
                 if (!tabGroups.length) {
                     workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
-                    // @ts-ignore
-                    workspace.context.remove('eablokker.tabsSidebar.context.hasTabGroups');
                 }
                 _this.tabGroupsDataProvider.refresh(tabGroups);
                 _this.groupsTreeView.reload();

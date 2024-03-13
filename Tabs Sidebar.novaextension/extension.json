@@ -54,12 +54,12 @@
             {
                 "title": "Open Tab Group…",
                 "command": "tabs-sidebar.openTabGroupPalette",
-                "when": "hasTabGroups == true",
+                "when": "eablokker.tabsSidebar.context.hasTabGroups == true",
             },
             {
                 "title": "Delete Tab Group…",
                 "command": "tabs-sidebar.deleteTabGroupPalette",
-                "when": "hasTabGroups == true",
+                "when": "eablokker.tabsSidebar.context.hasTabGroups == true",
             },
         ]
     },

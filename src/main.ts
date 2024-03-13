@@ -165,6 +165,13 @@ class App {
 		// TreeView implements the Disposable interface
 		nova.subscriptions.add(this.treeView);
 		nova.subscriptions.add(this.groupsTreeView);
+		
+		// Init Context
+		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+		if (tabGroups && tabGroups.length > 0) {
+			// @ts-ignore
+			nova.workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
+		}
 	}
 
 	deactivate() {
@@ -245,6 +252,16 @@ class App {
 					console.error(err);
 				});
 		});*/
+		
+		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.tabGroups', (newVal: string[], oldVal: string[]) => {
+			if (newVal.length > 0) {
+				// @ts-ignore
+				nova.workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
+			} else {
+				// @ts-ignore
+				nova.workspace.context.remove('eablokker.tabsSidebar.context.hasTabGroups');
+			}
+		});
 	}
 
 	initEditorEvents() {
@@ -933,8 +950,6 @@ class App {
 				const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
 				tabGroups.push(name);
 				workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-				// @ts-ignore
-				workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
 				
 				this.tabGroupsDataProvider.refresh(tabGroups);
 				this.groupsTreeView.reload();
@@ -983,8 +998,6 @@ class App {
 				
 				if (!tabGroups.length) {
 					workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
-					// @ts-ignore
-					workspace.context.remove('eablokker.tabsSidebar.context.hasTabGroups');
 				}
 				
 				this.tabGroupsDataProvider.refresh(tabGroups);
