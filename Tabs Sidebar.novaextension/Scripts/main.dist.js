@@ -1380,6 +1380,10 @@ var App = /** @class */ (function () {
             // @ts-ignore
             nova.workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
         }
+        else {
+            // @ts-ignore
+            nova.workspace.context.remove('eablokker.tabsSidebar.context.hasTabGroups');
+        }
     };
     App.prototype.deactivate = function () {
         var _a;
@@ -2072,13 +2076,49 @@ var App = /** @class */ (function () {
                     return;
                 }
                 tabGroups.splice(index, 1);
-                if (tabGroups.length > 0) {
-                    workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-                }
-                else {
+                workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
+                if (tabGroups.length <= 0) {
                     workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
                 }
                 _this.tabGroupsDataProvider.refresh(tabGroups);
+                _this.groupsTreeView.reload();
+            });
+        });
+        nova.commands.register('tabs-sidebar.renameTabGroup', function (workspace) {
+            var selections = _this.groupsTreeView.selection;
+            if (!selections[0]) {
+                return;
+            }
+            var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+            if (!tabGroups) {
+                return;
+            }
+            var selection = selections[0];
+            // const tabGroup = tabGroups.find((name) => {
+            // 	return name === selection.name;
+            // });
+            // 
+            // if (!tabGroup) {
+            // 	return;
+            // }
+            nova.workspace.showInputPalette('Rename Tab Group', {
+                placeholder: 'Rename Tab Group',
+                value: selection.name
+            }, function (name) {
+                if (!name) {
+                    workspace.showInformativeMessage('A tab group name is required.');
+                    return;
+                }
+                var renamedTabGroups = tabGroups.map(function (prevName) {
+                    if (prevName === selection.name) {
+                        return name;
+                    }
+                    else {
+                        return prevName;
+                    }
+                });
+                workspace.config.set('eablokker.tabsSidebar.config.tabGroups', renamedTabGroups);
+                _this.tabGroupsDataProvider.refresh(renamedTabGroups);
                 _this.groupsTreeView.reload();
             });
         });
@@ -2093,10 +2133,8 @@ var App = /** @class */ (function () {
             }
             var selection = selections[0];
             var filteredTabGroups = tabGroups.filter(function (name) { return name !== selection.name; });
-            if (filteredTabGroups.length > 0) {
-                workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
-            }
-            else {
+            workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
+            if (filteredTabGroups.length <= 0) {
                 workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
             }
             _this.tabGroupsDataProvider.refresh(filteredTabGroups);
