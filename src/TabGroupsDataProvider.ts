@@ -17,17 +17,13 @@ class TabGroupItem {
 	}
 
 	static randomUUID() {
-		let uuid: string;
-
 		if (nova.version[0] >= 10) {
 			// @ts-ignore
-			uuid = nova.crypto.randomUUID();
-		} else {
-			let u = Date.now().toString(16) + Math.random().toString(16) + '0'.repeat(16);
-			uuid = [u.substr(0,8), u.substr(8,4), '4000-8' + u.substr(13,3), u.substr(16,12)].join('-');
+			return nova.crypto.randomUUID();
 		}
 
-		return uuid;
+		let u = Date.now().toString(16) + Math.random().toString(16) + '0'.repeat(16);
+		return [u.substr(0,8), u.substr(8,4), '4000-8' + u.substr(13,3), u.substr(16,12)].join('-');
 	}
 }
 
@@ -48,7 +44,7 @@ class TabGroupsDataProvider {
 		const tabGroupItems = tabGroups.map((configString) => {
 			const matches = configString.match(this.configRegex);
 
-			if (!matches || matches.length < 2) {
+			if (!matches || matches.length < 3) {
 				return new TabGroupItem('Untitled');
 			}
 
@@ -74,31 +70,53 @@ class TabGroupsDataProvider {
 
 		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
 		tabGroups.push(tabGroup.configString);
-		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
 
+		// Update config and tree
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
 		this.flatItems.push(tabGroup);
 	}
 
-	removeItemByConfigString(configString: string) {
-		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-		if (!tabGroups) {
+	renameItemByConfigString(configString: string, newName: string) {
+		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
+
+		const matches = configString.match(this.configRegex);
+		if (!matches || matches.length < 3) {
 			return;
 		}
+
+		const uuid = matches[1];
+
+		const renamedTabGroups = tabGroups.map((prevConfigString) => {
+			if (prevConfigString === configString) {
+				return uuid + ':' + newName;
+			}
+
+			return prevConfigString;
+		});
+
+		const tabGroupItemToRename = this.flatItems.find((tabGroup) => {
+			return tabGroup.uuid === uuid;
+		});
+
+		if (!tabGroupItemToRename) {
+			return;
+		}
+
+		// Update config and tree
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', renamedTabGroups);
+		tabGroupItemToRename.name = newName;
+	}
+
+	removeItemByConfigString(configString: string) {
+		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
 
 		const filteredTabGroups = tabGroups.filter((configStringToFilter) => {
 			return configString !== configStringToFilter;
 		});
 
-		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
-
-		// Remove config key if empty
-		if (filteredTabGroups.length <= 0) {
-			nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
-		}
-
 		// Get UUID
 		const matches = configString.match(this.configRegex);
-		if (!matches || matches.length < 2) {
+		if (!matches || matches.length < 3) {
 			return;
 		}
 		const uuid = matches[1];
@@ -108,7 +126,14 @@ class TabGroupsDataProvider {
 			return groupItem.uuid === uuid;
 		});
 
+		// Update config and tree
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
 		this.flatItems.splice(index, 1);
+
+		// Remove config key if empty
+		if (filteredTabGroups.length <= 0) {
+			nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
+		}
 	}
 
 	getChildren(element: TabGroupItem) {
@@ -116,9 +141,8 @@ class TabGroupsDataProvider {
 		if (!element) {
 			return this.flatItems;
 		}
-		else {
-			return element.children;
-		}
+
+		return element.children;
 	}
 
 	getParent(element: TabGroupItem) {

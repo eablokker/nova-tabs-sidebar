@@ -961,13 +961,12 @@ class App {
 
 			const tabNames = tabGroups.map((configString) => {
 				const matches = configString.match(this.tabGroupsDataProvider.configRegex);
-				if (!matches || matches.length < 2) {
+				if (!matches || matches.length < 3) {
 					return 'Untitled';
-				} else {
-					return matches[2];
 				}
-			});
 
+				return matches[2];
+			});
 
 			workspace.showChoicePalette(tabNames,
 				{
@@ -987,11 +986,11 @@ class App {
 
 			const tabNames = tabGroups.map((configString) => {
 				const matches = configString.match(this.tabGroupsDataProvider.configRegex);
-				if (!matches || matches.length < 2) {
+				if (!matches || matches.length < 3) {
 					return 'Untitled';
-				} else {
-					return matches[2];
 				}
+
+				return matches[2];
 			});
 
 			workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' },
@@ -1023,35 +1022,17 @@ class App {
 
 			const selection = selections[0];
 
-			// const tabGroup = tabGroups.find((name) => {
-			// 	return name === selection.name;
-			// });
-			//
-			// if (!tabGroup) {
-			// 	return;
-			// }
-
 			nova.workspace.showInputPalette('Rename Tab Group', {
 				placeholder: 'Rename Tab Group',
 				value: selection.name
 			}, (name) => {
 				if (!name) {
-					workspace.showInformativeMessage('A tab group name is required.');
 					return;
 				}
 
-				const renamedTabGroups = tabGroups.map((prevName) => {
-					if (prevName === selection.name) {
-						return name;
-					} else {
-						return prevName;
-					}
-				});
+				const configString = selection.uuid + ':' + selection.name;
 
-
-				workspace.config.set('eablokker.tabsSidebar.config.tabGroups', renamedTabGroups);
-
-				// this.tabGroupsDataProvider.loadData(renamedTabGroups);
+				this.tabGroupsDataProvider.renameItemByConfigString(configString, name);
 				this.groupsTreeView.reload();
 			});
 		});

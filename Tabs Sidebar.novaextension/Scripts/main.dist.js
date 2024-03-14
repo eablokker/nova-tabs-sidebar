@@ -1194,16 +1194,12 @@ var TabGroupItem = /** @class */ (function () {
         this.parent = null;
     }
     TabGroupItem.randomUUID = function () {
-        var uuid;
         if (nova.version[0] >= 10) {
             // @ts-ignore
-            uuid = nova.crypto.randomUUID();
+            return nova.crypto.randomUUID();
         }
-        else {
-            var u = Date.now().toString(16) + Math.random().toString(16) + '0'.repeat(16);
-            uuid = [u.substr(0, 8), u.substr(8, 4), '4000-8' + u.substr(13, 3), u.substr(16, 12)].join('-');
-        }
-        return uuid;
+        var u = Date.now().toString(16) + Math.random().toString(16) + '0'.repeat(16);
+        return [u.substr(0, 8), u.substr(8, 4), '4000-8' + u.substr(13, 3), u.substr(16, 12)].join('-');
     };
     return TabGroupItem;
 }());
@@ -1218,7 +1214,7 @@ var TabGroupsDataProvider = /** @class */ (function () {
         }
         var tabGroupItems = tabGroups.map(function (configString) {
             var matches = configString.match(_this.configRegex);
-            if (!matches || matches.length < 2) {
+            if (!matches || matches.length < 3) {
                 return new TabGroupItem('Untitled');
             }
             var uuid = matches[1];
@@ -1238,25 +1234,41 @@ var TabGroupsDataProvider = /** @class */ (function () {
         var tabGroup = new TabGroupItem(name || 'Untitled');
         var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
         tabGroups.push(tabGroup.configString);
+        // Update config and tree
         nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
         this.flatItems.push(tabGroup);
     };
-    TabGroupsDataProvider.prototype.removeItemByConfigString = function (configString) {
-        var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-        if (!tabGroups) {
+    TabGroupsDataProvider.prototype.renameItemByConfigString = function (configString, newName) {
+        var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
+        var matches = configString.match(this.configRegex);
+        if (!matches || matches.length < 3) {
             return;
         }
+        var uuid = matches[1];
+        var renamedTabGroups = tabGroups.map(function (prevConfigString) {
+            if (prevConfigString === configString) {
+                return uuid + ':' + newName;
+            }
+            return prevConfigString;
+        });
+        var tabGroupItemToRename = this.flatItems.find(function (tabGroup) {
+            return tabGroup.uuid === uuid;
+        });
+        if (!tabGroupItemToRename) {
+            return;
+        }
+        // Update config and tree
+        nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', renamedTabGroups);
+        tabGroupItemToRename.name = newName;
+    };
+    TabGroupsDataProvider.prototype.removeItemByConfigString = function (configString) {
+        var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
         var filteredTabGroups = tabGroups.filter(function (configStringToFilter) {
             return configString !== configStringToFilter;
         });
-        nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
-        // Remove config key if empty
-        if (filteredTabGroups.length <= 0) {
-            nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
-        }
         // Get UUID
         var matches = configString.match(this.configRegex);
-        if (!matches || matches.length < 2) {
+        if (!matches || matches.length < 3) {
             return;
         }
         var uuid = matches[1];
@@ -1264,16 +1276,20 @@ var TabGroupsDataProvider = /** @class */ (function () {
         var index = this.flatItems.findIndex(function (groupItem) {
             return groupItem.uuid === uuid;
         });
+        // Update config and tree
+        nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
         this.flatItems.splice(index, 1);
+        // Remove config key if empty
+        if (filteredTabGroups.length <= 0) {
+            nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
+        }
     };
     TabGroupsDataProvider.prototype.getChildren = function (element) {
         // Requests the children of an element
         if (!element) {
             return this.flatItems;
         }
-        else {
-            return element.children;
-        }
+        return element.children;
     };
     TabGroupsDataProvider.prototype.getParent = function (element) {
         // Requests the parent of an element, for use with the reveal() method
@@ -2099,12 +2115,10 @@ var App = /** @class */ (function () {
             }
             var tabNames = tabGroups.map(function (configString) {
                 var matches = configString.match(_this.tabGroupsDataProvider.configRegex);
-                if (!matches || matches.length < 2) {
+                if (!matches || matches.length < 3) {
                     return 'Untitled';
                 }
-                else {
-                    return matches[2];
-                }
+                return matches[2];
             });
             workspace.showChoicePalette(tabNames, {
                 placeholder: 'Open Tab Group'
@@ -2120,12 +2134,10 @@ var App = /** @class */ (function () {
             }
             var tabNames = tabGroups.map(function (configString) {
                 var matches = configString.match(_this.tabGroupsDataProvider.configRegex);
-                if (!matches || matches.length < 2) {
+                if (!matches || matches.length < 3) {
                     return 'Untitled';
                 }
-                else {
-                    return matches[2];
-                }
+                return matches[2];
             });
             workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' }, function (name, index) {
                 if (index === null) {
@@ -2147,31 +2159,15 @@ var App = /** @class */ (function () {
                 return;
             }
             var selection = selections[0];
-            // const tabGroup = tabGroups.find((name) => {
-            // 	return name === selection.name;
-            // });
-            //
-            // if (!tabGroup) {
-            // 	return;
-            // }
             nova.workspace.showInputPalette('Rename Tab Group', {
                 placeholder: 'Rename Tab Group',
                 value: selection.name
             }, function (name) {
                 if (!name) {
-                    workspace.showInformativeMessage('A tab group name is required.');
                     return;
                 }
-                var renamedTabGroups = tabGroups.map(function (prevName) {
-                    if (prevName === selection.name) {
-                        return name;
-                    }
-                    else {
-                        return prevName;
-                    }
-                });
-                workspace.config.set('eablokker.tabsSidebar.config.tabGroups', renamedTabGroups);
-                // this.tabGroupsDataProvider.loadData(renamedTabGroups);
+                var configString = selection.uuid + ':' + selection.name;
+                _this.tabGroupsDataProvider.renameItemByConfigString(configString, name);
                 _this.groupsTreeView.reload();
             });
         });
