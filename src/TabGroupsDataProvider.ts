@@ -3,18 +3,20 @@ type TabGroupNames = {[uuid: string]: string};
 class TabGroupItem {
 	name: string;
 	uuid: string;
+	configString: string;
 	contextValue: string | undefined;
 	children: TabGroupItem[];
 	parent: TabGroupItem | null;
 
-	constructor(name: string) {
+	constructor(name: string, uuid?: string) {
 		this.name = name;
-		this.uuid = this.randomUUID();
+		this.uuid = uuid || TabGroupItem.randomUUID();
+		this.configString = this.uuid + ':' + this.name;
 		this.children = [];
 		this.parent = null;
 	}
 	
-	randomUUID() {
+	static randomUUID() {
 		let uuid: string;
 		
 		if (nova.version[0] >= 10) {
@@ -31,23 +33,44 @@ class TabGroupItem {
 
 class TabGroupsDataProvider {
 	flatItems: TabGroupItem[];
+	configRegex: RegExp;
 	
 	constructor() {
 		this.flatItems = [];
+		this.configRegex = /^[^:]*:(.*)$/;
 		
 		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
 		
-		if (tabGroups) {
-			this.refresh(tabGroups);
+		if (!tabGroups) {
+			return;
 		}
+		
+		const tabGroupItems = tabGroups.map((configString) => {
+			const matches = configString.match(this.configRegex);
+			
+			if (!matches || matches.length < 2) {
+				return new TabGroupItem('Untitled');
+			}
+			
+			const uuid = matches[0];
+			const name = matches[1];
+			
+			return new TabGroupItem(name, uuid);
+		});
+		
+		this.loadData(tabGroupItems);
 	}
 	
-	refresh(tabGroups: string[]) {
+	loadData(tabGroups: TabGroupItem[]) {
 		this.flatItems = [];
 		
-		tabGroups?.forEach((item) => {
-			this.flatItems.push(new TabGroupItem(item));
+		tabGroups?.forEach((tabGroup) => {
+			this.flatItems.push(tabGroup);
 		});
+	}
+	
+	addItem(tabGroup: TabGroupItem) {
+		this.flatItems.push(tabGroup);
 	}
 	
 	getChildren(element: TabGroupItem) {

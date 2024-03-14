@@ -1186,13 +1186,14 @@ var TabDataProvider = /** @class */ (function () {
 }());
 
 var TabGroupItem = /** @class */ (function () {
-    function TabGroupItem(name) {
+    function TabGroupItem(name, uuid) {
         this.name = name;
-        this.uuid = this.randomUUID();
+        this.uuid = uuid || TabGroupItem.randomUUID();
+        this.configString = this.uuid + ':' + this.name;
         this.children = [];
         this.parent = null;
     }
-    TabGroupItem.prototype.randomUUID = function () {
+    TabGroupItem.randomUUID = function () {
         var uuid;
         if (nova.version[0] >= 10) {
             // @ts-ignore
@@ -1208,18 +1209,33 @@ var TabGroupItem = /** @class */ (function () {
 }());
 var TabGroupsDataProvider = /** @class */ (function () {
     function TabGroupsDataProvider() {
-        this.flatItems = [];
-        var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-        if (tabGroups) {
-            this.refresh(tabGroups);
-        }
-    }
-    TabGroupsDataProvider.prototype.refresh = function (tabGroups) {
         var _this = this;
         this.flatItems = [];
-        tabGroups === null || tabGroups === void 0 ? void 0 : tabGroups.forEach(function (item) {
-            _this.flatItems.push(new TabGroupItem(item));
+        this.configRegex = /^[^:]*:(.*)$/;
+        var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+        if (!tabGroups) {
+            return;
+        }
+        var tabGroupItems = tabGroups.map(function (configString) {
+            var matches = configString.match(_this.configRegex);
+            if (!matches || matches.length < 2) {
+                return new TabGroupItem('Untitled');
+            }
+            var uuid = matches[0];
+            var name = matches[1];
+            return new TabGroupItem(name, uuid);
         });
+        this.loadData(tabGroupItems);
+    }
+    TabGroupsDataProvider.prototype.loadData = function (tabGroups) {
+        var _this = this;
+        this.flatItems = [];
+        tabGroups === null || tabGroups === void 0 ? void 0 : tabGroups.forEach(function (tabGroup) {
+            _this.flatItems.push(tabGroup);
+        });
+    };
+    TabGroupsDataProvider.prototype.addItem = function (tabGroup) {
+        this.flatItems.push(tabGroup);
     };
     TabGroupsDataProvider.prototype.getChildren = function (element) {
         // Requests the children of an element
@@ -2041,11 +2057,11 @@ var App = /** @class */ (function () {
                     workspace.showInformativeMessage('A tab group name is required.');
                     return;
                 }
-                // const tabGroup = new TabGroupItem(name);
+                var tabGroup = new TabGroupItem(name);
                 var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
-                tabGroups.push(name);
+                tabGroups.push(tabGroup.configString);
                 workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-                _this.tabGroupsDataProvider.refresh(tabGroups);
+                _this.tabGroupsDataProvider.addItem(tabGroup);
                 _this.groupsTreeView.reload();
             });
         });
@@ -2067,7 +2083,16 @@ var App = /** @class */ (function () {
                 workspace.showInformativeMessage('There are no tab groups yet.');
                 return;
             }
-            workspace.showChoicePalette(tabGroups, {
+            var tabNames = tabGroups.map(function (configString) {
+                var matches = configString.match(_this.tabGroupsDataProvider.configRegex);
+                if (!matches || matches.length < 2) {
+                    return 'Untitled';
+                }
+                else {
+                    return matches[1];
+                }
+            });
+            workspace.showChoicePalette(tabNames, {
                 placeholder: 'Delete Tab Group'
             }, function (choice, index) {
                 console.log(choice, index);
@@ -2080,7 +2105,7 @@ var App = /** @class */ (function () {
                 if (tabGroups.length <= 0) {
                     workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
                 }
-                _this.tabGroupsDataProvider.refresh(tabGroups);
+                // this.tabGroupsDataProvider.loadData(tabGroups);
                 _this.groupsTreeView.reload();
             });
         });
@@ -2118,7 +2143,7 @@ var App = /** @class */ (function () {
                     }
                 });
                 workspace.config.set('eablokker.tabsSidebar.config.tabGroups', renamedTabGroups);
-                _this.tabGroupsDataProvider.refresh(renamedTabGroups);
+                // this.tabGroupsDataProvider.loadData(renamedTabGroups);
                 _this.groupsTreeView.reload();
             });
         });
@@ -2137,7 +2162,7 @@ var App = /** @class */ (function () {
             if (filteredTabGroups.length <= 0) {
                 workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
             }
-            _this.tabGroupsDataProvider.refresh(filteredTabGroups);
+            // this.tabGroupsDataProvider.loadData(filteredTabGroups);
             _this.groupsTreeView.reload();
         });
     };

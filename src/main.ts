@@ -948,13 +948,13 @@ class App {
 					return;
 				}
 				
-				// const tabGroup = new TabGroupItem(name);
+				const tabGroup = new TabGroupItem(name);
 				
 				const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
-				tabGroups.push(name);
+				tabGroups.push(tabGroup.configString);
 				workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
 				
-				this.tabGroupsDataProvider.refresh(tabGroups);
+				this.tabGroupsDataProvider.addItem(tabGroup);
 				this.groupsTreeView.reload();
 			});
 		});
@@ -984,7 +984,17 @@ class App {
 				return;
 			}
 			
-			workspace.showChoicePalette(tabGroups,
+			const tabNames = tabGroups.map((configString) => {
+				const matches = configString.match(this.tabGroupsDataProvider.configRegex);
+				
+				if (!matches || matches.length < 2) {
+					return 'Untitled';
+				} else {
+					return matches[1];
+				}
+			});
+			
+			workspace.showChoicePalette(tabNames,
 			{
 				placeholder: 'Delete Tab Group'
 			},
@@ -1004,7 +1014,7 @@ class App {
 					workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
 				}
 				
-				this.tabGroupsDataProvider.refresh(tabGroups);
+				// this.tabGroupsDataProvider.loadData(tabGroups);
 				this.groupsTreeView.reload();
 			});
 		});
@@ -1052,7 +1062,7 @@ class App {
 				
 				workspace.config.set('eablokker.tabsSidebar.config.tabGroups', renamedTabGroups);
 				
-				this.tabGroupsDataProvider.refresh(renamedTabGroups);
+				// this.tabGroupsDataProvider.loadData(renamedTabGroups);
 				this.groupsTreeView.reload();
 			});
 		});
@@ -1080,7 +1090,7 @@ class App {
 				workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
 			}
 			
-			this.tabGroupsDataProvider.refresh(filteredTabGroups);
+			// this.tabGroupsDataProvider.loadData(filteredTabGroups);
 			this.groupsTreeView.reload();
 		});
 	}
