@@ -126,6 +126,10 @@ class TabGroupsDataProvider {
 			return groupItem.uuid === uuid;
 		});
 
+		if (index < 0) {
+			return;
+		}
+
 		// Update config and tree
 		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
 		this.flatItems.splice(index, 1);

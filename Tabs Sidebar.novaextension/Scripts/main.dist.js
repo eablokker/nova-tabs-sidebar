@@ -1276,6 +1276,9 @@ var TabGroupsDataProvider = /** @class */ (function () {
         var index = this.flatItems.findIndex(function (groupItem) {
             return groupItem.uuid === uuid;
         });
+        if (index < 0) {
+            return;
+        }
         // Update config and tree
         nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
         this.flatItems.splice(index, 1);
@@ -2151,14 +2154,13 @@ var App = /** @class */ (function () {
         });
         nova.commands.register('tabs-sidebar.renameTabGroup', function (workspace) {
             var selections = _this.groupsTreeView.selection;
-            if (!selections[0]) {
-                return;
-            }
-            var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-            if (!tabGroups) {
+            if (selections.length <= 0) {
                 return;
             }
             var selection = selections[0];
+            if (!selection) {
+                return;
+            }
             nova.workspace.showInputPalette('Rename Tab Group', {
                 placeholder: 'Rename Tab Group',
                 value: selection.name
@@ -2173,14 +2175,13 @@ var App = /** @class */ (function () {
         });
         nova.commands.register('tabs-sidebar.deleteTabGroup', function (workspace) {
             var selections = _this.groupsTreeView.selection;
-            if (!selections[0]) {
-                return;
-            }
-            var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-            if (!tabGroups) {
+            if (selections.length <= 0) {
                 return;
             }
             var selection = selections[0];
+            if (!selection) {
+                return;
+            }
             var configString = selection.uuid + ':' + selection.name;
             _this.tabGroupsDataProvider.removeItemByConfigString(configString);
             _this.groupsTreeView.reload();

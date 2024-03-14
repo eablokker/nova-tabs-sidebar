@@ -1009,18 +1009,14 @@ class App {
 
 		nova.commands.register('tabs-sidebar.renameTabGroup', (workspace: Workspace) => {
 			const selections = this.groupsTreeView.selection;
-
-			if (!selections[0]) {
-				return;
-			}
-
-			const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-
-			if (!tabGroups) {
+			if (selections.length <= 0) {
 				return;
 			}
 
 			const selection = selections[0];
+			if (!selection) {
+				return;
+			}
 
 			nova.workspace.showInputPalette('Rename Tab Group', {
 				placeholder: 'Rename Tab Group',
@@ -1039,18 +1035,15 @@ class App {
 
 		nova.commands.register('tabs-sidebar.deleteTabGroup', (workspace: Workspace) => {
 			const selections = this.groupsTreeView.selection;
-
-			if (!selections[0]) {
-				return;
-			}
-
-			const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-
-			if (!tabGroups) {
+			if (selections.length <= 0) {
 				return;
 			}
 
 			const selection = selections[0];
+			if (!selection) {
+				return;
+			}
+
 			const configString = selection.uuid + ':' + selection.name;
 
 			this.tabGroupsDataProvider.removeItemByConfigString(configString);
