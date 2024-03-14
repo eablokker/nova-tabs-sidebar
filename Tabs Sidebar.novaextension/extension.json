@@ -21,7 +21,7 @@
         "process": true,
         "filesystem": "readonly"
     },
-    
+
     "commands": {
         "extensions": [
             {
@@ -48,7 +48,7 @@
             },
             {"separator": true},
             {
-                "title": "New Tab Group…",
+                "title": "Add New Tab Group…",
                 "command": "tabs-sidebar.newTabGroup",
             },
             {

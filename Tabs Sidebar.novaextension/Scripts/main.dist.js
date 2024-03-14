@@ -1234,8 +1234,37 @@ var TabGroupsDataProvider = /** @class */ (function () {
             _this.flatItems.push(tabGroup);
         });
     };
-    TabGroupsDataProvider.prototype.addItem = function (tabGroup) {
+    TabGroupsDataProvider.prototype.addItem = function (name) {
+        var tabGroup = new TabGroupItem(name || 'Untitled');
+        var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
+        tabGroups.push(tabGroup.configString);
+        nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
         this.flatItems.push(tabGroup);
+    };
+    TabGroupsDataProvider.prototype.removeItemByConfigString = function (configString) {
+        var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+        if (!tabGroups) {
+            return;
+        }
+        var filteredTabGroups = tabGroups.filter(function (configStringToFilter) {
+            return configString !== configStringToFilter;
+        });
+        nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
+        // Remove config key if empty
+        if (filteredTabGroups.length <= 0) {
+            nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
+        }
+        // Get UUID
+        var matches = configString.match(this.configRegex);
+        if (!matches || matches.length < 2) {
+            return;
+        }
+        var uuid = matches[0];
+        // Get index of item to remove
+        var index = this.flatItems.findIndex(function (groupItem) {
+            return groupItem.uuid === uuid;
+        });
+        this.flatItems.splice(index, 1);
     };
     TabGroupsDataProvider.prototype.getChildren = function (element) {
         // Requests the children of an element
@@ -1466,6 +1495,7 @@ var App = /** @class */ (function () {
                 });
         });*/
         nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.tabGroups', function (newVal, oldVal) {
+            // Set menu context
             if (newVal.length > 0) {
                 // @ts-ignore
                 nova.workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
@@ -2050,18 +2080,10 @@ var App = /** @class */ (function () {
         // 	});
         // });
         nova.commands.register('tabs-sidebar.newTabGroup', function (workspace) {
-            workspace.showInputPalette('New Tab Group', {
+            workspace.showInputPalette('Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.', {
                 placeholder: 'Tab Group Name',
             }, function (name) {
-                if (!name) {
-                    workspace.showInformativeMessage('A tab group name is required.');
-                    return;
-                }
-                var tabGroup = new TabGroupItem(name);
-                var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
-                tabGroups.push(tabGroup.configString);
-                workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-                _this.tabGroupsDataProvider.addItem(tabGroup);
+                _this.tabGroupsDataProvider.addItem(name);
                 _this.groupsTreeView.reload();
             });
         });
@@ -2092,20 +2114,13 @@ var App = /** @class */ (function () {
                     return matches[1];
                 }
             });
-            workspace.showChoicePalette(tabNames, {
-                placeholder: 'Delete Tab Group'
-            }, function (choice, index) {
-                console.log(choice, index);
+            workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' }, function (name, index) {
                 if (index === null) {
-                    workspace.showInformativeMessage('The tab group "' + choice + '" was not found.');
+                    workspace.showInformativeMessage('The tab group "' + name + '" was not found.');
                     return;
                 }
-                tabGroups.splice(index, 1);
-                workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-                if (tabGroups.length <= 0) {
-                    workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
-                }
-                // this.tabGroupsDataProvider.loadData(tabGroups);
+                var itemToDelete = tabGroups[index];
+                _this.tabGroupsDataProvider.removeItemByConfigString(itemToDelete);
                 _this.groupsTreeView.reload();
             });
         });
@@ -2122,7 +2137,7 @@ var App = /** @class */ (function () {
             // const tabGroup = tabGroups.find((name) => {
             // 	return name === selection.name;
             // });
-            // 
+            //
             // if (!tabGroup) {
             // 	return;
             // }

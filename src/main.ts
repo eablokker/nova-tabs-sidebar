@@ -119,7 +119,7 @@ class App {
 
 		this.tabDataProvider = new TabDataProvider(this);
 		this.treeView = new TreeView('tabs-sidebar', { dataProvider: this.tabDataProvider });
-		
+
 		this.tabGroupsDataProvider = new TabGroupsDataProvider();
 		this.groupsTreeView = new TreeView('tabs-sidebar-groups', {
 			dataProvider: this.tabGroupsDataProvider
@@ -165,7 +165,7 @@ class App {
 		// TreeView implements the Disposable interface
 		nova.subscriptions.add(this.treeView);
 		nova.subscriptions.add(this.groupsTreeView);
-		
+
 		// Init Context
 		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
 		if (tabGroups && tabGroups.length > 0) {
@@ -255,8 +255,9 @@ class App {
 					console.error(err);
 				});
 		});*/
-		
+
 		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.tabGroups', (newVal: string[], oldVal: string[]) => {
+			// Set menu context
 			if (newVal.length > 0) {
 				// @ts-ignore
 				nova.workspace.context.set('eablokker.tabsSidebar.context.hasTabGroups', true);
@@ -923,11 +924,11 @@ class App {
 
 			this.treeView.reload();
 		});
-		
+
 		nova.commands.register('tabs-sidebar.openGlobalConfig', (workspace: Workspace) => {
 			nova.openConfig();
 		});
-		
+
 		// nova.commands.register('tabs-sidebar.newTabGroup', (workspace: Workspace) => {
 		// 	workspace.showInputPanel('New Tab Group', {
 		// 		label: 'Name',
@@ -937,36 +938,23 @@ class App {
 		// 		console.log(value);
 		// 	});
 		// });
-		
+
 		nova.commands.register('tabs-sidebar.newTabGroup', (workspace: Workspace) => {
-			workspace.showInputPalette('New Tab Group', {
+			workspace.showInputPalette('Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.', {
 				placeholder: 'Tab Group Name',
 			}, (name) => {
-				
-				if (!name) {
-					workspace.showInformativeMessage('A tab group name is required.');
-					return;
-				}
-				
-				const tabGroup = new TabGroupItem(name);
-				
-				const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
-				tabGroups.push(tabGroup.configString);
-				workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-				
-				this.tabGroupsDataProvider.addItem(tabGroup);
+				this.tabGroupsDataProvider.addItem(name);
 				this.groupsTreeView.reload();
 			});
 		});
-		
+
 		nova.commands.register('tabs-sidebar.openTabGroupPalette', (workspace: Workspace) => {
 			const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-			
 			if (!tabGroups) {
 				workspace.showInformativeMessage('There are no tab groups yet.');
 				return;
 			}
-			
+
 			workspace.showChoicePalette(tabGroups,
 			{
 				placeholder: 'Open Tab Group'
@@ -975,73 +963,60 @@ class App {
 				console.log(choice, index);
 			});
 		});
-		
+
 		nova.commands.register('tabs-sidebar.deleteTabGroupPalette', (workspace: Workspace) => {
 			const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-			
 			if (!tabGroups) {
 				workspace.showInformativeMessage('There are no tab groups yet.');
 				return;
 			}
-			
+
 			const tabNames = tabGroups.map((configString) => {
 				const matches = configString.match(this.tabGroupsDataProvider.configRegex);
-				
 				if (!matches || matches.length < 2) {
 					return 'Untitled';
 				} else {
 					return matches[1];
 				}
 			});
-			
-			workspace.showChoicePalette(tabNames,
-			{
-				placeholder: 'Delete Tab Group'
-			},
-			(choice, index) => {
-				console.log(choice, index);
-				
-				if (index === null) {
-					workspace.showInformativeMessage('The tab group "' + choice + '" was not found.');
-					return;
-				}
-				
-				tabGroups.splice(index, 1);
-				
-				workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
-				
-				if (tabGroups.length <= 0) {
-					workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
-				}
-				
-				// this.tabGroupsDataProvider.loadData(tabGroups);
-				this.groupsTreeView.reload();
-			});
+
+			workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' },
+				(name, index) => {
+					if (index === null) {
+						workspace.showInformativeMessage('The tab group "' + name + '" was not found.');
+						return;
+					}
+
+					const itemToDelete = tabGroups[index];
+
+					this.tabGroupsDataProvider.removeItemByConfigString(itemToDelete);
+					this.groupsTreeView.reload();
+				});
 		});
-		
+
 		nova.commands.register('tabs-sidebar.renameTabGroup', (workspace: Workspace) => {
 			const selections = this.groupsTreeView.selection;
-			
+
 			if (!selections[0]) {
 				return;
 			}
-			
+
 			const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-			
+
 			if (!tabGroups) {
 				return;
 			}
-			
+
 			const selection = selections[0];
-			
+
 			// const tabGroup = tabGroups.find((name) => {
 			// 	return name === selection.name;
 			// });
-			// 
+			//
 			// if (!tabGroup) {
 			// 	return;
 			// }
-			
+
 			nova.workspace.showInputPalette('Rename Tab Group', {
 				placeholder: 'Rename Tab Group',
 				value: selection.name
@@ -1050,7 +1025,7 @@ class App {
 					workspace.showInformativeMessage('A tab group name is required.');
 					return;
 				}
-				
+
 				const renamedTabGroups = tabGroups.map((prevName) => {
 					if (prevName === selection.name) {
 						return name;
@@ -1058,38 +1033,38 @@ class App {
 						return prevName;
 					}
 				});
-				
-				
+
+
 				workspace.config.set('eablokker.tabsSidebar.config.tabGroups', renamedTabGroups);
-				
+
 				// this.tabGroupsDataProvider.loadData(renamedTabGroups);
 				this.groupsTreeView.reload();
 			});
 		});
-		
+
 		nova.commands.register('tabs-sidebar.deleteTabGroup', (workspace: Workspace) => {
 			const selections = this.groupsTreeView.selection;
-			
+
 			if (!selections[0]) {
 				return;
 			}
-			
+
 			const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
-			
+
 			if (!tabGroups) {
 				return;
 			}
-			
+
 			const selection = selections[0];
-			
+
 			const filteredTabGroups = tabGroups.filter(name => name !== selection.name);
-			
+
 			workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
-			
+
 			if (filteredTabGroups.length <= 0) {
 				workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
 			}
-			
+
 			// this.tabGroupsDataProvider.loadData(filteredTabGroups);
 			this.groupsTreeView.reload();
 		});
