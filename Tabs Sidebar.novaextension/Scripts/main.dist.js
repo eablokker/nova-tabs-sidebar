@@ -1211,7 +1211,7 @@ var TabGroupsDataProvider = /** @class */ (function () {
     function TabGroupsDataProvider() {
         var _this = this;
         this.flatItems = [];
-        this.configRegex = /^[^:]*:(.*)$/;
+        this.configRegex = /^([^:]*):(.*)$/;
         var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
         if (!tabGroups) {
             return;
@@ -1221,8 +1221,8 @@ var TabGroupsDataProvider = /** @class */ (function () {
             if (!matches || matches.length < 2) {
                 return new TabGroupItem('Untitled');
             }
-            var uuid = matches[0];
-            var name = matches[1];
+            var uuid = matches[1];
+            var name = matches[2];
             return new TabGroupItem(name, uuid);
         });
         this.loadData(tabGroupItems);
@@ -1259,7 +1259,7 @@ var TabGroupsDataProvider = /** @class */ (function () {
         if (!matches || matches.length < 2) {
             return;
         }
-        var uuid = matches[0];
+        var uuid = matches[1];
         // Get index of item to remove
         var index = this.flatItems.findIndex(function (groupItem) {
             return groupItem.uuid === uuid;
@@ -1284,7 +1284,8 @@ var TabGroupsDataProvider = /** @class */ (function () {
     };
     TabGroupsDataProvider.prototype.getTreeItem = function (element) {
         var item = new TreeItem(element.name);
-        // item.descriptiveText = 'Description';
+        item.identifier = element.uuid;
+        // item.descriptiveText = element.uuid;
         return item;
     };
     return TabGroupsDataProvider;
@@ -2083,6 +2084,9 @@ var App = /** @class */ (function () {
             workspace.showInputPalette('Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.', {
                 placeholder: 'Tab Group Name',
             }, function (name) {
+                if (!name) {
+                    return;
+                }
                 _this.tabGroupsDataProvider.addItem(name);
                 _this.groupsTreeView.reload();
             });
@@ -2093,7 +2097,16 @@ var App = /** @class */ (function () {
                 workspace.showInformativeMessage('There are no tab groups yet.');
                 return;
             }
-            workspace.showChoicePalette(tabGroups, {
+            var tabNames = tabGroups.map(function (configString) {
+                var matches = configString.match(_this.tabGroupsDataProvider.configRegex);
+                if (!matches || matches.length < 2) {
+                    return 'Untitled';
+                }
+                else {
+                    return matches[2];
+                }
+            });
+            workspace.showChoicePalette(tabNames, {
                 placeholder: 'Open Tab Group'
             }, function (choice, index) {
                 console.log(choice, index);
@@ -2111,7 +2124,7 @@ var App = /** @class */ (function () {
                     return 'Untitled';
                 }
                 else {
-                    return matches[1];
+                    return matches[2];
                 }
             });
             workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' }, function (name, index) {
@@ -2172,12 +2185,8 @@ var App = /** @class */ (function () {
                 return;
             }
             var selection = selections[0];
-            var filteredTabGroups = tabGroups.filter(function (name) { return name !== selection.name; });
-            workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
-            if (filteredTabGroups.length <= 0) {
-                workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
-            }
-            // this.tabGroupsDataProvider.loadData(filteredTabGroups);
+            var configString = selection.uuid + ':' + selection.name;
+            _this.tabGroupsDataProvider.removeItemByConfigString(configString);
             _this.groupsTreeView.reload();
         });
     };

@@ -943,6 +943,10 @@ class App {
 			workspace.showInputPalette('Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.', {
 				placeholder: 'Tab Group Name',
 			}, (name) => {
+				if (!name) {
+					return;
+				}
+
 				this.tabGroupsDataProvider.addItem(name);
 				this.groupsTreeView.reload();
 			});
@@ -955,13 +959,23 @@ class App {
 				return;
 			}
 
-			workspace.showChoicePalette(tabGroups,
-			{
-				placeholder: 'Open Tab Group'
-			},
-			(choice, index) => {
-				console.log(choice, index);
+			const tabNames = tabGroups.map((configString) => {
+				const matches = configString.match(this.tabGroupsDataProvider.configRegex);
+				if (!matches || matches.length < 2) {
+					return 'Untitled';
+				} else {
+					return matches[2];
+				}
 			});
+
+
+			workspace.showChoicePalette(tabNames,
+				{
+					placeholder: 'Open Tab Group'
+				},
+				(choice, index) => {
+					console.log(choice, index);
+				});
 		});
 
 		nova.commands.register('tabs-sidebar.deleteTabGroupPalette', (workspace: Workspace) => {
@@ -976,7 +990,7 @@ class App {
 				if (!matches || matches.length < 2) {
 					return 'Untitled';
 				} else {
-					return matches[1];
+					return matches[2];
 				}
 			});
 
@@ -1056,16 +1070,9 @@ class App {
 			}
 
 			const selection = selections[0];
+			const configString = selection.uuid + ':' + selection.name;
 
-			const filteredTabGroups = tabGroups.filter(name => name !== selection.name);
-
-			workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
-
-			if (filteredTabGroups.length <= 0) {
-				workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
-			}
-
-			// this.tabGroupsDataProvider.loadData(filteredTabGroups);
+			this.tabGroupsDataProvider.removeItemByConfigString(configString);
 			this.groupsTreeView.reload();
 		});
 	}

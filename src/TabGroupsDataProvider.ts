@@ -37,7 +37,7 @@ class TabGroupsDataProvider {
 
 	constructor() {
 		this.flatItems = [];
-		this.configRegex = /^[^:]*:(.*)$/;
+		this.configRegex = /^([^:]*):(.*)$/;
 
 		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
 
@@ -52,8 +52,8 @@ class TabGroupsDataProvider {
 				return new TabGroupItem('Untitled');
 			}
 
-			const uuid = matches[0];
-			const name = matches[1];
+			const uuid = matches[1];
+			const name = matches[2];
 
 			return new TabGroupItem(name, uuid);
 		});
@@ -101,7 +101,7 @@ class TabGroupsDataProvider {
 		if (!matches || matches.length < 2) {
 			return;
 		}
-		const uuid = matches[0];
+		const uuid = matches[1];
 
 		// Get index of item to remove
 		const index = this.flatItems.findIndex((groupItem) => {
@@ -134,7 +134,8 @@ class TabGroupsDataProvider {
 	getTreeItem(element: TabGroupItem) {
 		const item = new TreeItem(element.name);
 
-		// item.descriptiveText = 'Description';
+		item.identifier = element.uuid;
+		// item.descriptiveText = element.uuid;
 
 		return item;
 	}
