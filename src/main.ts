@@ -1000,12 +1000,33 @@ class App {
 				return matches[2];
 			});
 
-			workspace.showChoicePalette(tabNames,
-				{
-					placeholder: 'Open Tab Group'
-				},
-				(choice, index) => {
-					console.log(choice, index);
+			tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
+
+			workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' },
+				(name, index) => {
+					if (index === null) {
+						return;
+					}
+
+					if (index === 0) {
+						workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', '__DEFAULT_GROUP__');
+						return;
+					}
+
+					const itemToOpen = tabGroups[index - 1];
+
+					const matches = itemToOpen.match(this.tabGroupsDataProvider.configRegex);
+					if (!matches || matches.length < 3) {
+						return;
+					}
+
+					const uuid = matches[1];
+
+					if (uuid === '__DEFAULT_GROUPS__') {
+						workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+					} else {
+						workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
+					}
 				});
 		});
 
@@ -1028,7 +1049,6 @@ class App {
 			workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' },
 				(name, index) => {
 					if (index === null) {
-						workspace.showInformativeMessage('The tab group "' + name + '" was not found.');
 						return;
 					}
 
@@ -1037,6 +1057,24 @@ class App {
 					this.tabGroupsDataProvider.removeItemByConfigString(itemToDelete);
 					this.groupsTreeView.reload();
 				});
+		});
+
+		nova.commands.register('tabs-sidebar.openTabGroup', (workspace: Workspace) => {
+			const selections = this.groupsTreeView.selection;
+			if (selections.length <= 0) {
+				return;
+			}
+
+			const selection = selections[0];
+			if (!selection) {
+				return;
+			}
+
+			if (selection.uuid === '__DEFAULT_GROUP__') {
+				workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+			} else {
+				workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
+			}
 		});
 
 		nova.commands.register('tabs-sidebar.renameTabGroup', (workspace: Workspace) => {

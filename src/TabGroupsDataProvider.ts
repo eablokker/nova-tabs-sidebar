@@ -61,7 +61,7 @@ class TabGroupsDataProvider {
 	loadData(tabGroups?: TabGroupItem[]) {
 		this.flatItems = [];
 
-		this.flatItems.push(new TabGroupItem(nova.workspace.textDocuments.length + ' Documents', '__CURRENT_TABS__'));
+		this.flatItems.push(new TabGroupItem(nova.workspace.textDocuments.length + ' Documents', '__DEFAULT_GROUP__'));
 
 		tabGroups?.forEach((tabGroup) => {
 			this.flatItems.push(tabGroup);
@@ -171,8 +171,9 @@ class TabGroupsDataProvider {
 
 		item.identifier = element.uuid;
 		// item.descriptiveText = element.uuid;
+		item.command = 'tabs-sidebar.openTabGroup';
 
-		if (element.uuid === '__CURRENT_TABS__') {
+		if (element.uuid === '__DEFAULT_GROUP__') {
 			item.image = 'desktop-computer';
 			item.contextValue = 'currentTabs';
 		} else {

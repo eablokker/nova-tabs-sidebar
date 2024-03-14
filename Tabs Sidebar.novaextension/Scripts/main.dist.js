@@ -1227,7 +1227,7 @@ var TabGroupsDataProvider = /** @class */ (function () {
     TabGroupsDataProvider.prototype.loadData = function (tabGroups) {
         var _this = this;
         this.flatItems = [];
-        this.flatItems.push(new TabGroupItem(nova.workspace.textDocuments.length + ' Documents', '__CURRENT_TABS__'));
+        this.flatItems.push(new TabGroupItem(nova.workspace.textDocuments.length + ' Documents', '__DEFAULT_GROUP__'));
         tabGroups === null || tabGroups === void 0 ? void 0 : tabGroups.forEach(function (tabGroup) {
             _this.flatItems.push(tabGroup);
         });
@@ -1310,7 +1310,8 @@ var TabGroupsDataProvider = /** @class */ (function () {
         var item = new TreeItem(element.name);
         item.identifier = element.uuid;
         // item.descriptiveText = element.uuid;
-        if (element.uuid === '__CURRENT_TABS__') {
+        item.command = 'tabs-sidebar.openTabGroup';
+        if (element.uuid === '__DEFAULT_GROUP__') {
             item.image = 'desktop-computer';
             item.contextValue = 'currentTabs';
         }
@@ -1482,37 +1483,101 @@ var App = /** @class */ (function () {
             else if (oldVal === 'never' && newVal !== 'never') {
                 _this.initFileWatcher();
             }
-            _this.treeView.reload();
+            _this.treeView.reload()
+                .then(function () {
+                var _a;
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
+                _this.highlightTab(activeEditor || null);
+            })
+                .catch(function (err) {
+                console.error('Could not reload treeView.', err);
+            });
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', function (newVal, oldVal) {
             _this.alwaysShowParentFolder = newVal;
-            _this.treeView.reload();
+            _this.treeView.reload()
+                .then(function () {
+                var _a;
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
+                _this.highlightTab(activeEditor || null);
+            })
+                .catch(function (err) {
+                console.error('Could not reload treeView.', err);
+            });
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', function (newVal, oldVal) {
             _this.showParentPathInReverse = newVal;
-            _this.treeView.reload();
+            _this.treeView.reload()
+                .then(function () {
+                var _a;
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
+                _this.highlightTab(activeEditor || null);
+            })
+                .catch(function (err) {
+                console.error('Could not reload treeView.', err);
+            });
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', function (newVal, oldVal) {
             _this.showGroupCount = newVal;
             _this.tabDataProvider.sortItems();
-            _this.treeView.reload();
+            _this.treeView.reload()
+                .then(function () {
+                var _a;
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
+                _this.highlightTab(activeEditor || null);
+            })
+                .catch(function (err) {
+                console.error('Could not reload treeView.', err);
+            });
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol', function (newVal, oldVal) {
             _this.unsavedSymbol = newVal;
-            _this.treeView.reload();
+            _this.treeView.reload()
+                .then(function () {
+                var _a;
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
+                _this.highlightTab(activeEditor || null);
+            })
+                .catch(function (err) {
+                console.error('Could not reload treeView.', err);
+            });
         });
         nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol-location', function (newVal, oldVal) {
             _this.unsavedSymbolLocation = newVal;
-            _this.treeView.reload();
+            _this.treeView.reload()
+                .then(function () {
+                var _a;
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
+                _this.highlightTab(activeEditor || null);
+            })
+                .catch(function (err) {
+                console.error('Could not reload treeView.', err);
+            });
         });
         nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', function (newVal, oldVal) {
             _this.tabDataProvider.sortAlpha = newVal;
-            _this.treeView.reload();
+            _this.treeView.reload()
+                .then(function () {
+                var _a;
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
+                _this.highlightTab(activeEditor || null);
+            })
+                .catch(function (err) {
+                console.error('Could not reload treeView.', err);
+            });
         });
         nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupBy', function (newVal, oldVal) {
             _this.groupBy = newVal;
             _this.tabDataProvider.groupBy = newVal;
-            _this.treeView.reload();
+            _this.treeView.reload()
+                .then(function () {
+                var _a;
+                var activeEditor = _this.tabDataProvider.getElementByUri(((_a = nova.workspace.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri) || '');
+                _this.highlightTab(activeEditor || null);
+            })
+                .catch(function (err) {
+                console.error('Could not reload treeView.', err);
+            });
         });
         /*nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.customTabOrder', (newVal: string[], oldVal: string[]) => {
             console.log('customTabOrder changed', newVal);
@@ -2164,10 +2229,27 @@ var App = /** @class */ (function () {
                 }
                 return matches[2];
             });
-            workspace.showChoicePalette(tabNames, {
-                placeholder: 'Open Tab Group'
-            }, function (choice, index) {
-                console.log(choice, index);
+            tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
+            workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' }, function (name, index) {
+                if (index === null) {
+                    return;
+                }
+                if (index === 0) {
+                    workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', '__DEFAULT_GROUP__');
+                    return;
+                }
+                var itemToOpen = tabGroups[index - 1];
+                var matches = itemToOpen.match(_this.tabGroupsDataProvider.configRegex);
+                if (!matches || matches.length < 3) {
+                    return;
+                }
+                var uuid = matches[1];
+                if (uuid === '__DEFAULT_GROUPS__') {
+                    workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+                }
+                else {
+                    workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
+                }
             });
         });
         nova.commands.register('tabs-sidebar.deleteTabGroupPalette', function (workspace) {
@@ -2185,13 +2267,28 @@ var App = /** @class */ (function () {
             });
             workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' }, function (name, index) {
                 if (index === null) {
-                    workspace.showInformativeMessage('The tab group "' + name + '" was not found.');
                     return;
                 }
                 var itemToDelete = tabGroups[index];
                 _this.tabGroupsDataProvider.removeItemByConfigString(itemToDelete);
                 _this.groupsTreeView.reload();
             });
+        });
+        nova.commands.register('tabs-sidebar.openTabGroup', function (workspace) {
+            var selections = _this.groupsTreeView.selection;
+            if (selections.length <= 0) {
+                return;
+            }
+            var selection = selections[0];
+            if (!selection) {
+                return;
+            }
+            if (selection.uuid === '__DEFAULT_GROUP__') {
+                workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+            }
+            else {
+                workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
+            }
         });
         nova.commands.register('tabs-sidebar.renameTabGroup', function (workspace) {
             var selections = _this.groupsTreeView.selection;
