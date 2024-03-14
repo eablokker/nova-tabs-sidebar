@@ -196,50 +196,106 @@ class App {
 				this.initFileWatcher();
 			}
 
-			this.treeView.reload();
+			this.treeView.reload()
+				.then(() => {
+						const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+						this.highlightTab(activeEditor || null);
+					})
+					.catch(err => {
+						console.error('Could not reload treeView.', err);
+				});
 		});
 
 		nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal: boolean, oldVal: boolean) => {
 			this.alwaysShowParentFolder = newVal;
 
-			this.treeView.reload();
+			this.treeView.reload()
+				.then(() => {
+					const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+					this.highlightTab(activeEditor || null);
+				})
+				.catch(err => {
+					console.error('Could not reload treeView.', err);
+				});
 		});
 
 		nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', (newVal: boolean, oldVal: boolean) => {
 			this.showParentPathInReverse = newVal;
 
-			this.treeView.reload();
+			this.treeView.reload()
+				.then(() => {
+					const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+					this.highlightTab(activeEditor || null);
+				})
+				.catch(err => {
+					console.error('Could not reload treeView.', err);
+				});
 		});
 
 		nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', (newVal: boolean, oldVal: boolean) => {
 			this.showGroupCount = newVal;
 
 			this.tabDataProvider.sortItems();
-			this.treeView.reload();
+			this.treeView.reload()
+				.then(() => {
+					const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+					this.highlightTab(activeEditor || null);
+				})
+				.catch(err => {
+					console.error('Could not reload treeView.', err);
+				});
 		});
 
 		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol', (newVal: string, oldVal: string) => {
 			this.unsavedSymbol = newVal;
 
-			this.treeView.reload();
+			this.treeView.reload()
+				.then(() => {
+					const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+					this.highlightTab(activeEditor || null);
+				})
+				.catch(err => {
+					console.error('Could not reload treeView.', err);
+				});
 		});
 
 		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol-location', (newVal: string, oldVal: string) => {
 			this.unsavedSymbolLocation = newVal;
 
-			this.treeView.reload();
+			this.treeView.reload()
+				.then(() => {
+					const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+					this.highlightTab(activeEditor || null);
+				})
+				.catch(err => {
+					console.error('Could not reload treeView.', err);
+				});
 		});
 
 		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', (newVal: boolean, oldVal: boolean) => {
 			this.tabDataProvider.sortAlpha = newVal;
-			this.treeView.reload();
+			this.treeView.reload()
+				.then(() => {
+					const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+					this.highlightTab(activeEditor || null);
+				})
+				.catch(err => {
+					console.error('Could not reload treeView.', err);
+				});
 		});
 
 		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupBy', (newVal: string, oldVal: string) => {
 			this.groupBy = newVal;
 
 			this.tabDataProvider.groupBy = newVal;
-			this.treeView.reload();
+			this.treeView.reload()
+				.then(() => {
+					const activeEditor = this.tabDataProvider.getElementByUri(nova.workspace.activeTextEditor?.document.uri || '');
+					this.highlightTab(activeEditor || null);
+				})
+				.catch(err => {
+					console.error('Could not reload treeView.', err);
+				});
 		});
 
 		/*nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.customTabOrder', (newVal: string[], oldVal: string[]) => {
