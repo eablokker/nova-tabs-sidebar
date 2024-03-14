@@ -249,9 +249,9 @@
                     "placeholderImage": "tabs-sidebar-placeholder",
                     "headerCommands": [
                         {
-                            "title": "New Tab Group",
+                            "title": "Add New Tab Group",
                             "image": "__builtin.add",
-                            "tooltip": "New Tab Group",
+                            "tooltip": "Add New Tab Group",
                             "command": "tabs-sidebar.newTabGroup",
                         },
                         {
@@ -259,7 +259,7 @@
                             "image": "__builtin.remove",
                             "tooltip": "Delete Tab Group",
                             "command": "tabs-sidebar.deleteTabGroup",
-                            "when": "viewItem !== null"
+                            "when": "viewItem !== 'currentTabs'"
                         }
                     ],
                     "contextCommands": [
@@ -272,12 +272,12 @@
                         {
                             "title": "Rename…",
                             "command": "tabs-sidebar.renameTabGroup",
-                            "when": "viewItem !== null"
+                            "when": "viewItem !== 'currentTabs'"
                         },
                         {
                             "title": "Delete",
                             "command": "tabs-sidebar.deleteTabGroup",
-                            "when": "viewItem !== null"
+                            "when": "viewItem !== 'currentTabs'"
                         },
                     ]
                 }

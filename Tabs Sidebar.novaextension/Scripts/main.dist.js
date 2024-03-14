@@ -1210,6 +1210,7 @@ var TabGroupsDataProvider = /** @class */ (function () {
         this.configRegex = /^([^:]*):(.*)$/;
         var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
         if (!tabGroups) {
+            this.loadData();
             return;
         }
         var tabGroupItems = tabGroups.map(function (configString) {
@@ -1226,9 +1227,13 @@ var TabGroupsDataProvider = /** @class */ (function () {
     TabGroupsDataProvider.prototype.loadData = function (tabGroups) {
         var _this = this;
         this.flatItems = [];
+        this.flatItems.push(new TabGroupItem(nova.workspace.textDocuments.length + ' Documents', '__CURRENT_TABS__'));
         tabGroups === null || tabGroups === void 0 ? void 0 : tabGroups.forEach(function (tabGroup) {
             _this.flatItems.push(tabGroup);
         });
+    };
+    TabGroupsDataProvider.prototype.updateCurrentTabsCount = function () {
+        this.flatItems[0].name = nova.workspace.textDocuments.length + ' Documents';
     };
     TabGroupsDataProvider.prototype.addItem = function (name) {
         var tabGroup = new TabGroupItem(name || 'Untitled');
@@ -1305,6 +1310,14 @@ var TabGroupsDataProvider = /** @class */ (function () {
         var item = new TreeItem(element.name);
         item.identifier = element.uuid;
         // item.descriptiveText = element.uuid;
+        if (element.uuid === '__CURRENT_TABS__') {
+            item.image = 'desktop-computer';
+            item.contextValue = 'currentTabs';
+        }
+        else {
+            item.image = 'tab-group';
+            item.contextValue = 'tabGroup';
+        }
         return item;
     };
     return TabGroupsDataProvider;
@@ -1539,6 +1552,8 @@ var App = /** @class */ (function () {
                 var reload;
                 var folder = _this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
                 _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);
+                _this.tabGroupsDataProvider.updateCurrentTabsCount();
+                _this.groupsTreeView.reload();
                 if (folder && _this.groupBy === 'type') {
                     reload = _this.treeView.reload(folder);
                 }
@@ -1572,6 +1587,8 @@ var App = /** @class */ (function () {
                         reload = _this.treeView.reload();
                     }
                     _this.tabDataProvider.loadData(nova.workspace.textDocuments);
+                    _this.tabGroupsDataProvider.updateCurrentTabsCount();
+                    _this.groupsTreeView.reload();
                     reload
                         .then(function () {
                         var document = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
@@ -2100,7 +2117,30 @@ var App = /** @class */ (function () {
         // 	});
         // });
         nova.commands.register('tabs-sidebar.newTabGroup', function (workspace) {
-            workspace.showInputPalette('Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.', {
+            nova.workspace.textDocuments.length;
+            nova.workspace.textEditors.forEach(function (textEditor) {
+                console.log(textEditor.document.uri);
+            });
+            /*workspace.showChoicePalette([
+                    'New Empty Tab Group',
+                    'New Tab Group with ' + documentCount + ' Documents'
+                ],
+                {
+                    placeholder: 'New Tab Group'
+                },
+                (choice, index) => {
+                    if (!choice) {
+                        return;
+                    }
+
+                    let message = '';
+                    if (index === 0) {
+                        message = 'Enter a name for your new empty tab group.'
+                    } else {
+                        message = 'Enter a name for your tab group with ' + documentCount + ' documents. The currently open document tabs will be saved to the new tab group.'
+                    }*/
+            var message = 'Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.';
+            workspace.showInputPalette(message, {
                 placeholder: 'Tab Group Name',
             }, function (name) {
                 if (!name) {
@@ -2109,6 +2149,7 @@ var App = /** @class */ (function () {
                 _this.tabGroupsDataProvider.addItem(name);
                 _this.groupsTreeView.reload();
             });
+            /*});*/
         });
         nova.commands.register('tabs-sidebar.openTabGroupPalette', function (workspace) {
             var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');

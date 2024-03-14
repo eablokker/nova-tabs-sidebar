@@ -283,6 +283,8 @@ class App {
 				const folder = this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
 
 				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
+				this.tabGroupsDataProvider.updateCurrentTabsCount();
+				this.groupsTreeView.reload();
 
 				if (folder && this.groupBy === 'type') {
 					reload = this.treeView.reload(folder);
@@ -319,6 +321,8 @@ class App {
 					}
 
 					this.tabDataProvider.loadData(nova.workspace.textDocuments);
+					this.tabGroupsDataProvider.updateCurrentTabsCount();
+					this.groupsTreeView.reload();
 
 					reload
 						.then(() => {
@@ -940,16 +944,44 @@ class App {
 		// });
 
 		nova.commands.register('tabs-sidebar.newTabGroup', (workspace: Workspace) => {
-			workspace.showInputPalette('Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.', {
-				placeholder: 'Tab Group Name',
-			}, (name) => {
-				if (!name) {
-					return;
-				}
+			const documentCount =  nova.workspace.textDocuments.length;
 
-				this.tabGroupsDataProvider.addItem(name);
-				this.groupsTreeView.reload();
+			nova.workspace.textEditors.forEach((textEditor) => {
+				console.log(textEditor.document.uri);
 			});
+
+			/*workspace.showChoicePalette([
+					'New Empty Tab Group',
+					'New Tab Group with ' + documentCount + ' Documents'
+				],
+				{
+					placeholder: 'New Tab Group'
+				},
+				(choice, index) => {
+					if (!choice) {
+						return;
+					}
+
+					let message = '';
+					if (index === 0) {
+						message = 'Enter a name for your new empty tab group.'
+					} else {
+						message = 'Enter a name for your tab group with ' + documentCount + ' documents. The currently open document tabs will be saved to the new tab group.'
+					}*/
+
+					let message = 'Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.';
+
+					workspace.showInputPalette(message, {
+						placeholder: 'Tab Group Name',
+					}, (name) => {
+						if (!name) {
+							return;
+						}
+
+						this.tabGroupsDataProvider.addItem(name);
+						this.groupsTreeView.reload();
+					});
+				/*});*/
 		});
 
 		nova.commands.register('tabs-sidebar.openTabGroupPalette', (workspace: Workspace) => {

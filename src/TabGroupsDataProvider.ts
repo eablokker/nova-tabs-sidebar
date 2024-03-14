@@ -38,6 +38,7 @@ class TabGroupsDataProvider {
 		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
 
 		if (!tabGroups) {
+			this.loadData();
 			return;
 		}
 
@@ -57,12 +58,18 @@ class TabGroupsDataProvider {
 		this.loadData(tabGroupItems);
 	}
 
-	loadData(tabGroups: TabGroupItem[]) {
+	loadData(tabGroups?: TabGroupItem[]) {
 		this.flatItems = [];
+
+		this.flatItems.push(new TabGroupItem(nova.workspace.textDocuments.length + ' Documents', '__CURRENT_TABS__'));
 
 		tabGroups?.forEach((tabGroup) => {
 			this.flatItems.push(tabGroup);
 		});
+	}
+
+	updateCurrentTabsCount() {
+		this.flatItems[0].name = nova.workspace.textDocuments.length + ' Documents';
 	}
 
 	addItem(name: string | null) {
@@ -164,6 +171,14 @@ class TabGroupsDataProvider {
 
 		item.identifier = element.uuid;
 		// item.descriptiveText = element.uuid;
+
+		if (element.uuid === '__CURRENT_TABS__') {
+			item.image = 'desktop-computer';
+			item.contextValue = 'currentTabs';
+		} else {
+			item.image = 'tab-group';
+			item.contextValue = 'tabGroup';
+		}
 
 		return item;
 	}
