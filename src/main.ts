@@ -1176,8 +1176,18 @@ To preserve them between switches, you can move them to another split pane.`,
 
 					const itemToDelete = tabGroups[index];
 
-					this.tabGroupsDataProvider.removeItemByConfigString(itemToDelete);
-					this.groupsTreeView.reload();
+					workspace.showActionPanel('Are you sure you want to delete "' + name + '"?',
+						{
+							buttons: ['Delete', 'Cancel']
+						},
+						(index) => {
+							if (index === 1) {
+								return;
+							}
+							this.tabGroupsDataProvider.removeItemByConfigString(itemToDelete);
+							this.groupsTreeView.reload();
+						}
+					);
 				});
 		});
 
@@ -1238,8 +1248,18 @@ To preserve them between switches, you can move them to another split pane.`,
 
 			const configString = selection.uuid + ':' + selection.name;
 
-			this.tabGroupsDataProvider.removeItemByConfigString(configString);
-			this.groupsTreeView.reload();
+			workspace.showActionPanel('Are you sure you want to delete "' + selection.name + '"?',
+				{
+					buttons: ['Delete', 'Cancel']
+				},
+				(index) => {
+					if (index === 1) {
+						return;
+					}
+					this.tabGroupsDataProvider.removeItemByConfigString(configString);
+					this.groupsTreeView.reload();
+				}
+			);
 		});
 	}
 

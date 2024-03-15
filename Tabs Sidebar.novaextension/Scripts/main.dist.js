@@ -2312,8 +2312,15 @@ var App = /** @class */ (function () {
                     return;
                 }
                 var itemToDelete = tabGroups[index];
-                _this.tabGroupsDataProvider.removeItemByConfigString(itemToDelete);
-                _this.groupsTreeView.reload();
+                workspace.showActionPanel('Are you sure you want to delete "' + name + '"?', {
+                    buttons: ['Delete', 'Cancel']
+                }, function (index) {
+                    if (index === 1) {
+                        return;
+                    }
+                    _this.tabGroupsDataProvider.removeItemByConfigString(itemToDelete);
+                    _this.groupsTreeView.reload();
+                });
             });
         });
         nova.commands.register('tabs-sidebar.openTabGroup', function (workspace) {
@@ -2363,8 +2370,15 @@ var App = /** @class */ (function () {
                 return;
             }
             var configString = selection.uuid + ':' + selection.name;
-            _this.tabGroupsDataProvider.removeItemByConfigString(configString);
-            _this.groupsTreeView.reload();
+            workspace.showActionPanel('Are you sure you want to delete "' + selection.name + '"?', {
+                buttons: ['Delete', 'Cancel']
+            }, function (index) {
+                if (index === 1) {
+                    return;
+                }
+                _this.tabGroupsDataProvider.removeItemByConfigString(configString);
+                _this.groupsTreeView.reload();
+            });
         });
     };
     App.prototype.initFileWatcher = function () {

@@ -48,7 +48,8 @@
             },
             {"separator": true},
             {
-                "title": "Add New Tab Group…",
+                "title": "New Tab Group…",
+                "paletteTitle": "Add New Tab Group…",
                 "command": "tabs-sidebar.newTabGroup",
             },
             {
