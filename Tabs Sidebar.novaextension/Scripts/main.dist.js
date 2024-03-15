@@ -1685,28 +1685,25 @@ var App = /** @class */ (function () {
                     this.highlightTab(this.focusedTab || null, { focus: true, reveal: 3 });
                 }
             });*/
-            /*editor.onDidStopChanging(changedEditor => {
-                if (nova.inDevMode()) console.log('Document did stop changing');
-
+            editor.onDidStopChanging(function (changedEditor) {
+                if (nova.inDevMode())
+                    console.log('Document did stop changing');
                 if (changedEditor.document.isUntitled) {
                     return;
                 }
-
-                const element = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
-                this.focusedTab = element;
-
+                var element = _this.tabDataProvider.getElementByUri(changedEditor.document.uri);
+                _this.focusedTab = element;
                 if (element) {
                     element.isDirty = changedEditor.document.isDirty;
                 }
-
-                this.treeView.reload(this.focusedTab)
-                    .then(() => {
-                        this.highlightTab(this.focusedTab || null, { focus: true });
-                    })
-                    .catch(err => {
-                        console.error('Could not reload treeView.', err);
-                    });
-            });*/
+                _this.treeView.reload(_this.focusedTab)
+                    .then(function () {
+                    _this.highlightTab(_this.focusedTab || null, { focus: true });
+                })
+                    .catch(function (err) {
+                    console.error('Could not reload treeView.', err);
+                });
+            });
             // Focus tab in sidebar when saving document
             editor.onDidSave(function (savedEditor) {
                 if (nova.inDevMode())
@@ -2229,28 +2226,73 @@ var App = /** @class */ (function () {
                 }
                 return matches[2];
             });
-            tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
-            workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' }, function (name, index) {
-                if (index === null) {
-                    return;
+            var showChoicePalette = function () {
+                // Add default group as first item in palette
+                tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
+                workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' }, function (name, index) {
+                    if (index === null) {
+                        return;
+                    }
+                    if (index === 0) {
+                        workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', '__DEFAULT_GROUP__');
+                        return;
+                    }
+                    var itemToOpen = tabGroups[index - 1];
+                    var matches = itemToOpen.match(_this.tabGroupsDataProvider.configRegex);
+                    if (!matches || matches.length < 3) {
+                        return;
+                    }
+                    var uuid = matches[1];
+                    if (uuid === '__DEFAULT_GROUPS__') {
+                        workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+                    }
+                    else {
+                        workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
+                    }
+                });
+            };
+            // Check for remote and unsaved tabs
+            var openTabs = workspace.textDocuments;
+            var remoteTabString = '';
+            var remoteTabs = openTabs.filter(function (tab) {
+                if (tab.isRemote) {
+                    if (tab.path) {
+                        remoteTabString += '• ' + nova.path.basename(tab.path) + '\n';
+                    }
+                    return true;
                 }
-                if (index === 0) {
-                    workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', '__DEFAULT_GROUP__');
-                    return;
-                }
-                var itemToOpen = tabGroups[index - 1];
-                var matches = itemToOpen.match(_this.tabGroupsDataProvider.configRegex);
-                if (!matches || matches.length < 3) {
-                    return;
-                }
-                var uuid = matches[1];
-                if (uuid === '__DEFAULT_GROUPS__') {
-                    workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
-                }
-                else {
-                    workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
-                }
+                return false;
             });
+            var unsavedTabsString = '';
+            var unsavedTabs = openTabs.filter(function (tab) {
+                if (tab.isDirty || tab.isUntitled) {
+                    if (tab.path) {
+                        unsavedTabsString += '• ' + nova.path.basename(tab.path) + '\n';
+                    }
+                    else if (tab.isUntitled) {
+                        unsavedTabsString += '• untitled\n';
+                    }
+                    return true;
+                }
+                return false;
+            });
+            if (unsavedTabs.length > 0) {
+                workspace.showWarningMessage("Your workspace has ".concat(unsavedTabs.length, " unsaved tab").concat(unsavedTabs.length > 1 ? 's' : '', ".\n\n").concat(unsavedTabsString, "\nPlease save ").concat(unsavedTabs.length > 1 ? 'them' : 'it', " before opening another tab group."));
+                return;
+            }
+            if (remoteTabs.length > 0) {
+                workspace.showActionPanel("Your workspace has ".concat(remoteTabs.length, " remote tab").concat(remoteTabs.length > 1 ? 's' : '', ".\n\n").concat(remoteTabString, "\nRemote tabs in the current split pane will be closed and cannot be saved to a tab group.\n\nTo preserve them between switches, you can move them to another split pane."), {
+                    buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
+                }, function (index) {
+                    if (index === 2) {
+                        return;
+                    }
+                    showChoicePalette();
+                });
+            }
+            else {
+                showChoicePalette();
+            }
         });
         nova.commands.register('tabs-sidebar.deleteTabGroupPalette', function (workspace) {
             var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');

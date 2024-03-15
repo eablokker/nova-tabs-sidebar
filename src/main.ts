@@ -414,7 +414,7 @@ class App {
 				}
 			});*/
 
-			/*editor.onDidStopChanging(changedEditor => {
+			editor.onDidStopChanging(changedEditor => {
 				if (nova.inDevMode()) console.log('Document did stop changing');
 
 				if (changedEditor.document.isUntitled) {
@@ -435,7 +435,7 @@ class App {
 					.catch(err => {
 						console.error('Could not reload treeView.', err);
 					});
-			});*/
+			});
 
 			// Focus tab in sidebar when saving document
 			editor.onDidSave(savedEditor => {
@@ -1056,34 +1056,100 @@ class App {
 				return matches[2];
 			});
 
-			tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
+			const showChoicePalette = () => {
+				// Add default group as first item in palette
+				tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
 
-			workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' },
-				(name, index) => {
-					if (index === null) {
-						return;
+				workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' },
+					(name, index) => {
+						if (index === null) {
+							return;
+						}
+
+						if (index === 0) {
+							workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', '__DEFAULT_GROUP__');
+							return;
+						}
+
+						const itemToOpen = tabGroups[index - 1];
+
+						const matches = itemToOpen.match(this.tabGroupsDataProvider.configRegex);
+						if (!matches || matches.length < 3) {
+							return;
+						}
+
+						const uuid = matches[1];
+
+						if (uuid === '__DEFAULT_GROUPS__') {
+							workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+						} else {
+							workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
+						}
+					});
+			}
+
+			// Check for remote and unsaved tabs
+			const openTabs = workspace.textDocuments;
+			let remoteTabString = '';
+			const remoteTabs = openTabs.filter((tab) => {
+				if (tab.isRemote) {
+					if (tab.path) {
+						remoteTabString += '• ' + nova.path.basename(tab.path) + '\n';
 					}
 
-					if (index === 0) {
-						workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', '__DEFAULT_GROUP__');
-						return;
+					return true;
+				}
+
+				return false
+			});
+
+			let unsavedTabsString = '';
+			const unsavedTabs = openTabs.filter((tab) => {
+				if (tab.isDirty || tab.isUntitled) {
+					if (tab.path) {
+						unsavedTabsString += '• ' + nova.path.basename(tab.path) + '\n';
+					} else if (tab.isUntitled) {
+						unsavedTabsString += '• untitled\n';
 					}
 
-					const itemToOpen = tabGroups[index - 1];
+					return true;
+				}
 
-					const matches = itemToOpen.match(this.tabGroupsDataProvider.configRegex);
-					if (!matches || matches.length < 3) {
-						return;
+				return false;
+			});
+
+			if (unsavedTabs.length > 0) {
+				workspace.showWarningMessage(
+`Your workspace has ${unsavedTabs.length} unsaved tab${unsavedTabs.length > 1 ? 's' : ''}.
+
+${unsavedTabsString}
+Please save ${unsavedTabs.length > 1 ? 'them' : 'it'} before opening another tab group.`
+				);
+				return;
+			}
+
+			if (remoteTabs.length > 0) {
+				workspace.showActionPanel(
+`Your workspace has ${remoteTabs.length} remote tab${remoteTabs.length > 1 ? 's' : ''}.
+
+${remoteTabString}
+Remote tabs in the current split pane will be closed and cannot be saved to a tab group.
+
+To preserve them between switches, you can move them to another split pane.`,
+					{
+						buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
+					},
+					(index) => {
+						if (index === 2) {
+							return;
+						}
+
+						showChoicePalette();
 					}
-
-					const uuid = matches[1];
-
-					if (uuid === '__DEFAULT_GROUPS__') {
-						workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
-					} else {
-						workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
-					}
-				});
+				);
+			} else {
+				showChoicePalette();
+			}
 		});
 
 		nova.commands.register('tabs-sidebar.deleteTabGroupPalette', (workspace: Workspace) => {
