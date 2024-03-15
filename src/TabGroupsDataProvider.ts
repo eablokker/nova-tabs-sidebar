@@ -29,10 +29,12 @@ class TabGroupItem {
 
 class TabGroupsDataProvider {
 	flatItems: TabGroupItem[];
+	activeGroup: string;
 	configRegex: RegExp;
 
 	constructor() {
 		this.flatItems = [];
+		this.activeGroup = nova.workspace.config.get('eablokker.tabsSidebar.config.activeTabGroup', 'string') || '__DEFAULT_GROUP__';
 		this.configRegex = /^([^:]*):(.*)$/;
 
 		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
@@ -78,9 +80,31 @@ class TabGroupsDataProvider {
 		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
 		tabGroups.push(tabGroup.configString);
 
-		// Update config and tree
+		// Add current document tabs
+		const currentTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array');
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + tabGroup.uuid, currentTabs);
+
+		// Add new group
 		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
+
+		// Set active group
+		nova.workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', tabGroup.uuid);
+		this.activeGroup = tabGroup.uuid;
+
+		// Update tree
 		this.flatItems.push(tabGroup);
+
+		return tabGroup;
+	}
+
+	openItem(uuid: string) {
+		this.activeGroup = uuid;
+	}
+
+	selectItemByUUID(uuid: string) {
+		return this.flatItems.find((tabGroup) => {
+			return tabGroup.uuid === uuid;
+		}) || null;
 	}
 
 	renameItemByConfigString(configString: string, newName: string) {
@@ -137,11 +161,20 @@ class TabGroupsDataProvider {
 			return;
 		}
 
-		// Update config and tree
+		// Update config
 		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
+
+		// Remove tab order
+		nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroupsOrder.' + uuid);
+
+		// Set active group
+		this.activeGroup = '__DEFAULT_GROUP__';
+		nova.workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+
+		// Update tree
 		this.flatItems.splice(index, 1);
 
-		// Remove config key if empty
+		// Remove tab groups key if empty
 		if (filteredTabGroups.length <= 0) {
 			nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
 		}
@@ -176,6 +209,9 @@ class TabGroupsDataProvider {
 		if (element.uuid === '__DEFAULT_GROUP__') {
 			item.image = 'desktop-computer';
 			item.contextValue = 'currentTabs';
+		} else if (element.uuid === this.activeGroup) {
+			item.image = 'tab-group-active';
+			item.contextValue = 'activeTabGroup';
 		} else {
 			item.image = 'tab-group';
 			item.contextValue = 'tabGroup';

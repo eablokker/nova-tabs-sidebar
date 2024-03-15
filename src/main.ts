@@ -1006,38 +1006,21 @@ class App {
 				console.log(textEditor.document.uri);
 			});
 
-			/*workspace.showChoicePalette([
-					'New Empty Tab Group',
-					'New Tab Group with ' + documentCount + ' Documents'
-				],
-				{
-					placeholder: 'New Tab Group'
-				},
-				(choice, index) => {
-					if (!choice) {
+			let message = 'The currently open document tabs will be saved to the new tab group.\n\nFile browsers, terminal tabs, and remote tabs cannot be saved to a tab group.\n\nTabs from all splits will be saved to the group, but split assignments can not be restored.';
+
+			workspace.showInputPalette(message, {
+					placeholder: 'Tab Group Name',
+				}, (name) => {
+					if (!name) {
 						return;
 					}
 
-					let message = '';
-					if (index === 0) {
-						message = 'Enter a name for your new empty tab group.'
-					} else {
-						message = 'Enter a name for your tab group with ' + documentCount + ' documents. The currently open document tabs will be saved to the new tab group.'
-					}*/
-
-					let message = 'Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.';
-
-					workspace.showInputPalette(message, {
-						placeholder: 'Tab Group Name',
-					}, (name) => {
-						if (!name) {
-							return;
-						}
-
-						this.tabGroupsDataProvider.addItem(name);
-						this.groupsTreeView.reload();
-					});
-				/*});*/
+					const selection = this.tabGroupsDataProvider.addItem(name);
+					this.groupsTreeView.reload()
+						.then(() => {
+							this.groupsTreeView.reveal(selection)
+						});
+				});
 		});
 
 		nova.commands.register('tabs-sidebar.openTabGroupPalette', (workspace: Workspace) => {
@@ -1066,25 +1049,35 @@ class App {
 							return;
 						}
 
+						let uuid: string;
+
 						if (index === 0) {
-							workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', '__DEFAULT_GROUP__');
-							return;
+							uuid = '__DEFAULT_GROUP__';
+						} else {
+							const itemToOpen = tabGroups[index - 1];
+
+							const matches = itemToOpen.match(this.tabGroupsDataProvider.configRegex);
+							if (!matches || matches.length < 3) {
+								return;
+							}
+
+							uuid = matches[1];
 						}
 
-						const itemToOpen = tabGroups[index - 1];
+						const selection = this.tabGroupsDataProvider.selectItemByUUID(uuid);
 
-						const matches = itemToOpen.match(this.tabGroupsDataProvider.configRegex);
-						if (!matches || matches.length < 3) {
-							return;
-						}
-
-						const uuid = matches[1];
-
-						if (uuid === '__DEFAULT_GROUPS__') {
+						if (uuid === '__DEFAULT_GROUP__') {
 							workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
 						} else {
 							workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
 						}
+
+						// Update tree
+						this.tabGroupsDataProvider.openItem(uuid);
+						this.groupsTreeView.reload()
+							.then(() => {
+								this.groupsTreeView.reveal(selection);
+							});
 					});
 			}
 
@@ -1135,7 +1128,7 @@ Please save ${unsavedTabs.length > 1 ? 'them' : 'it'} before opening another tab
 ${remoteTabString}
 Remote tabs in the current split pane will be closed and cannot be saved to a tab group.
 
-To preserve them between switches, you can move them to another split pane.`,
+To preserve them between switches, you can move them to a different split pane.`,
 					{
 						buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
 					},
@@ -1207,6 +1200,13 @@ To preserve them between switches, you can move them to another split pane.`,
 			} else {
 				workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
 			}
+
+			// Update tree
+			this.tabGroupsDataProvider.openItem(selection.uuid);
+			this.groupsTreeView.reload()
+				.then(() => {
+					this.groupsTreeView.reveal(selection);
+				});
 		});
 
 		nova.commands.register('tabs-sidebar.renameTabGroup', (workspace: Workspace) => {
@@ -1446,11 +1446,15 @@ To preserve them between switches, you can move them to another split pane.`,
 
 
 exports.activate = function() {
+	if (nova.inDevMode()) console.log('Extension activated');
+
 	// Do work when the extension is activated
 	app = new App();
 };
 
 exports.deactivate = function() {
+	if (nova.inDevMode()) console.log('Extension deactivated');
+
 	// Clean up state before the extension is deactivated
 	app.deactivate();
 };

@@ -1207,6 +1207,7 @@ var TabGroupsDataProvider = /** @class */ (function () {
     function TabGroupsDataProvider() {
         var _this = this;
         this.flatItems = [];
+        this.activeGroup = nova.workspace.config.get('eablokker.tabsSidebar.config.activeTabGroup', 'string') || '__DEFAULT_GROUP__';
         this.configRegex = /^([^:]*):(.*)$/;
         var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
         if (!tabGroups) {
@@ -1239,9 +1240,25 @@ var TabGroupsDataProvider = /** @class */ (function () {
         var tabGroup = new TabGroupItem(name || 'Untitled');
         var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
         tabGroups.push(tabGroup.configString);
-        // Update config and tree
+        // Add current document tabs
+        var currentTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array');
+        nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + tabGroup.uuid, currentTabs);
+        // Add new group
         nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', tabGroups);
+        // Set active group
+        nova.workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', tabGroup.uuid);
+        this.activeGroup = tabGroup.uuid;
+        // Update tree
         this.flatItems.push(tabGroup);
+        return tabGroup;
+    };
+    TabGroupsDataProvider.prototype.openItem = function (uuid) {
+        this.activeGroup = uuid;
+    };
+    TabGroupsDataProvider.prototype.selectItemByUUID = function (uuid) {
+        return this.flatItems.find(function (tabGroup) {
+            return tabGroup.uuid === uuid;
+        }) || null;
     };
     TabGroupsDataProvider.prototype.renameItemByConfigString = function (configString, newName) {
         var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
@@ -1284,10 +1301,16 @@ var TabGroupsDataProvider = /** @class */ (function () {
         if (index < 0) {
             return;
         }
-        // Update config and tree
+        // Update config
         nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroups', filteredTabGroups);
+        // Remove tab order
+        nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroupsOrder.' + uuid);
+        // Set active group
+        this.activeGroup = '__DEFAULT_GROUP__';
+        nova.workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+        // Update tree
         this.flatItems.splice(index, 1);
-        // Remove config key if empty
+        // Remove tab groups key if empty
         if (filteredTabGroups.length <= 0) {
             nova.workspace.config.remove('eablokker.tabsSidebar.config.tabGroups');
         }
@@ -1314,6 +1337,10 @@ var TabGroupsDataProvider = /** @class */ (function () {
         if (element.uuid === '__DEFAULT_GROUP__') {
             item.image = 'desktop-computer';
             item.contextValue = 'currentTabs';
+        }
+        else if (element.uuid === this.activeGroup) {
+            item.image = 'tab-group-active';
+            item.contextValue = 'activeTabGroup';
         }
         else {
             item.image = 'tab-group';
@@ -2183,35 +2210,19 @@ var App = /** @class */ (function () {
             nova.workspace.textEditors.forEach(function (textEditor) {
                 console.log(textEditor.document.uri);
             });
-            /*workspace.showChoicePalette([
-                    'New Empty Tab Group',
-                    'New Tab Group with ' + documentCount + ' Documents'
-                ],
-                {
-                    placeholder: 'New Tab Group'
-                },
-                (choice, index) => {
-                    if (!choice) {
-                        return;
-                    }
-
-                    let message = '';
-                    if (index === 0) {
-                        message = 'Enter a name for your new empty tab group.'
-                    } else {
-                        message = 'Enter a name for your tab group with ' + documentCount + ' documents. The currently open document tabs will be saved to the new tab group.'
-                    }*/
-            var message = 'Enter a name for your tab group. The currently open document tabs will be saved to the new tab group.';
+            var message = 'The currently open document tabs will be saved to the new tab group.\n\nFile browsers, terminal tabs, and remote tabs cannot be saved to a tab group.\n\nTabs from all splits will be saved to the group, but split assignments can not be restored.';
             workspace.showInputPalette(message, {
                 placeholder: 'Tab Group Name',
             }, function (name) {
                 if (!name) {
                     return;
                 }
-                _this.tabGroupsDataProvider.addItem(name);
-                _this.groupsTreeView.reload();
+                var selection = _this.tabGroupsDataProvider.addItem(name);
+                _this.groupsTreeView.reload()
+                    .then(function () {
+                    _this.groupsTreeView.reveal(selection);
+                });
             });
-            /*});*/
         });
         nova.commands.register('tabs-sidebar.openTabGroupPalette', function (workspace) {
             var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
@@ -2233,22 +2244,31 @@ var App = /** @class */ (function () {
                     if (index === null) {
                         return;
                     }
+                    var uuid;
                     if (index === 0) {
-                        workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', '__DEFAULT_GROUP__');
-                        return;
+                        uuid = '__DEFAULT_GROUP__';
                     }
-                    var itemToOpen = tabGroups[index - 1];
-                    var matches = itemToOpen.match(_this.tabGroupsDataProvider.configRegex);
-                    if (!matches || matches.length < 3) {
-                        return;
+                    else {
+                        var itemToOpen = tabGroups[index - 1];
+                        var matches = itemToOpen.match(_this.tabGroupsDataProvider.configRegex);
+                        if (!matches || matches.length < 3) {
+                            return;
+                        }
+                        uuid = matches[1];
                     }
-                    var uuid = matches[1];
-                    if (uuid === '__DEFAULT_GROUPS__') {
+                    var selection = _this.tabGroupsDataProvider.selectItemByUUID(uuid);
+                    if (uuid === '__DEFAULT_GROUP__') {
                         workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
                     }
                     else {
                         workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
                     }
+                    // Update tree
+                    _this.tabGroupsDataProvider.openItem(uuid);
+                    _this.groupsTreeView.reload()
+                        .then(function () {
+                        _this.groupsTreeView.reveal(selection);
+                    });
                 });
             };
             // Check for remote and unsaved tabs
@@ -2281,7 +2301,7 @@ var App = /** @class */ (function () {
                 return;
             }
             if (remoteTabs.length > 0) {
-                workspace.showActionPanel("Your workspace has ".concat(remoteTabs.length, " remote tab").concat(remoteTabs.length > 1 ? 's' : '', ".\n\n").concat(remoteTabString, "\nRemote tabs in the current split pane will be closed and cannot be saved to a tab group.\n\nTo preserve them between switches, you can move them to another split pane."), {
+                workspace.showActionPanel("Your workspace has ".concat(remoteTabs.length, " remote tab").concat(remoteTabs.length > 1 ? 's' : '', ".\n\n").concat(remoteTabString, "\nRemote tabs in the current split pane will be closed and cannot be saved to a tab group.\n\nTo preserve them between switches, you can move them to a different split pane."), {
                     buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
                 }, function (index) {
                     if (index === 2) {
@@ -2338,6 +2358,12 @@ var App = /** @class */ (function () {
             else {
                 workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
             }
+            // Update tree
+            _this.tabGroupsDataProvider.openItem(selection.uuid);
+            _this.groupsTreeView.reload()
+                .then(function () {
+                _this.groupsTreeView.reveal(selection);
+            });
         });
         nova.commands.register('tabs-sidebar.renameTabGroup', function (workspace) {
             var selections = _this.groupsTreeView.selection;
@@ -2547,10 +2573,14 @@ var App = /** @class */ (function () {
     return App;
 }());
 exports.activate = function () {
+    if (nova.inDevMode())
+        console.log('Extension activated');
     // Do work when the extension is activated
     app = new App();
 };
 exports.deactivate = function () {
+    if (nova.inDevMode())
+        console.log('Extension deactivated');
     // Clean up state before the extension is deactivated
     app.deactivate();
 };
