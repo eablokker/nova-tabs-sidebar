@@ -2206,7 +2206,6 @@ var App = /** @class */ (function () {
         // 	});
         // });
         nova.commands.register('tabs-sidebar.newTabGroup', function (workspace) {
-            nova.workspace.textDocuments.length;
             nova.workspace.textEditors.forEach(function (textEditor) {
                 console.log(textEditor.document.uri);
             });
@@ -2237,7 +2236,7 @@ var App = /** @class */ (function () {
                 }
                 return matches[2];
             });
-            var showChoicePalette = function () {
+            _this.checkForUnsaveableTabs(function () {
                 // Add default group as first item in palette
                 tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
                 workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' }, function (name, index) {
@@ -2270,49 +2269,7 @@ var App = /** @class */ (function () {
                         _this.groupsTreeView.reveal(selection);
                     });
                 });
-            };
-            // Check for remote and unsaved tabs
-            var openTabs = workspace.textDocuments;
-            var remoteTabString = '';
-            var remoteTabs = openTabs.filter(function (tab) {
-                if (tab.isRemote) {
-                    if (tab.path) {
-                        remoteTabString += '• ' + nova.path.basename(tab.path) + '\n';
-                    }
-                    return true;
-                }
-                return false;
             });
-            var unsavedTabsString = '';
-            var unsavedTabs = openTabs.filter(function (tab) {
-                if (tab.isDirty || tab.isUntitled) {
-                    if (tab.path) {
-                        unsavedTabsString += '• ' + nova.path.basename(tab.path) + '\n';
-                    }
-                    else if (tab.isUntitled) {
-                        unsavedTabsString += '• untitled\n';
-                    }
-                    return true;
-                }
-                return false;
-            });
-            if (unsavedTabs.length > 0) {
-                workspace.showWarningMessage("Your workspace has ".concat(unsavedTabs.length, " unsaved tab").concat(unsavedTabs.length > 1 ? 's' : '', ".\n\n").concat(unsavedTabsString, "\nPlease save ").concat(unsavedTabs.length > 1 ? 'them' : 'it', " before opening another tab group."));
-                return;
-            }
-            if (remoteTabs.length > 0) {
-                workspace.showActionPanel("Your workspace has ".concat(remoteTabs.length, " remote tab").concat(remoteTabs.length > 1 ? 's' : '', ".\n\n").concat(remoteTabString, "\nRemote tabs in the current split pane will be closed and cannot be saved to a tab group.\n\nTo preserve them between switches, you can move them to a different split pane."), {
-                    buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
-                }, function (index) {
-                    if (index === 2) {
-                        return;
-                    }
-                    showChoicePalette();
-                });
-            }
-            else {
-                showChoicePalette();
-            }
         });
         nova.commands.register('tabs-sidebar.deleteTabGroupPalette', function (workspace) {
             var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
@@ -2352,17 +2309,19 @@ var App = /** @class */ (function () {
             if (!selection) {
                 return;
             }
-            if (selection.uuid === '__DEFAULT_GROUP__') {
-                workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
-            }
-            else {
-                workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
-            }
-            // Update tree
-            _this.tabGroupsDataProvider.openItem(selection.uuid);
-            _this.groupsTreeView.reload()
-                .then(function () {
-                _this.groupsTreeView.reveal(selection);
+            _this.checkForUnsaveableTabs(function () {
+                if (selection.uuid === '__DEFAULT_GROUP__') {
+                    workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+                }
+                else {
+                    workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
+                }
+                // Update tree
+                _this.tabGroupsDataProvider.openItem(selection.uuid);
+                _this.groupsTreeView.reload()
+                    .then(function () {
+                    _this.groupsTreeView.reveal(selection);
+                });
             });
         });
         nova.commands.register('tabs-sidebar.renameTabGroup', function (workspace) {
@@ -2569,6 +2528,50 @@ var App = /** @class */ (function () {
         }, function (error) {
             console.error(error);
         });
+    };
+    App.prototype.checkForUnsaveableTabs = function (callback) {
+        // Check for remote and unsaved tabs
+        var openTabs = nova.workspace.textDocuments;
+        var remoteTabString = '';
+        var remoteTabs = openTabs.filter(function (tab) {
+            if (tab.isRemote) {
+                if (tab.path) {
+                    remoteTabString += '• ' + nova.path.basename(tab.path) + '\n';
+                }
+                return true;
+            }
+            return false;
+        });
+        var unsavedTabsString = '';
+        var unsavedTabs = openTabs.filter(function (tab) {
+            if (tab.isDirty || tab.isUntitled) {
+                if (tab.path) {
+                    unsavedTabsString += '• ' + nova.path.basename(tab.path) + '\n';
+                }
+                else if (tab.isUntitled) {
+                    unsavedTabsString += '• untitled\n';
+                }
+                return true;
+            }
+            return false;
+        });
+        if (unsavedTabs.length > 0) {
+            nova.workspace.showWarningMessage("Your workspace has ".concat(unsavedTabs.length, " unsaved tab").concat(unsavedTabs.length > 1 ? 's' : '', ".\n\n").concat(unsavedTabsString, "\nPlease save ").concat(unsavedTabs.length > 1 ? 'them' : 'it', " before switching to another tab group."));
+            return;
+        }
+        if (remoteTabs.length > 0) {
+            nova.workspace.showActionPanel("Your workspace has ".concat(remoteTabs.length, " remote tab").concat(remoteTabs.length > 1 ? 's' : '', ".\n\n").concat(remoteTabString, "\nRemote tabs in the current split pane will be closed and cannot be saved to a tab group.\n\nTo preserve them between switches, you can move them to a different split pane."), {
+                buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
+            }, function (index) {
+                if (index === 2) {
+                    return;
+                }
+                callback();
+            });
+        }
+        else {
+            callback();
+        }
     };
     return App;
 }());

@@ -276,7 +276,7 @@
                             "when": "viewItem !== 'currentTabs'"
                         },
                         {
-                            "title": "Delete",
+                            "title": "Delete…",
                             "command": "tabs-sidebar.deleteTabGroup",
                             "when": "viewItem !== 'currentTabs'"
                         },
