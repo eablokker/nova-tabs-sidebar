@@ -939,32 +939,52 @@ class App {
 
 		this.fileWatcher = nova.fs.watch(null, () => { /**/ });
 
+		// Keep a list of files changed during timeout period
+		let paths: string[] = [];
+
 		this.fileWatcher.onDidChange(path => {
+
+			// Add to paths array if not in array
+			if (paths.indexOf(path) < 0) {
+				paths.push(path);
+			}
+
 			clearTimeout(watchTimeoutID);
 			watchTimeoutID = setTimeout(() => {
-				if (nova.inDevMode()) console.log('File changed', path);
+				if (nova.inDevMode()) console.log('Files changed', paths.join(', '));
 
-				const pathSplit = nova.path.split(nova.path.dirname(path));
+				paths.every((path) => {
+					const pathSplit = nova.path.split(nova.path.dirname(path));
 
-				// Don't respond to changes to nova config
-				if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-					if (nova.inDevMode()) console.log('Dont respond to config changes');
-					return;
-				}
+					// Don't respond to changes to nova config
+					if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+						if (nova.inDevMode()) console.log('Dont respond to config changes');
+						return true; // Keep iterating
+					}
 
-				// Check if file is ignored in Git
-				this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
-					.then(status => {
-						if (nova.inDevMode()) console.log('Git ignored status', status);
+					// Check if file is ignored in Git
+					this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+						.then(status => {
+							if (nova.inDevMode()) console.log('Git ignored status', status);
 
-						// Update git status if changed file is not ignored
-						if (status === '1') {
-							this.updateGitStatus();
-						}
-					})
-					.catch(err => {
-						console.error('Could not check Git ignore status', err);
-					});
+							// Update git status if changed file is not ignored
+							if (status === '1') {
+								this.updateGitStatus();
+								return false; // Stop iterating
+							}
+
+							return true; // Keep iterating
+						})
+						.catch(err => {
+							console.error('Could not check Git ignore status', err);
+							return true; // Keep iterating
+						});
+
+					return true;
+				});
+
+				// Reset paths array
+				paths = [];
 			}, 200);
 		});
 	}

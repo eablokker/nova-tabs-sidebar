@@ -49,7 +49,7 @@ function __generator(thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+        while (_) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -1934,7 +1934,7 @@ var App = /** @class */ (function () {
     };
     App.prototype.initFileWatcher = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var gitPath, repoPath, watchTimeoutID;
+            var gitPath, repoPath, watchTimeoutID, paths;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1973,31 +1973,44 @@ var App = /** @class */ (function () {
                             //
                         }, 200);
                         this.fileWatcher = nova.fs.watch(null, function () { });
+                        paths = [];
                         this.fileWatcher.onDidChange(function (path) {
+                            // Add to paths array if not in array
+                            if (paths.indexOf(path) < 0) {
+                                paths.push(path);
+                            }
                             clearTimeout(watchTimeoutID);
                             watchTimeoutID = setTimeout(function () {
                                 if (nova.inDevMode())
-                                    console.log('File changed', path);
-                                var pathSplit = nova.path.split(nova.path.dirname(path));
-                                // Don't respond to changes to nova config
-                                if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-                                    if (nova.inDevMode())
-                                        console.log('Dont respond to config changes');
-                                    return;
-                                }
-                                // Check if file is ignored in Git
-                                _this.tabDataProvider.runProcess(_this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
-                                    .then(function (status) {
-                                    if (nova.inDevMode())
-                                        console.log('Git ignored status', status);
-                                    // Update git status if changed file is not ignored
-                                    if (status === '1') {
-                                        _this.updateGitStatus();
+                                    console.log('Files changed', paths.join(', '));
+                                paths.every(function (path) {
+                                    var pathSplit = nova.path.split(nova.path.dirname(path));
+                                    // Don't respond to changes to nova config
+                                    if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+                                        if (nova.inDevMode())
+                                            console.log('Dont respond to config changes');
+                                        return true; // Keep iterating
                                     }
-                                })
-                                    .catch(function (err) {
-                                    console.error('Could not check Git ignore status', err);
+                                    // Check if file is ignored in Git
+                                    _this.tabDataProvider.runProcess(_this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+                                        .then(function (status) {
+                                        if (nova.inDevMode())
+                                            console.log('Git ignored status', status);
+                                        // Update git status if changed file is not ignored
+                                        if (status === '1') {
+                                            _this.updateGitStatus();
+                                            return false; // Stop iterating
+                                        }
+                                        return true; // Keep iterating
+                                    })
+                                        .catch(function (err) {
+                                        console.error('Could not check Git ignore status', err);
+                                        return true; // Keep iterating
+                                    });
+                                    return true;
                                 });
+                                // Reset paths array
+                                paths = [];
                             }, 200);
                         });
                         return [2 /*return*/];
