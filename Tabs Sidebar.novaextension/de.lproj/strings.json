@@ -10,6 +10,9 @@
 
 	"Open": "Öffnen",
 	"Close Tab": "Tab schließen",
+	"Close Other Tabs": "Andere Tabs schließen",
+	"Close All Tabs": "Alle Tabs schließen",
+	"Close All Tabs…": "Alle Tabs schließen…",
 	"Move Item Up": "Artikel nach oben verschieben",
 	"Move Item Down": "Artikel nach unten verschieben",
 	"Show in Files Sidebar": "In der Dateien-Seitenleiste anzeigen",
@@ -61,10 +64,14 @@
 	"missing value": "missing value",
 
 	"Failed to Close Tab": "Das Schließen des Tabs ist fehlgeschlagen",
+	"Failed to Close All Tabs": "Das Schließen aller Tabs ist fehlgeschlagen",
 	"Failed to Clean Up By Tab Bar Order": "Bereinigen nach Reihenfolge der Tableiste fehlgeschlagen",
 	"Failed to Show in Files Sidebar": "Fehler beim Anzeigen in der Dateien-Seitenleiste",
 	"Failed to Open Remote Tab": "Öffnen der Remote-Registerkarte fehlgeschlagen",
 	"Make sure Nova has permissions for Accessibility and System Events.": "Stellen Sie sicher, dass Nova über Berechtigungen für Barrierefreiheit und Systemereignisse verfügt.",
 	"More Info": "Mehr Info",
-	"Dismiss": "Verwerfen"
+	"Dismiss": "Verwerfen",
+
+	"Are you sure you want to close all tabs?": "Möchten Sie wirklich alle Tabs schließen?",
+	"Cancel": "Abbrechen"
 }

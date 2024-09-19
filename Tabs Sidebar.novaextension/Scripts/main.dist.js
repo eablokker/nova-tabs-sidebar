@@ -982,7 +982,6 @@ var TabDataProvider = /** @class */ (function () {
             }
         }
         if (foundChildTab) {
-            // console.log('foundChildTab', foundChildTab?.uri);
             return foundChildTab;
         }
         return null;
@@ -1705,6 +1704,31 @@ var App = /** @class */ (function () {
                 console.error('Could not open remote tab.', err);
             });
         });
+        nova.commands.register('tabs-sidebar.closeAll', function (workspace) {
+            nova.workspace.showActionPanel(nova.localize('Are you sure you want to close all tabs?'), {
+                buttons: [nova.localize('Close All Tabs'), nova.localize('Cancel')]
+            }, function (index) {
+                if (index === 0) {
+                    _this.tabDataProvider
+                        .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Other Tabs')])
+                        .then(function () {
+                        _this.tabDataProvider
+                            .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+                            .then(function () {
+                            //
+                        })
+                            .catch(function (err) {
+                            console.error('Could not click menu item.', err);
+                        });
+                    })
+                        .catch(function (err) {
+                        console.error('Could not click menu item.', err);
+                        var title = nova.localize('Failed to Close All Tabs');
+                        _this.showPermissionsNotification(title);
+                    });
+                }
+            });
+        });
         nova.commands.register('tabs-sidebar.open', function (workspace) {
             var selection = _this.treeView.selection;
             // console.log('Selection: ' + selection[0].name);
@@ -1940,6 +1964,9 @@ var App = /** @class */ (function () {
             }
             _this.initFileWatcher();
             _this.treeView.reload();
+        });
+        nova.commands.register('tabs-sidebar.openGlobalConfig', function (workspace) {
+            nova.openConfig();
         });
     };
     App.prototype.initFileWatcher = function () {

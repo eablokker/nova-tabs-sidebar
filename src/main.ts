@@ -625,6 +625,33 @@ class App {
 				});
 		});
 
+		nova.commands.register('tabs-sidebar.closeAll', (workspace: Workspace) => {
+			nova.workspace.showActionPanel(nova.localize('Are you sure you want to close all tabs?'), {
+				buttons: [nova.localize('Close All Tabs'), nova.localize('Cancel')]
+			}, (index) => {
+				if (index === 0) {
+					this.tabDataProvider
+						.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Other Tabs')])
+						.then(() => {
+							this.tabDataProvider
+								.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+								.then(() => {
+									//
+								})
+								.catch(err => {
+									console.error('Could not click menu item.', err);
+								});
+						})
+						.catch(err => {
+							console.error('Could not click menu item.', err);
+
+							const title = nova.localize('Failed to Close All Tabs');
+							this.showPermissionsNotification(title);
+						});
+				}
+			});
+		});
+
 		nova.commands.register('tabs-sidebar.open', (workspace: Workspace) => {
 			const selection = this.treeView.selection;
 			// console.log('Selection: ' + selection[0].name);
@@ -901,6 +928,10 @@ class App {
 			this.initFileWatcher();
 
 			this.treeView.reload();
+		});
+
+		nova.commands.register('tabs-sidebar.openGlobalConfig', (workspace: Workspace) => {
+			nova.openConfig();
 		});
 	}
 
