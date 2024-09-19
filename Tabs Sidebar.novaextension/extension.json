@@ -3,7 +3,7 @@
     "name": "Tabs Sidebar",
     "organization": "Austen Blokker",
     "description": "Manage open document tabs from the sidebar.",
-    "version": "1.6.2",
+    "version": "1.7.0",
     "categories": ["sidebars"],
     "license": "MIT",
     "repository": "https://github.com/eablokker/nova-tabs-sidebar",
@@ -63,6 +63,10 @@
                 "state": "eablokker.tabsSidebar.config.groupBy === 'folder'"
             },
             {"separator": true},
+            {
+                "title": "Close All Tabs…",
+                "command": "tabs-sidebar.closeAll",
+            },
             {
                 "title": "Refresh Tab List",
                 "command": "tabs-sidebar.refresh",
@@ -145,6 +149,10 @@
                             "state": "eablokker.tabsSidebar.config.groupBy === 'folder'"
                         },
                         {"separator": true},
+                        {
+                            "title": "Close All Tabs…",
+                            "command": "tabs-sidebar.closeAll",
+                        },
                         {
                             "title": "Refresh",
                             "image": "__builtin.refresh",
@@ -231,6 +239,10 @@
                             "state": "eablokker.tabsSidebar.config.groupBy === 'folder'"
                         },
                         {"separator": true},
+                        {
+                            "title": "Close All Tabs…",
+                            "command": "tabs-sidebar.closeAll",
+                        },
                         {
                             "title": "Refresh",
                             "command": "tabs-sidebar.refresh"

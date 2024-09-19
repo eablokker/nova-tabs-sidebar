@@ -10,6 +10,9 @@
 
 	"Open": "打开",
 	"Close Tab": "关闭标签页",
+	"Close Other Tabs": "关闭其他标签页",
+	"Close All Tabs": "关闭所有标签",
+	"Close All Tabs…": "关闭所有标签…",
 	"Move Item Up": "向上移动项目",
 	"Move Item Down": "下移项目",
 	"Show in Files Sidebar": "在文件边栏中显示",
@@ -64,10 +67,14 @@
 	"missing value": "missing value",
 
 	"Failed to Close Tab": "关闭选项卡失败",
+	"Failed to Close All Tabs": "关闭所有选项卡失败",
 	"Failed to Clean Up By Tab Bar Order": "无法按选项卡栏顺序进行清理",
 	"Failed to Show in Files Sidebar": "无法在文件边栏中显示",
 	"Failed to Open Remote Tab": "无法打开远程选项卡",
 	"Make sure Nova has permissions for Accessibility and System Events.": "确保 Nova 具有可访问性和系统事件的权限。",
 	"More Info": "更多信息",
-	"Dismiss": "解雇"
+	"Dismiss": "解雇",
+
+	"Are you sure you want to close all tabs?": "您确定要关闭所有标签吗?",
+	"Cancel": "取消"
 }

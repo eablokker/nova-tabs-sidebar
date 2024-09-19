@@ -1,4 +1,8 @@
-## v1.6.2 - 2024-09-19
+## v1.7.0 - 2024-09-19
+
+### Added
+
+- New "Close All Tabs" menu item to quickly clean up a workspace
 
 ### Changed
 
