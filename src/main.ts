@@ -20,6 +20,7 @@ class App {
 	groupBy: string | null;
 
 	collapseTimeoutID: NodeJS.Timeout;
+	highlightTimeoutID: NodeJS.Timeout;
 
 	syntaxNames: SyntaxNames;
 	syntaxImages: SyntaxImages;
@@ -38,6 +39,10 @@ class App {
 		this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
 
 		this.collapseTimeoutID = setTimeout(() => {
+			//
+		});
+
+		this.highlightTimeoutID = setTimeout(() => {
 			//
 		});
 
@@ -1069,7 +1074,11 @@ class App {
 
 					this.treeView.reload(element)
 						.then(() => {
-							this.highlightTab(activeEditor || null);
+							// Prevent excessive highlighting
+							clearTimeout(this.highlightTimeoutID);
+							this.highlightTimeoutID = setTimeout(() => {
+								this.highlightTab(activeEditor || null);
+							}, 200);
 						})
 						.catch(err => {
 							console.error('Could not reload treeView.', err);
