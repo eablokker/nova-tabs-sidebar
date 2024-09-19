@@ -408,7 +408,7 @@ class App {
 		});
 
 		this.treeView.onDidChangeSelection((selection) => {
-			if (nova.inDevMode()) console.log('treeView.onDidChangeSelection');
+			// if (nova.inDevMode()) console.log('treeView.onDidChangeSelection');
 			//console.log('New selection: ' + selection.map((e) => e.name));
 
 			if (!selection[0]) {

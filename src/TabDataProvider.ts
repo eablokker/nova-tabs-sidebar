@@ -101,7 +101,7 @@ class GroupItem extends ListItem {
 }
 
 class FolderItem extends ListItem {
-	children: (FolderItem | TabItem)[];
+	children: NestedFolders;
 	parent: FolderItem | null;
 	count: number | undefined;
 	image: string | undefined;
@@ -130,11 +130,13 @@ class FolderItem extends ListItem {
 	}
 }
 
+type NestedFolders = (FolderItem | TabItem)[];
+
 class TabDataProvider {
 	app: App;
 	flatItems: TabItem[];
 	kindGroupItems: GroupItem[];
-	folderGroupItems: (FolderItem | TabItem)[];
+	folderGroupItems: NestedFolders;
 	customOrder: string[];
 	customKindGroupsOrder: string[];
 	gitStatuses: GitStatus[];
@@ -325,9 +327,9 @@ class TabDataProvider {
 			rootFolder.path = '__RootFolder__';
 			rootFolder.uri = '__RootFolder__';
 
-			this.createNestedFolders(tabs, rootFolder);
+			const nestedFolders = this.createNestedFolders(tabs, rootFolder);
 
-			rootFolder.children.forEach(child => {
+			nestedFolders.children.forEach(child => {
 				this.folderGroupItems.push(child);
 			});
 
@@ -349,8 +351,8 @@ class TabDataProvider {
 					projectFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 				}
 
-				this.createNestedFolders(projectTabs, projectFolder);
-				this.folderGroupItems.push(projectFolder);
+				const nestedFolders = this.createNestedFolders(projectTabs, projectFolder);
+				this.folderGroupItems.push(nestedFolders);
 			}
 
 			if (localTabs.length) {
@@ -366,8 +368,8 @@ class TabDataProvider {
 					localFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 				}
 
-				this.createNestedFolders(localTabs, localFolder);
-				this.folderGroupItems.push(localFolder);
+				const nestedFolders = this.createNestedFolders(localTabs, localFolder);
+				this.folderGroupItems.push(nestedFolders);
 			}
 
 			if (remoteTabs.length) {
@@ -383,8 +385,8 @@ class TabDataProvider {
 					remoteFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 				}
 
-				this.createNestedFolders(remoteTabs, remoteFolder);
-				this.folderGroupItems.push(remoteFolder);
+				const nestedFolders = this.createNestedFolders(remoteTabs, remoteFolder);
+				this.folderGroupItems.push(nestedFolders);
 			}
 
 			if (trashTabs.length) {
@@ -400,8 +402,8 @@ class TabDataProvider {
 					trashFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
 				}
 
-				this.createNestedFolders(trashTabs, trashFolder);
-				this.folderGroupItems.push(trashFolder);
+				const nestedFolders = this.createNestedFolders(trashTabs, trashFolder);
+				this.folderGroupItems.push(nestedFolders);
 			}
 
 		}
@@ -459,7 +461,7 @@ class TabDataProvider {
 				if (folder) {
 					const childIndex = folder.children.findIndex(child => child.uri === tab.uri);
 					if (childIndex < 0) {
-						folder.addChild(Object.assign({}, element));
+						folder.addChild(element);
 					}
 				} else {
 					// Add new folder if it doesn't exist yet
@@ -481,7 +483,7 @@ class TabDataProvider {
 						{ syntax: tab.syntax, extName: extName }
 					);
 
-					newFolder.addChild(Object.assign({}, element));
+					newFolder.addChild(element);
 					this.kindGroupItems.push(newFolder);
 
 					if (this.customKindGroupsOrder.indexOf(tabSyntax) < 0) {
@@ -498,7 +500,7 @@ class TabDataProvider {
 		this.sortItems();
 	}
 
-	createNestedFolders(tabs: TextDocument[], rootFolder: FolderItem) {
+	createNestedFolders(tabs: TextDocument[], rootFolder: FolderItem): FolderItem {
 		// Find common parent folder
 		const tabDirArray = nova.path.split(nova.path.dirname(tabs[0].path || ''));
 
@@ -518,75 +520,84 @@ class TabDataProvider {
 		});
 
 		tabs.forEach(tab => {
-			const tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
+			const tabDirArrayFull = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
 
-			let parentFolder = rootFolder;
-			tabDirArray.forEach((dir, i, arr) => {
-				const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
-				const folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1));
-				const folderUriJoined = folderUriSliced.length ? nova.path.join(...folderUriSliced) : nova.path.dirname(tab.uri);
-				const folderUri = folderUriJoined.replace(/^file:/, 'file://').replace(/^sftp:\/:/, 'sftp://:').replace(/^ftp:\/:/, 'ftp://:');
+			// Exclude common parent folders from tree
+			const tabDirArray = tabDirArrayFull.slice(commonDirArray.length - 1);
 
-				// console.log('folderPath', folderPath);
-				// console.log('folderUri', folderUri);
-
-				// Exclude common parent folders from tree
-				if (i < commonDirArray.length - 1) {
-					return;
-				}
-
-				const childFolder = parentFolder.children.find(child => child instanceof FolderItem && child.path === folderPath) as FolderItem;
-
-				// Add new folder if it doesn't exist yet
-				if (!childFolder) {
-					const subFolder = new FolderItem(dir, folderUri);
-					subFolder.path = folderPath;
-					subFolder.uri = folderUri;
-					subFolder.tooltip = folderPath;
-					subFolder.image = 'folder';
-
-					if (folderPath === nova.path.expanduser('~')) {
-						subFolder.image = 'folder-home';
-					}
-
-					if (dir === '.nova') {
-						subFolder.image = 'folder-nova';
-					}
-
-					if (dir === '.git') {
-						subFolder.image = 'folder-git';
-					}
-
-					if (dir === 'node_modules') {
-						subFolder.image = 'folder-node';
-					}
-
-					if (dir.endsWith('.novaextension')) {
-						subFolder.image = '__filetype.novaextension';
-					}
-
-					if (folderPath && this.collapsedFolders.indexOf(folderUri) > -1) {
-						subFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
-					}
-
-					// console.log('folderPath', folderPath, subFolder.collapsibleState);
-
-					parentFolder.addChild(subFolder);
-
-					parentFolder = subFolder;
-
-				// Use existing folder to add child to
-				} else if (childFolder) {
-					parentFolder = childFolder;
-				}
-			});
-
-			const tabName = this.basename(tab.path || 'untitled');
-			const child = new TabItem(tabName, tab);
-			parentFolder.addChild(child);
+			this.iterateFolderLevelsForTab(tabDirArray, tab, rootFolder);
 		});
 
 		this.sortNestedFolders(rootFolder);
+
+		return rootFolder;
+	}
+
+	iterateFolderLevelsForTab(tabDirArray: string[], tab: TextDocument, rootFolder: FolderItem): FolderItem | null {
+		let targetFolder: FolderItem | null = null;
+
+		tabDirArray.forEach((dir, i, arr) => {
+			const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
+			const folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1));
+			const folderUriJoined = folderUriSliced.length ? nova.path.join(...folderUriSliced) : nova.path.dirname(tab.uri);
+			const folderUri = folderUriJoined.replace(/^file:/, 'file://').replace(/^sftp:\/:/, 'sftp://:').replace(/^ftp:\/:/, 'ftp://:');
+
+			// console.log('folderPath', folderPath);
+			// console.log('folderUri', folderUri);
+			// console.log('targetFolder', targetFolder?.path);
+
+			const childFolder = (targetFolder || rootFolder).children.find(child => child instanceof FolderItem && child.path === folderPath) as FolderItem;
+
+			if (!childFolder) {
+				let newFolder = this.createChildFolder(dir, folderPath, folderUri);
+				(targetFolder || rootFolder).addChild(newFolder);
+				targetFolder = newFolder;
+			} else {
+				targetFolder = childFolder;
+			}
+		});
+
+		const tabName = this.basename(tab.path || 'untitled');
+		const child = new TabItem(tabName, tab);
+		(targetFolder || rootFolder).addChild(child);
+
+		return rootFolder;
+	}
+
+	createChildFolder(dir: string, folderPath: string, folderUri: string): FolderItem {
+		const newFolder = new FolderItem(dir, folderUri);
+		newFolder.path = folderPath;
+		newFolder.uri = folderUri;
+		newFolder.tooltip = folderPath;
+		newFolder.image = 'folder';
+
+		if (folderPath === nova.path.expanduser('~')) {
+			newFolder.image = 'folder-home';
+		}
+
+		if (dir === '.nova') {
+			newFolder.image = 'folder-nova';
+		}
+
+		if (dir === '.git') {
+			newFolder.image = 'folder-git';
+		}
+
+		if (dir === 'node_modules') {
+			newFolder.image = 'folder-node';
+		}
+
+		if (dir.endsWith('.novaextension')) {
+			newFolder.image = '__filetype.novaextension';
+		}
+
+		if (folderPath && this.collapsedFolders.indexOf(folderUri) > -1) {
+			newFolder.collapsibleState = TreeItemCollapsibleState.Collapsed;
+		}
+
+		// console.log('folderPath', folderPath, subFolder.collapsibleState);
+
+		return newFolder;
 	}
 
 	sortNestedFolders(parentFolder: FolderItem) {
@@ -1093,7 +1104,7 @@ class TabDataProvider {
 		return this.kindGroupItems.find((folder: GroupItem) => folder.syntax === syntax);
 	}
 
-	findNestedChild(arr: (FolderItem | TabItem)[], id: string, key: 'uri' | 'path'): TabItem | null {
+	findNestedChild(arr: NestedFolders, id: string, key: 'uri' | 'path'): TabItem | null {
 		const folders = arr.filter(item => item instanceof FolderItem);
 		const tabs = arr.filter(item => item instanceof TabItem);
 
@@ -1105,19 +1116,18 @@ class TabDataProvider {
 			return foundTab;
 		}
 
-		folders.some(folder => {
-			const foundChildTab = this.findNestedChild(folder.children, id, key);
+		let foundChildTab: TabItem | null = null;
 
-			if (foundChildTab) {
-				foundTab = foundChildTab;
-				return true;
-			} else {
-				return false;
+		for (const folder of folders) {
+			const foundChild = this.findNestedChild(folder.children, id, key);
+			if (foundChild) {
+				foundChildTab = foundChild;
+				break;
 			}
-		});
+		}
 
-		if (foundTab) {
-			return foundTab;
+		if (foundChildTab) {
+			return foundChildTab;
 		}
 
 		return null;
