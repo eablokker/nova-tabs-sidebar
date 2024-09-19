@@ -479,25 +479,28 @@ var TabDataProvider = /** @class */ (function () {
             return true;
         });
         tabs.forEach(function (tab) {
-            var tabDirArrayFull = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
-            // Exclude common parent folders from tree
-            var tabDirArray = tabDirArrayFull.slice(commonDirArray.length - 1);
-            _this.iterateFolderLevelsForTab(tabDirArray, tab, rootFolder);
+            var tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
+            _this.iterateFolderLevelsForTab(tabDirArray, commonDirArray, tab, rootFolder);
         });
         this.sortNestedFolders(rootFolder);
         return rootFolder;
     };
-    TabDataProvider.prototype.iterateFolderLevelsForTab = function (tabDirArray, tab, rootFolder) {
+    TabDataProvider.prototype.iterateFolderLevelsForTab = function (tabDirArray, commonDirArray, tab, rootFolder) {
         var _this = this;
         var targetFolder = null;
         tabDirArray.forEach(function (dir, i, arr) {
             var _a, _b;
+            // Exclude common parent folders from tree
+            if (i < commonDirArray.length - 1) {
+                return;
+            }
             var folderPath = '/' + (_a = nova.path).join.apply(_a, arr.slice(0, i + 1));
             var folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1));
             var folderUriJoined = folderUriSliced.length ? (_b = nova.path).join.apply(_b, folderUriSliced) : nova.path.dirname(tab.uri);
             var folderUri = folderUriJoined.replace(/^file:/, 'file://').replace(/^sftp:\/:/, 'sftp://:').replace(/^ftp:\/:/, 'ftp://:');
-            // console.log('folderPath', folderPath);
-            // console.log('folderUri', folderUri);
+            console.log('tab.path', tab.path);
+            console.log('folderPath', folderPath);
+            console.log('folderUri', folderUri);
             // console.log('targetFolder', targetFolder?.path);
             var childFolder = (targetFolder || rootFolder).children.find(function (child) { return child instanceof FolderItem && child.path === folderPath; });
             if (!childFolder) {

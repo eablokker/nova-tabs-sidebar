@@ -520,12 +520,9 @@ class TabDataProvider {
 		});
 
 		tabs.forEach(tab => {
-			const tabDirArrayFull = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
+			const tabDirArray = nova.path.split(nova.path.dirname(tab.path || '')).slice(1);
 
-			// Exclude common parent folders from tree
-			const tabDirArray = tabDirArrayFull.slice(commonDirArray.length - 1);
-
-			this.iterateFolderLevelsForTab(tabDirArray, tab, rootFolder);
+			this.iterateFolderLevelsForTab(tabDirArray, commonDirArray, tab, rootFolder);
 		});
 
 		this.sortNestedFolders(rootFolder);
@@ -533,15 +530,21 @@ class TabDataProvider {
 		return rootFolder;
 	}
 
-	iterateFolderLevelsForTab(tabDirArray: string[], tab: TextDocument, rootFolder: FolderItem): FolderItem | null {
+	iterateFolderLevelsForTab(tabDirArray: string[], commonDirArray: string[], tab: TextDocument, rootFolder: FolderItem): FolderItem | null {
 		let targetFolder: FolderItem | null = null;
 
 		tabDirArray.forEach((dir, i, arr) => {
+			// Exclude common parent folders from tree
+			if (i < commonDirArray.length - 1) {
+				return;
+			}
+
 			const folderPath = '/' + nova.path.join(...arr.slice(0, i + 1));
 			const folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1));
 			const folderUriJoined = folderUriSliced.length ? nova.path.join(...folderUriSliced) : nova.path.dirname(tab.uri);
 			const folderUri = folderUriJoined.replace(/^file:/, 'file://').replace(/^sftp:\/:/, 'sftp://:').replace(/^ftp:\/:/, 'ftp://:');
 
+			// console.log('tab.path', tab.path);
 			// console.log('folderPath', folderPath);
 			// console.log('folderUri', folderUri);
 			// console.log('targetFolder', targetFolder?.path);

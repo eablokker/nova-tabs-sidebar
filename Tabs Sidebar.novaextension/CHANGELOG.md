@@ -1,3 +1,9 @@
+## v1.7.1 - 2024-09-19
+
+### Fixed
+
+- Folders having the wrong path info when copying path
+
 ## v1.7.0 - 2024-09-19
 
 ### Added
