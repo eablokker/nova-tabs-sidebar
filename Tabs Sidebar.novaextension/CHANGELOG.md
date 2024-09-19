@@ -1,4 +1,15 @@
-## v1.6.1 - 2024-02-08
+## v1.6.2 - 2024-09-19
+
+### Changed
+
+- Watching for Git status changes is now less buggy
+- Refactored how folder hierarchy is built in group by folder view
+
+### Fixed
+
+- Git status not auto-updating in group by folder view when saving document
+
+# v1.6.1 - 2024-02-08
 
 ### Fixed
 
