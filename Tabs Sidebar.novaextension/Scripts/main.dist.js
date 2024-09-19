@@ -498,9 +498,9 @@ var TabDataProvider = /** @class */ (function () {
             var folderUriSliced = nova.path.split(nova.path.dirname(tab.uri)).slice(0, -(arr.length - i - 1));
             var folderUriJoined = folderUriSliced.length ? (_b = nova.path).join.apply(_b, folderUriSliced) : nova.path.dirname(tab.uri);
             var folderUri = folderUriJoined.replace(/^file:/, 'file://').replace(/^sftp:\/:/, 'sftp://:').replace(/^ftp:\/:/, 'ftp://:');
-            console.log('tab.path', tab.path);
-            console.log('folderPath', folderPath);
-            console.log('folderUri', folderUri);
+            // console.log('tab.path', tab.path);
+            // console.log('folderPath', folderPath);
+            // console.log('folderUri', folderUri);
             // console.log('targetFolder', targetFolder?.path);
             var childFolder = (targetFolder || rootFolder).children.find(function (child) { return child instanceof FolderItem && child.path === folderPath; });
             if (!childFolder) {
