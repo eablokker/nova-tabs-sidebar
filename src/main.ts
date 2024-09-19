@@ -20,6 +20,7 @@ class App {
 	groupBy: string | null;
 
 	collapseTimeoutID: NodeJS.Timeout;
+	highlightTimeoutID: NodeJS.Timeout;
 
 	syntaxNames: SyntaxNames;
 	syntaxImages: SyntaxImages;
@@ -38,6 +39,10 @@ class App {
 		this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
 
 		this.collapseTimeoutID = setTimeout(() => {
+			//
+		});
+
+		this.highlightTimeoutID = setTimeout(() => {
 			//
 		});
 
@@ -325,8 +330,9 @@ class App {
 			});
 
 			editor.onDidStopChanging(changedEditor => {
-				if (nova.inDevMode()) console.log('Document did stop changing');
+				// if (nova.inDevMode()) console.log('Document did stop changing');
 
+				// Prevent treeview reloading when untitled document is edited
 				if (changedEditor.document.isUntitled) {
 					return;
 				}
@@ -334,17 +340,17 @@ class App {
 				const element = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
 				this.focusedTab = element;
 
-				if (element) {
+				if (element && element.isDirty != changedEditor.document.isDirty) {
 					element.isDirty = changedEditor.document.isDirty;
-				}
 
-				this.treeView.reload(this.focusedTab)
-					.then(() => {
-						this.highlightTab(this.focusedTab || null, { focus: true });
-					})
-					.catch(err => {
-						console.error('Could not reload treeView.', err);
-					});
+					this.treeView.reload(this.focusedTab)
+						.then(() => {
+							this.highlightTab(this.focusedTab || null, { focus: true });
+						})
+						.catch(err => {
+							console.error('Could not reload treeView.', err);
+						});
+				}
 			});
 
 			// Focus tab in sidebar when saving document
@@ -360,7 +366,9 @@ class App {
 					}
 
 					// Refresh tab data
-					this.tabDataProvider.loadData(nova.workspace.textDocuments, element);
+					if (savedEditor.document.isUntitled) {
+						this.tabDataProvider.loadData(nova.workspace.textDocuments, element);
+					}
 
 					this.treeView.reload(this.focusedTab)
 						.then(() => {
@@ -400,7 +408,7 @@ class App {
 		});
 
 		this.treeView.onDidChangeSelection((selection) => {
-			if (nova.inDevMode()) console.log('treeView.onDidChangeSelection');
+			// if (nova.inDevMode()) console.log('treeView.onDidChangeSelection');
 			//console.log('New selection: ' + selection.map((e) => e.name));
 
 			if (!selection[0]) {
@@ -939,32 +947,52 @@ class App {
 
 		this.fileWatcher = nova.fs.watch(null, () => { /**/ });
 
+		// Keep a list of files changed during timeout period
+		let paths: string[] = [];
+
 		this.fileWatcher.onDidChange(path => {
+
+			// Add to paths array if not in array
+			if (paths.indexOf(path) < 0) {
+				paths.push(path);
+			}
+
 			clearTimeout(watchTimeoutID);
 			watchTimeoutID = setTimeout(() => {
-				if (nova.inDevMode()) console.log('File changed', path);
+				if (nova.inDevMode()) console.log('Files changed', paths.join(', '));
 
-				const pathSplit = nova.path.split(nova.path.dirname(path));
+				paths.every((path) => {
+					const pathSplit = nova.path.split(nova.path.dirname(path));
 
-				// Don't respond to changes to nova config
-				if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-					if (nova.inDevMode()) console.log('Dont respond to config changes');
-					return;
-				}
+					// Don't respond to changes to nova config
+					if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+						if (nova.inDevMode()) console.log('Dont respond to config changes');
+						return true; // Keep iterating
+					}
 
-				// Check if file is ignored in Git
-				this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
-					.then(status => {
-						if (nova.inDevMode()) console.log('Git ignored status', status);
+					// Check if file is ignored in Git
+					this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+						.then(status => {
+							if (nova.inDevMode()) console.log('Git ignored status', status);
 
-						// Update git status if changed file is not ignored
-						if (status === '1') {
-							this.updateGitStatus();
-						}
-					})
-					.catch(err => {
-						console.error('Could not check Git ignore status', err);
-					});
+							// Update git status if changed file is not ignored
+							if (status === '1') {
+								this.updateGitStatus();
+								return false; // Stop iterating
+							}
+
+							return true; // Keep iterating
+						})
+						.catch(err => {
+							console.error('Could not check Git ignore status', err);
+							return true; // Keep iterating
+						});
+
+					return true;
+				});
+
+				// Reset paths array
+				paths = [];
 			}, 200);
 		});
 	}
@@ -1046,7 +1074,11 @@ class App {
 
 					this.treeView.reload(element)
 						.then(() => {
-							this.highlightTab(activeEditor || null);
+							// Prevent excessive highlighting
+							clearTimeout(this.highlightTimeoutID);
+							this.highlightTimeoutID = setTimeout(() => {
+								this.highlightTab(activeEditor || null);
+							}, 200);
 						})
 						.catch(err => {
 							console.error('Could not reload treeView.', err);
