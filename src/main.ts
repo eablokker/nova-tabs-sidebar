@@ -325,8 +325,9 @@ class App {
 			});
 
 			editor.onDidStopChanging(changedEditor => {
-				if (nova.inDevMode()) console.log('Document did stop changing');
+				// if (nova.inDevMode()) console.log('Document did stop changing');
 
+				// Prevent treeview reloading when untitled document is edited
 				if (changedEditor.document.isUntitled) {
 					return;
 				}
@@ -334,17 +335,17 @@ class App {
 				const element = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
 				this.focusedTab = element;
 
-				if (element) {
+				if (element && element.isDirty != changedEditor.document.isDirty) {
 					element.isDirty = changedEditor.document.isDirty;
-				}
 
-				this.treeView.reload(this.focusedTab)
-					.then(() => {
-						this.highlightTab(this.focusedTab || null, { focus: true });
-					})
-					.catch(err => {
-						console.error('Could not reload treeView.', err);
-					});
+					this.treeView.reload(this.focusedTab)
+						.then(() => {
+							this.highlightTab(this.focusedTab || null, { focus: true });
+						})
+						.catch(err => {
+							console.error('Could not reload treeView.', err);
+						});
+				}
 			});
 
 			// Focus tab in sidebar when saving document
@@ -360,7 +361,9 @@ class App {
 					}
 
 					// Refresh tab data
-					this.tabDataProvider.loadData(nova.workspace.textDocuments, element);
+					if (savedEditor.document.isUntitled) {
+						this.tabDataProvider.loadData(nova.workspace.textDocuments, element);
+					}
 
 					this.treeView.reload(this.focusedTab)
 						.then(() => {
