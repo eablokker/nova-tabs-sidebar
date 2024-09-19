@@ -26,7 +26,7 @@
         "extensions": [
             {
                 "title": "Preferences…",
-                "command": "tabs-sidebar.openGlobalConfig",
+                "command": "tabs-sidebar.openGlobalConfig"
             },
             {"separator": true},
             {
@@ -65,12 +65,12 @@
             {"separator": true},
             {
                 "title": "Close All Tabs…",
-                "command": "tabs-sidebar.closeAll",
+                "command": "tabs-sidebar.closeAll"
             },
             {
                 "title": "Refresh Tab List",
-                "command": "tabs-sidebar.refresh",
-            },
+                "command": "tabs-sidebar.refresh"
+            }
         ]
     },
 
@@ -151,7 +151,7 @@
                         {"separator": true},
                         {
                             "title": "Close All Tabs…",
-                            "command": "tabs-sidebar.closeAll",
+                            "command": "tabs-sidebar.closeAll"
                         },
                         {
                             "title": "Refresh",
@@ -241,7 +241,7 @@
                         {"separator": true},
                         {
                             "title": "Close All Tabs…",
-                            "command": "tabs-sidebar.closeAll",
+                            "command": "tabs-sidebar.closeAll"
                         },
                         {
                             "title": "Refresh",
