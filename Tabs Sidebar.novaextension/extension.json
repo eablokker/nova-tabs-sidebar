@@ -22,6 +22,54 @@
         "filesystem": "readonly"
     },
 
+    "commands": {
+        "extensions": [
+            {
+                "title": "Preferences…",
+                "command": "tabs-sidebar.openGlobalConfig",
+            },
+            {"separator": true},
+            {
+                "title": "Clean Up By Tab Bar Order",
+                "command": "tabs-sidebar.cleanUpByTabBarOrder",
+                "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
+            },
+            {
+                "title": "Clean Up By Name",
+                "command": "tabs-sidebar.cleanUpByAlpha",
+                "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
+            },
+            {
+                "title": "Clean Up By Type",
+                "command": "tabs-sidebar.cleanUpByType",
+                "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
+            },
+            {"separator": true},
+            {
+                "title": "Sort by Name",
+                "command": "tabs-sidebar.sortByAlpha",
+                "when": "eablokker.tabsSidebar.config.groupBy !== 'folder'",
+                "state": "eablokker.tabsSidebar.config.sortAlpha === true"
+            },
+            {"separator": true},
+            {
+                "title": "Group By Type",
+                "command": "tabs-sidebar.groupByType",
+                "state": "eablokker.tabsSidebar.config.groupBy === 'type'"
+            },
+            {
+                "title": "Group By Folder",
+                "command": "tabs-sidebar.groupByFolder",
+                "state": "eablokker.tabsSidebar.config.groupBy === 'folder'"
+            },
+            {"separator": true},
+            {
+                "title": "Refresh Tab List",
+                "command": "tabs-sidebar.refresh",
+            },
+        ]
+    },
+
     "sidebars": [
         {
             "id": "tabs-sidebar",

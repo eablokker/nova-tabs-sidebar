@@ -982,7 +982,6 @@ var TabDataProvider = /** @class */ (function () {
             }
         }
         if (foundChildTab) {
-            // console.log('foundChildTab', foundChildTab?.uri);
             return foundChildTab;
         }
         return null;
@@ -1940,6 +1939,9 @@ var App = /** @class */ (function () {
             }
             _this.initFileWatcher();
             _this.treeView.reload();
+        });
+        nova.commands.register('tabs-sidebar.openGlobalConfig', function (workspace) {
+            nova.openConfig();
         });
     };
     App.prototype.initFileWatcher = function () {

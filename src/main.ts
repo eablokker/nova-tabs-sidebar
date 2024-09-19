@@ -902,6 +902,10 @@ class App {
 
 			this.treeView.reload();
 		});
+
+		nova.commands.register('tabs-sidebar.openGlobalConfig', (workspace: Workspace) => {
+			nova.openConfig();
+		});
 	}
 
 	async initFileWatcher() {
