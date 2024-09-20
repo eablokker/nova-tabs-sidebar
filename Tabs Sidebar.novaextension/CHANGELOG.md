@@ -1,4 +1,25 @@
-## v1.6.1 - 2024-02-08
+## v1.7.1 - 2024-09-19
+
+### Fixed
+
+- Folders having the wrong path info when copying path
+
+## v1.7.0 - 2024-09-19
+
+### Added
+
+- New "Close All Tabs" menu item to quickly clean up a workspace
+
+### Changed
+
+- Watching for Git status changes is now less buggy
+- Refactored how folder hierarchy is built in group by folder view
+
+### Fixed
+
+- Git status not auto-updating in group by folder view when saving document
+
+# v1.6.1 - 2024-02-08
 
 ### Fixed
 

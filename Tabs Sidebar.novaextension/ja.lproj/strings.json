@@ -10,6 +10,9 @@
 
 	"Open": "開く",
 	"Close Tab": "タブを閉じる",
+	"Close Other Tabs": "その他のタブを閉じる",
+	"Close All Tabs": "すべてのタブを閉じる",
+	"Close All Tabs…": "すべてのタブを閉じる…",
 	"Move Item Up": "アイテムを上に移動",
 	"Move Item Down": "アイテムを下に移動",
 	"Show in Files Sidebar": "ファイルサイドバーで表示",
@@ -64,10 +67,14 @@
 	"missing value": "missing value",
 
 	"Failed to Close Tab": "タブを閉じるのに失敗しました",
+	"Failed to Close All Tabs": "すべてのタブを閉じるのに失敗しました",
 	"Failed to Clean Up By Tab Bar Order": "「タブバーの順序によるクリーンアップに失敗しました」",
 	"Failed to Show in Files Sidebar": "サイドバーでのファイルの表示に失敗しました",
 	"Failed to Open Remote Tab": "リモートタブを開けませんでした",
 	"Make sure Nova has permissions for Accessibility and System Events.": "Nova にアクセシビリティとシステム イベントの権限があることを確認してください。",
 	"More Info": "より詳しい情報",
-	"Dismiss": "却下する"
+	"Dismiss": "却下する",
+
+	"Are you sure you want to close all tabs?": "すべてのタブを閉じてもよろしいですか?",
+	"Cancel": "キャンセル"
 }

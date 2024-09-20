@@ -3,7 +3,7 @@
     "name": "Tabs Sidebar",
     "organization": "Austen Blokker",
     "description": "Manage open document tabs from the sidebar.",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "categories": ["sidebars"],
     "license": "MIT",
     "repository": "https://github.com/eablokker/nova-tabs-sidebar",
@@ -26,16 +26,18 @@
         "extensions": [
             {
                 "title": "Preferences…",
-                "command": "tabs-sidebar.openGlobalConfig",
+                "command": "tabs-sidebar.openGlobalConfig"
             },
             {"separator": true},
             {
                 "title": "Clean Up By Tab Bar Order",
                 "command": "tabs-sidebar.cleanUpByTabBarOrder",
+                "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
             },
             {
                 "title": "Clean Up By Name",
                 "command": "tabs-sidebar.cleanUpByAlpha",
+                "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
             },
             {
                 "title": "Clean Up By Type",
@@ -43,9 +45,31 @@
             },
             {"separator": true},
             {
-                "title": "Refresh Tab List",
-                "command": "tabs-sidebar.refresh",
+                "title": "Sort by Name",
+                "command": "tabs-sidebar.sortByAlpha",
+                "when": "eablokker.tabsSidebar.config.groupBy !== 'folder'",
+                "state": "eablokker.tabsSidebar.config.sortAlpha === true"
             },
+            {"separator": true},
+            {
+                "title": "Group By Type",
+                "command": "tabs-sidebar.groupByType",
+                "state": "eablokker.tabsSidebar.config.groupBy === 'type'"
+            },
+            {
+                "title": "Group By Folder",
+                "command": "tabs-sidebar.groupByFolder",
+                "state": "eablokker.tabsSidebar.config.groupBy === 'folder'"
+            },
+            {"separator": true},
+            {
+                "title": "Close All Tabs…",
+                "command": "tabs-sidebar.closeAll"
+            },
+            {
+                "title": "Refresh Tab List",
+                "command": "tabs-sidebar.refresh"
+            }
             {"separator": true},
             {
                 "title": "New Tab Group…",
@@ -61,6 +85,8 @@
                 "title": "Delete Tab Group…",
                 "command": "tabs-sidebar.deleteTabGroupPalette",
                 "when": "eablokker.tabsSidebar.context.hasTabGroups == true",
+            },
+                "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
             },
         ]
     },
@@ -140,6 +166,10 @@
                             "state": "eablokker.tabsSidebar.config.groupBy === 'folder'"
                         },
                         {"separator": true},
+                        {
+                            "title": "Close All Tabs…",
+                            "command": "tabs-sidebar.closeAll"
+                        },
                         {
                             "title": "Refresh",
                             "image": "__builtin.refresh",
@@ -226,6 +256,10 @@
                             "state": "eablokker.tabsSidebar.config.groupBy === 'folder'"
                         },
                         {"separator": true},
+                        {
+                            "title": "Close All Tabs…",
+                            "command": "tabs-sidebar.closeAll"
+                        },
                         {
                             "title": "Refresh",
                             "command": "tabs-sidebar.refresh"

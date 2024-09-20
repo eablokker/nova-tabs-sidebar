@@ -10,6 +10,9 @@
 
 	"Open": "Ouvrir",
 	"Close Tab": "Fermer l’onglet",
+	"Close Other Tabs": "Fermer les autres onglets",
+	"Close All Tabs": "Fermer tous les onglets",
+	"Close All Tabs…": "Fermer tous les onglets…",
 	"Move Item Up": "Déplacer vers le haut",
 	"Move Item Down": "Déplacer vers le bas",
 	"Show in Files Sidebar": "Afficher dans la barre latérale Fichiers",
@@ -64,10 +67,14 @@
 	"missing value": "missing value",
 
 	"Failed to Close Tab": "Échec de la fermeture de l'onglet",
+	"Failed to Close All Tabs": "Échec de la fermeture de tous les onglets",
 	"Failed to Clean Up By Tab Bar Order": "Échec du nettoyage par ordre de la barre d'onglets",
 	"Failed to Show in Files Sidebar": "Échec de l'affichage dans la barre latérale des fichiers",
 	"Failed to Open Remote Tab": "Échec de l'ouverture de l'onglet Distant",
 	"Make sure Nova has permissions for Accessibility and System Events.": "Assurez-vous que Nova dispose des autorisations pour l'accessibilité et les événements système.",
 	"More Info": "Plus d'infos",
-	"Dismiss": "Rejeter"
+	"Dismiss": "Rejeter",
+
+	"Are you sure you want to close all tabs?": "Êtes-vous sûr de vouloir fermer tous les onglets ?",
+	"Cancel": "Annuler"
 }
