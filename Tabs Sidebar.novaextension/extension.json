@@ -42,6 +42,7 @@
             {
                 "title": "Clean Up By Type",
                 "command": "tabs-sidebar.cleanUpByType",
+                "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
             },
             {"separator": true},
             {
@@ -69,25 +70,23 @@
             {
                 "title": "Refresh Tab List",
                 "command": "tabs-sidebar.refresh"
-            }
+            },
             {"separator": true},
             {
                 "title": "New Tab Group…",
                 "paletteTitle": "Add New Tab Group…",
-                "command": "tabs-sidebar.newTabGroup",
+                "command": "tabs-sidebar.newTabGroup"
             },
             {
                 "title": "Open Tab Group…",
                 "command": "tabs-sidebar.openTabGroupPalette",
-                "when": "eablokker.tabsSidebar.context.hasTabGroups == true",
+                "when": "eablokker.tabsSidebar.context.hasTabGroups == true"
             },
             {
                 "title": "Delete Tab Group…",
                 "command": "tabs-sidebar.deleteTabGroupPalette",
-                "when": "eablokker.tabsSidebar.context.hasTabGroups == true",
-            },
-                "when": "eablokker.tabsSidebar.config.sortAlpha !== true"
-            },
+                "when": "eablokker.tabsSidebar.context.hasTabGroups == true"
+            }
         ]
     },
 
@@ -287,7 +286,7 @@
                             "title": "Add New Tab Group",
                             "image": "__builtin.add",
                             "tooltip": "Add New Tab Group",
-                            "command": "tabs-sidebar.newTabGroup",
+                            "command": "tabs-sidebar.newTabGroup"
                         },
                         {
                             "title": "Delete Tab Group",
@@ -313,7 +312,7 @@
                             "title": "Delete…",
                             "command": "tabs-sidebar.deleteTabGroup",
                             "when": "viewItem !== 'currentTabs'"
-                        },
+                        }
                     ]
                 }
             ]
