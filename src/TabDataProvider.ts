@@ -66,6 +66,7 @@ class TabItem extends ListItem {
 		this._syntax = tab.syntax || 'plaintext';
 		this.extension = nova.path.extname(tab.path || '').replace(/^\./, '');
 		this.contextValue = tab.isRemote ? 'remote-tab' : 'tab';
+		this.identifier = tab.uri;
 	}
 
 	get isDirty() {
@@ -92,6 +93,7 @@ class GroupItem extends ListItem {
 		this.children = [];
 		this.parent = null;
 		this.count = undefined;
+		this.identifier = '__kindgroup.' + this._syntax;
 	}
 
 	addChild(element: TabItem) {
@@ -344,7 +346,7 @@ class TabDataProvider {
 				projectFolder.path = '__LocalProjectFolder__';
 				projectFolder.uri = '__LocalProjectFolder__';
 				projectFolder.image = 'sidebar-files';
-				projectFolder.tooltip = nova.workspace?.path || nova.localize('Project');
+				projectFolder.tooltip = nova.workspace?.path?.replace(nova.path.expanduser('~'), '~') || nova.localize('Project');
 				projectFolder.contextValue = 'folderGroup-root';
 				projectFolder.collapsibleState = TreeItemCollapsibleState.Expanded;
 
@@ -588,7 +590,7 @@ class TabDataProvider {
 		const newFolder = new FolderItem(dir, folderUri);
 		newFolder.path = folderPath;
 		newFolder.uri = folderUri;
-		newFolder.tooltip = folderPath;
+		newFolder.tooltip = folderPath.replace(nova.path.expanduser('~'), '~');
 		newFolder.image = 'folder';
 
 		if (folderPath === nova.path.expanduser('~')) {
