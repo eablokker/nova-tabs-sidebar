@@ -5,7 +5,7 @@ class TabGroupItem {
 	uuid: string;
 	configString: string;
 	contextValue: string | undefined;
-	children: TabGroupItem[];
+	children: TabGroupChild[];
 	parent: TabGroupItem | null;
 
 	constructor(name: string, uuid?: string) {
@@ -27,20 +27,55 @@ class TabGroupItem {
 	}
 }
 
+class TabGroupChild {
+	name: string;
+	path: string;
+	uri: string;
+	children: TabGroupChild[];
+
+	constructor(name: string) {
+		this.name = name;
+		this.path = '';
+		this.uri = '';
+		this.children = [];
+	}
+}
+
 class TabGroupsDataProvider {
 	flatItems: TabGroupItem[];
 	activeGroup: string;
+	expandedGroups: string[];
 	configRegex: RegExp;
 
 	constructor() {
 		this.flatItems = [];
 		this.activeGroup = nova.workspace.config.get('eablokker.tabsSidebar.config.activeTabGroup', 'string') || '__DEFAULT_GROUP__';
+		this.expandedGroups = [];
 		this.configRegex = /^([^:]*):(.*)$/;
 
-		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+		this.loadData();
+	}
+
+	loadData() {
+		this.flatItems = [];
+		const tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
+
+		const defaultChildren = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.__DEFAULT_GROUP__', 'array') || nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+		const defaultTabGroupItem = new TabGroupItem(defaultChildren.length + ' Documents', '__DEFAULT_GROUP__');
+
+		defaultChildren.forEach(child => {
+			const name = nova.path.basename(child);
+
+			const tabGroupChild = new TabGroupChild(name);
+			tabGroupChild.uri = decodeURI(child);
+			tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+
+			defaultTabGroupItem.children.push(tabGroupChild);
+		});
+
+		this.flatItems.push(defaultTabGroupItem);
 
 		if (!tabGroups) {
-			this.loadData();
 			return;
 		}
 
@@ -54,24 +89,27 @@ class TabGroupsDataProvider {
 			const uuid = matches[1];
 			const name = matches[2];
 
-			return new TabGroupItem(name, uuid);
+			const tabGroupItem = new TabGroupItem(name, uuid);
+			const children = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + uuid, 'array') || [];
+
+			children.forEach(child => {
+				const name = nova.path.basename(child);
+
+				const tabGroupChild = new TabGroupChild(name);
+				tabGroupChild.uri = decodeURI(child);
+				tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+
+				tabGroupItem.children.push(tabGroupChild);
+			});
+
+			return tabGroupItem;
 		});
 
-		this.loadData(tabGroupItems);
+		this.flatItems = this.flatItems.concat(tabGroupItems);
 	}
 
-	loadData(tabGroups?: TabGroupItem[]) {
-		this.flatItems = [];
-
-		this.flatItems.push(new TabGroupItem(nova.workspace.textDocuments.length + ' Documents', '__DEFAULT_GROUP__'));
-
-		tabGroups?.forEach((tabGroup) => {
-			this.flatItems.push(tabGroup);
-		});
-	}
-
-	updateCurrentTabsCount() {
-		this.flatItems[0].name = nova.workspace.textDocuments.length + ' Documents';
+	refresh() {
+		this.loadData();
 	}
 
 	addItem(name: string | null) {
@@ -180,7 +218,7 @@ class TabGroupsDataProvider {
 		}
 	}
 
-	getChildren(element: TabGroupItem) {
+	getChildren(element: TabGroupItem | TabGroupChild) {
 		// Requests the children of an element
 		if (!element) {
 			return this.flatItems;
@@ -202,23 +240,43 @@ class TabGroupsDataProvider {
 	getTreeItem(element: TabGroupItem) {
 		const item = new TreeItem(element.name);
 
-		item.identifier = element.uuid;
-		// item.descriptiveText = element.uuid;
-		item.command = 'tabs-sidebar.openTabGroup';
+		if (element instanceof TabGroupItem) {
+			item.identifier = element.uuid;
+			// item.descriptiveText = element.uuid;
+			item.command = 'tabs-sidebar.openTabGroup';
 
-		if (element.uuid === '__DEFAULT_GROUP__') {
-			item.image = 'desktop-computer';
-			item.contextValue = 'currentTabs';
-		} else if (element.uuid === this.activeGroup) {
-			item.image = 'tab-group-active';
-			item.contextValue = 'activeTabGroup';
-		} else {
-			item.image = 'tab-group';
-			item.contextValue = 'tabGroup';
+			if (element.uuid === '__DEFAULT_GROUP__') {
+				item.image = 'desktop-computer';
+				item.contextValue = 'currentTabs';
+			} else if (element.uuid === this.activeGroup) {
+				item.image = 'tab-group-active';
+				item.contextValue = 'activeTabGroup';
+			} else {
+				item.image = 'tab-group';
+				item.contextValue = 'tabGroup';
+			}
+
+			if (element.children.length) {
+
+				if (this.expandedGroups.indexOf(element.uuid) > -1) {
+					item.collapsibleState = TreeItemCollapsibleState.Expanded;
+				} else {
+					item.collapsibleState = TreeItemCollapsibleState.Collapsed;
+				}
+			}
 		}
+
+		if (element instanceof TabGroupChild) {
+			item.identifier = element.uri;
+			item.path = element.path
+			item.tooltip = element.path.replace(nova.path.expanduser('~'), '~');
+			// item.image = '__filetype.' + nova.path.extname(element.uri);
+			item.contextValue = 'document';
+		}
+
 
 		return item;
 	}
 }
 
-export { TabGroupItem, TabGroupsDataProvider };
+export { TabGroupItem, TabGroupChild, TabGroupsDataProvider };

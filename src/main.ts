@@ -1,12 +1,12 @@
 import { SyntaxNames, SyntaxImages, TabItem, GroupItem, FolderItem, TabDataProvider } from './TabDataProvider';
-import { TabGroupItem, TabGroupsDataProvider } from './TabGroupsDataProvider';
+import { TabGroupItem, TabGroupChild, TabGroupsDataProvider } from './TabGroupsDataProvider';
 
 let app: App;
 
 class App {
 	treeView: TreeView<TabItem | GroupItem | FolderItem | null>;
 	tabDataProvider: TabDataProvider;
-	groupsTreeView: TreeView<TabGroupItem | null>
+	groupsTreeView: TreeView<TabGroupItem | TabGroupChild>
 	tabGroupsDataProvider: TabGroupsDataProvider;
 	fileWatcher: FileSystemWatcher | undefined;
 	focusedTab: TabItem | undefined;
@@ -347,7 +347,7 @@ class App {
 					const folder = this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
 
 					this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
-					this.tabGroupsDataProvider.updateCurrentTabsCount();
+					this.tabGroupsDataProvider.refresh();
 					this.groupsTreeView.reload();
 
 					if (folder && this.groupBy === 'type') {
@@ -390,7 +390,7 @@ class App {
 					}
 
 					this.tabDataProvider.loadData(nova.workspace.textDocuments);
-					this.tabGroupsDataProvider.updateCurrentTabsCount();
+					this.tabGroupsDataProvider.refresh();
 					this.groupsTreeView.reload();
 
 					reload
@@ -574,6 +574,21 @@ class App {
 
 		this.treeView.onDidChangeVisibility(() => {
 			if (nova.inDevMode()) console.log('Visibility Changed');
+		});
+
+		this.groupsTreeView.onDidExpandElement(element => {
+			if (element instanceof TabGroupItem) {
+				this.tabGroupsDataProvider.expandedGroups.push(element.uuid);
+			}
+		});
+
+		this.groupsTreeView.onDidCollapseElement(element => {
+			if (element instanceof TabGroupItem) {
+				const index = this.tabGroupsDataProvider.expandedGroups.indexOf(element.uuid);
+				if (index > -1) {
+					this.tabGroupsDataProvider.expandedGroups.splice(index, 1);
+				}
+			}
 		});
 	}
 
@@ -960,40 +975,86 @@ class App {
 		});
 
 		nova.commands.register('tabs-sidebar.copyPath', () => {
-			const selection = this.treeView.selection;
+			const selections = this.treeView.selection;
 
-			if (!selection[0]) {
+			if (!selections[0]) {
 				return;
 			}
 
-			if (!selection[0].path) {
-				if (nova.inDevMode()) console.log('No path found for selection', selection[0].name);
+			const selection = selections[0];
+
+			if (!selection.path) {
+				if (nova.inDevMode()) console.log('No path found for selection', selection.name);
 				return;
 			}
 
-			nova.clipboard.writeText(selection[0].path);
+			nova.clipboard.writeText(selection.path);
+		});
+
+		nova.commands.register('tabs-sidebar.copyTabGroupPath', () => {
+			const selections = this.groupsTreeView.selection;
+
+			if (!selections[0] || selections[0] instanceof TabGroupItem) {
+				return;
+			}
+
+			const selection = selections[0];
+
+			if (!selection.path) {
+				if (nova.inDevMode()) console.log('No path found for selection', selection.name);
+				return;
+			}
+
+			nova.clipboard.writeText(selection.path);
 		});
 
 		nova.commands.register('tabs-sidebar.copyRelativePath', (workspace: Workspace) => {
-			const selection = this.treeView.selection;
+			const selections = this.treeView.selection;
 
-			if (!selection[0]) {
+			if (!selections[0]) {
 				return;
 			}
 
-			if (!selection[0].path) {
-				if (nova.inDevMode()) console.log('No path found for selection', selection[0].name);
+			const selection = selections[0];
+
+			if (!selection.path) {
+				if (nova.inDevMode()) console.log('No path found for selection', selections[0].name);
 				return;
 			}
 
 			if (workspace.path) {
 				if (nova.version[0] >= 8) {
-					nova.clipboard.writeText(nova.path.relative(selection[0].path, workspace.path));
+					nova.clipboard.writeText(nova.path.relative(selection.path, workspace.path));
 				} else {
-					nova.clipboard.writeText(selection[0].path.substring(workspace.path.length));
+					nova.clipboard.writeText(selection.path.substring(workspace.path.length));
 				}
 			} else {
-				nova.clipboard.writeText(selection[0].path);
+				nova.clipboard.writeText(selection.path);
+			}
+		});
+
+		nova.commands.register('tabs-sidebar.copyTabGroupRelativePath', (workspace: Workspace) => {
+			const selections = this.groupsTreeView.selection;
+
+			if (!selections[0] || selections[0] instanceof TabGroupItem) {
+				return;
+			}
+
+			const selection = selections[0];
+
+			if (!selection.path) {
+				if (nova.inDevMode()) console.log('No path found for selection', selection.name);
+				return;
+			}
+
+			if (workspace.path) {
+				if (nova.version[0] >= 8) {
+					nova.clipboard.writeText(nova.path.relative(selection.path, workspace.path));
+				} else {
+					nova.clipboard.writeText(selection.path.substring(workspace.path.length));
+				}
+			} else {
+				nova.clipboard.writeText(selection.path);
 			}
 		});
 
@@ -1148,7 +1209,7 @@ class App {
 			}
 
 			const selection = selections[0];
-			if (!selection) {
+			if (!selection || selection instanceof TabGroupChild) {
 				return;
 			}
 
@@ -1162,7 +1223,7 @@ class App {
 			}
 
 			const selection = selections[0];
-			if (!selection) {
+			if (!selection || selection instanceof TabGroupChild) {
 				return;
 			}
 
@@ -1188,7 +1249,7 @@ class App {
 			}
 
 			const selection = selections[0];
-			if (!selection) {
+			if (!selection || selection instanceof TabGroupChild) {
 				return;
 			}
 
@@ -1490,10 +1551,18 @@ To preserve remote tabs you can move them to a different pane.`,
 				workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
 			}
 
+			const prevElement = this.tabGroupsDataProvider.selectItemByUUID(this.tabGroupsDataProvider.activeGroup);
 			this.tabGroupsDataProvider.openItem(selection.uuid);
+			const newElement = this.tabGroupsDataProvider.selectItemByUUID(selection.uuid);
 
 			// Update tree
-			this.groupsTreeView.reload();
+			this.groupsTreeView.reload(prevElement)
+				.then(() => {
+					this.groupsTreeView.reload(newElement)
+					.then(() => {
+						this.groupsTreeView.reveal(newElement);
+					});
+				});
 
 			this.closeAllTabs(() => {
 				nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', switchToTabs);
@@ -1511,20 +1580,17 @@ To preserve remote tabs you can move them to a different pane.`,
 					this.isSwitchingTabGroups = false;
 
 					this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
-					this.tabGroupsDataProvider.updateCurrentTabsCount();
 					this.treeView.reload();
-
-					// Update tree
-					this.groupsTreeView.reload()
-						.then(() => {
-							this.groupsTreeView.reveal(selection);
-						});
 				}, 1000);
+			}, () => {
+				this.isSwitchingTabGroups = false;
+				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
+				this.treeView.reload();
 			});
 		});
 	}
 
-	closeAllTabs(callback?: () => void) {
+	closeAllTabs(callback?: () => void, error?: () => void) {
 		this.tabDataProvider
 			.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Other Tabs')])
 			.then(() => {
@@ -1537,6 +1603,10 @@ To preserve remote tabs you can move them to a different pane.`,
 					})
 					.catch(err => {
 						console.error('Could not click menu item.', err);
+
+						if (error) {
+							error();
+						}
 					});
 			})
 			.catch(err => {
@@ -1544,6 +1614,10 @@ To preserve remote tabs you can move them to a different pane.`,
 
 				const title = nova.localize('Failed to Close All Tabs');
 				this.showPermissionsNotification(title);
+
+				if (error) {
+					error();
+				}
 			});
 	}
 }

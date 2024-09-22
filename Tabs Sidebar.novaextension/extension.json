@@ -305,12 +305,28 @@
                         {
                             "title": "Rename…",
                             "command": "tabs-sidebar.renameTabGroup",
-                            "when": "viewItem !== 'currentTabs'"
+                            "when": "viewItem !== 'currentTabs' && viewItem !== 'document'"
                         },
                         {
                             "title": "Delete…",
                             "command": "tabs-sidebar.deleteTabGroup",
-                            "when": "viewItem !== 'currentTabs'"
+                            "when": "viewItem !== 'currentTabs' && viewItem !== 'document'"
+                        },
+                        {"separator": true},
+                        {
+                            "title": "Close Tab",
+                            "command": "tabs-sidebar.closeTabGroupTab",
+                            "when": "viewItem == 'document'"
+                        },
+                        {
+                            "title": "Copy Path",
+                            "command": "tabs-sidebar.copyTabGroupPath",
+                            "when": "viewItem == 'document'"
+                        },
+                        {
+                            "title": "Copy Relative Path",
+                            "command": "tabs-sidebar.copyTabGroupRelativePath",
+                            "when": "viewItem == 'document'"
                         },
                         {"separator": true},
                         {
