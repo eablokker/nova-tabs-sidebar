@@ -409,7 +409,7 @@ class App {
 			});
 
 			// Focus tab in sidebar when clicking in document
-			/*editor.onDidChangeSelection(changedEditor => {
+			editor.onDidChangeSelection(changedEditor => {
 				// if (nova.inDevMode()) console.log('editor.onDidChangeSelection');
 
 				const selection = this.treeView.selection[0];
@@ -425,7 +425,7 @@ class App {
 					this.focusedTab = this.tabDataProvider.getElementByUri(changedEditor.document.uri);
 					this.highlightTab(this.focusedTab || null, { focus: true, reveal: 3 });
 				}
-			});*/
+			});
 
 			editor.onDidStopChanging(changedEditor => {
 				// if (nova.inDevMode()) console.log('Document did stop changing');
