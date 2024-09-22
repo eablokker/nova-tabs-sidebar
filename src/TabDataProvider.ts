@@ -328,10 +328,11 @@ class TabDataProvider {
 			rootFolder.uri = '__RootFolder__';
 
 			const nestedFolders = this.createNestedFolders(tabs, rootFolder);
-
-			nestedFolders.children.forEach(child => {
-				this.folderGroupItems.push(child);
-			});
+			if (nestedFolders) {
+				nestedFolders.children.forEach(child => {
+					this.folderGroupItems.push(child);
+				});
+			}
 
 		} else {
 
@@ -352,7 +353,9 @@ class TabDataProvider {
 				}
 
 				const nestedFolders = this.createNestedFolders(projectTabs, projectFolder);
-				this.folderGroupItems.push(nestedFolders);
+				if (nestedFolders) {
+					this.folderGroupItems.push(nestedFolders);
+				}
 			}
 
 			if (localTabs.length) {
@@ -369,7 +372,9 @@ class TabDataProvider {
 				}
 
 				const nestedFolders = this.createNestedFolders(localTabs, localFolder);
-				this.folderGroupItems.push(nestedFolders);
+				if (nestedFolders) {
+					this.folderGroupItems.push(nestedFolders);
+				}
 			}
 
 			if (remoteTabs.length) {
@@ -386,7 +391,9 @@ class TabDataProvider {
 				}
 
 				const nestedFolders = this.createNestedFolders(remoteTabs, remoteFolder);
-				this.folderGroupItems.push(nestedFolders);
+				if (nestedFolders) {
+					this.folderGroupItems.push(nestedFolders);
+				}
 			}
 
 			if (trashTabs.length) {
@@ -403,7 +410,9 @@ class TabDataProvider {
 				}
 
 				const nestedFolders = this.createNestedFolders(trashTabs, trashFolder);
-				this.folderGroupItems.push(nestedFolders);
+				if (nestedFolders) {
+					this.folderGroupItems.push(nestedFolders);
+				}
 			}
 
 		}
@@ -495,12 +504,20 @@ class TabDataProvider {
 
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customKindGroupsOrder', this.customKindGroupsOrder);
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
+
+		const tabGroupUUID = this.app.tabGroupsDataProvider.activeGroup;
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + tabGroupUUID, this.customOrder);
+
 		nova.workspace.config.set('eablokker.tabsSidebar.config.collapsedFolders', this.collapsedFolders);
 
 		this.sortItems();
 	}
 
-	createNestedFolders(tabs: TextDocument[], rootFolder: FolderItem): FolderItem {
+	createNestedFolders(tabs: TextDocument[], rootFolder: FolderItem): FolderItem | null {
+		if (!tabs.length) {
+			return null;
+		}
+
 		// Find common parent folder
 		const tabDirArray = nova.path.split(nova.path.dirname(tabs[0].path || ''));
 
@@ -770,6 +787,9 @@ class TabDataProvider {
 		const item = this.customOrder.splice(fromIndex, 1)[0];
 		this.customOrder.splice(toIndex, 0, item);
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
+
+		const tabGroupUUID = this.app.tabGroupsDataProvider.activeGroup;
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + tabGroupUUID, this.customOrder);
 		this.app.focusedTab = toItem;
 
 		// Reload each item that got swapped
@@ -891,6 +911,9 @@ class TabDataProvider {
 		});
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
 
+		const tabGroupUUID = this.app.tabGroupsDataProvider.activeGroup;
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + tabGroupUUID, this.customOrder);
+
 		this.sortItems();
 	}
 
@@ -899,6 +922,9 @@ class TabDataProvider {
 			return nova.path.basename(a).localeCompare(nova.path.basename(b));
 		});
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
+
+		const tabGroupUUID = this.app.tabGroupsDataProvider.activeGroup;
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + tabGroupUUID, this.customOrder);
 
 		this.sortItems();
 	}
@@ -919,6 +945,9 @@ class TabDataProvider {
 			return aElement.syntax.localeCompare(bElement.syntax);
 		});
 		nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', this.customOrder);
+
+		const tabGroupUUID = this.app.tabGroupsDataProvider.activeGroup;
+		nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + tabGroupUUID, this.customOrder);
 
 		this.sortItems();
 	}

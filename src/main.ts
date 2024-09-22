@@ -11,6 +11,7 @@ class App {
 	fileWatcher: FileSystemWatcher | undefined;
 	focusedTab: TabItem | undefined;
 	openTabWhenFocusSidebar: boolean;
+	isSwitchingTabGroups: boolean;
 	gitPath: string;
 
 	openOnSingleClick: boolean | null;
@@ -30,6 +31,7 @@ class App {
 
 	constructor() {
 		this.openTabWhenFocusSidebar = true;
+		this.isSwitchingTabGroups = false;
 		this.gitPath = '/usr/bin/git';
 
 		this.openOnSingleClick = nova.config.get('eablokker.tabs-sidebar.open-on-single-click', 'boolean');
@@ -336,40 +338,46 @@ class App {
 		});
 
 		nova.workspace.onDidAddTextEditor(editor => {
-			//console.log('Document opened');
+			// console.log('Document opened');
 
-			clearTimeout(reloadTimeoutID);
-			reloadTimeoutID = setTimeout(() => {
-				let reload;
-				const folder = this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
+			if (!this.isSwitchingTabGroups) {
+				clearTimeout(reloadTimeoutID);
+				reloadTimeoutID = setTimeout(() => {
+					let reload;
+					const folder = this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
 
-				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
-				this.tabGroupsDataProvider.updateCurrentTabsCount();
-				this.groupsTreeView.reload();
+					this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
+					this.tabGroupsDataProvider.updateCurrentTabsCount();
+					this.groupsTreeView.reload();
 
-				if (folder && this.groupBy === 'type') {
-					reload = this.treeView.reload(folder);
-				} else {
-					reload = this.treeView.reload();
-				}
+					if (folder && this.groupBy === 'type') {
+						reload = this.treeView.reload(folder);
+					} else {
+						reload = this.treeView.reload();
+					}
 
-				reload
-					.then(() => {
-						// Focus tab in sidebar
-						this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
+					reload
+						.then(() => {
+							// Focus tab in sidebar
+							this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
 
-						if (editor.document.uri === nova.workspace.activeTextEditor?.document.uri) {
-							this.highlightTab(this.focusedTab || null, { focus: true });
-						}
-					})
-					.catch(err => {
-						console.error('Could not reload treeView.', err);
-					});
-			}, 100);
+							if (editor.document.uri === nova.workspace.activeTextEditor?.document.uri) {
+								this.highlightTab(this.focusedTab || null, { focus: true });
+							}
+						})
+						.catch(err => {
+							console.error('Could not reload treeView.', err);
+						});
+				}, 100);
+			}
 
 			// Remove tab from sidebar when editor closed
 			editor.onDidDestroy(destroyedEditor => {
-				if (nova.inDevMode()) console.log('Document closed');
+				// if (nova.inDevMode()) console.log('Document closed');
+
+				if (this.isSwitchingTabGroups) {
+					return;
+				}
 
 				setTimeout(() => {
 					let reload;
@@ -720,24 +728,7 @@ class App {
 				buttons: [nova.localize('Close All Tabs'), nova.localize('Cancel')]
 			}, (index) => {
 				if (index === 0) {
-					this.tabDataProvider
-						.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Other Tabs')])
-						.then(() => {
-							this.tabDataProvider
-								.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-								.then(() => {
-									//
-								})
-								.catch(err => {
-									console.error('Could not click menu item.', err);
-								});
-						})
-						.catch(err => {
-							console.error('Could not click menu item.', err);
-
-							const title = nova.localize('Failed to Close All Tabs');
-							this.showPermissionsNotification(title);
-						});
+					this.closeAllTabs();
 				}
 			});
 		});
@@ -1039,7 +1030,10 @@ class App {
 				console.log(textEditor.document.uri);
 			});
 
-			let message = 'The currently open document tabs will be saved to the new tab group.\n\nFile browsers, terminal tabs, and remote tabs cannot be saved to a tab group.\n\nTabs from all splits will be saved to the group, but split assignments can not be restored.';
+			let message = 'The currently open document tabs will be saved to the new tab group.';
+
+			// message += '\n\nFile browsers, terminal tabs, and remote tabs cannot be saved to a tab group.';
+			// message += '\n\nTabs from all splits will be saved to the group, but split assignments can not be restored.';
 
 			workspace.showInputPalette(message, {
 					placeholder: 'Tab Group Name',
@@ -1099,18 +1093,11 @@ class App {
 
 						const selection = this.tabGroupsDataProvider.selectItemByUUID(uuid);
 
-						if (uuid === '__DEFAULT_GROUP__') {
-							workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
-						} else {
-							workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', uuid);
+						if (!selection) {
+							return;
 						}
 
-						// Update tree
-						this.tabGroupsDataProvider.openItem(uuid);
-						this.groupsTreeView.reload()
-							.then(() => {
-								this.groupsTreeView.reveal(selection);
-							});
+						this.openTabGroup(selection, workspace);
 					});
 			});
 		});
@@ -1165,20 +1152,7 @@ class App {
 				return;
 			}
 
-			this.checkForUnsaveableTabs(() => {
-				if (selection.uuid === '__DEFAULT_GROUP__') {
-					workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
-				} else {
-					workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
-				}
-
-				// Update tree
-				this.tabGroupsDataProvider.openItem(selection.uuid);
-				this.groupsTreeView.reload()
-					.then(() => {
-						this.groupsTreeView.reveal(selection);
-					});
-			});
+			this.openTabGroup(selection, workspace);
 		});
 
 		nova.commands.register('tabs-sidebar.renameTabGroup', (workspace: Workspace) => {
@@ -1485,9 +1459,9 @@ Please save ${unsavedTabs.length > 1 ? 'them' : 'it'} before switching to anothe
 `Your workspace has ${remoteTabs.length} remote tab${remoteTabs.length > 1 ? 's' : ''}.
 
 ${remoteTabString}
-Remote tabs in the current split pane will be closed and cannot be saved to a tab group.
+Remote tabs in the current pane will be closed and cannot be saved to a tab group.
 
-To preserve them between switches, you can move them to a different split pane.`,
+To preserve remote tabs you can move them to a different pane.`,
 				{
 					buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
 				},
@@ -1502,6 +1476,75 @@ To preserve them between switches, you can move them to a different split pane.`
 		} else {
 			callback();
 		}
+	}
+
+	openTabGroup(selection: TabGroupItem, workspace: Workspace) {
+		this.checkForUnsaveableTabs(() => {
+			const switchToTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + selection.uuid, 'array') || [];
+
+			this.isSwitchingTabGroups = true;
+
+			if (selection.uuid === '__DEFAULT_GROUP__') {
+				workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+			} else {
+				workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
+			}
+
+			this.tabGroupsDataProvider.openItem(selection.uuid);
+
+			// Update tree
+			this.groupsTreeView.reload();
+
+			this.closeAllTabs(() => {
+				nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', switchToTabs);
+				nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + selection.uuid, switchToTabs);
+				this.tabDataProvider.customOrder = switchToTabs;
+				this.tabDataProvider.flatItems = [];
+				this.tabDataProvider.kindGroupItems = [];
+				this.tabDataProvider.folderGroupItems = [];
+
+				switchToTabs.forEach(uri => {
+					nova.workspace.openFile(uri);
+				});
+
+				setTimeout(() => {
+					this.isSwitchingTabGroups = false;
+
+					this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
+					this.tabGroupsDataProvider.updateCurrentTabsCount();
+					this.treeView.reload();
+
+					// Update tree
+					this.groupsTreeView.reload()
+						.then(() => {
+							this.groupsTreeView.reveal(selection);
+						});
+				}, 1000);
+			});
+		});
+	}
+
+	closeAllTabs(callback?: () => void) {
+		this.tabDataProvider
+			.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Other Tabs')])
+			.then(() => {
+				this.tabDataProvider
+					.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+					.then(() => {
+						if (callback) {
+							callback();
+						}
+					})
+					.catch(err => {
+						console.error('Could not click menu item.', err);
+					});
+			})
+			.catch(err => {
+				console.error('Could not click menu item.', err);
+
+				const title = nova.localize('Failed to Close All Tabs');
+				this.showPermissionsNotification(title);
+			});
 	}
 }
 

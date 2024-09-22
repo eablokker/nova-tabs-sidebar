@@ -74,7 +74,7 @@
             {"separator": true},
             {
                 "title": "New Tab Group…",
-                "paletteTitle": "Add New Tab Group…",
+                "paletteTitle": "New Tab Group…",
                 "command": "tabs-sidebar.newTabGroup"
             },
             {
@@ -283,9 +283,9 @@
                     "placeholderImage": "tabs-sidebar-placeholder",
                     "headerCommands": [
                         {
-                            "title": "Add New Tab Group",
+                            "title": "New Tab Group",
                             "image": "__builtin.add",
-                            "tooltip": "Add New Tab Group",
+                            "tooltip": "New Tab Group",
                             "command": "tabs-sidebar.newTabGroup"
                         },
                         {
@@ -302,7 +302,6 @@
                             "command": "tabs-sidebar.openTabGroup",
                             "when": "viewItem !== null"
                         },
-                        {"separator": true},
                         {
                             "title": "Rename…",
                             "command": "tabs-sidebar.renameTabGroup",
@@ -312,6 +311,11 @@
                             "title": "Delete…",
                             "command": "tabs-sidebar.deleteTabGroup",
                             "when": "viewItem !== 'currentTabs'"
+                        },
+                        {"separator": true},
+                        {
+                            "title": "New Tab Group…",
+                            "command": "tabs-sidebar.newTabGroup"
                         }
                     ]
                 }
