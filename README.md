@@ -15,7 +15,7 @@ It was inspired by the [Tab List](https://extensions.panic.com/extensions/gerard
 
 ## Features
 
-- Sort by tab bar order, file kind, or alphabetically
+- Sort by tab bar order, file type, or alphabetically
 - Sort by custom order using up/down buttons and context menu
 - Custom sort order is saved in project config
 - Group by type, based on syntax
@@ -58,7 +58,7 @@ To use Tabs Sidebar:
 
 ### Configuration
 
-To configure global preferences, open **Extensions → Extension Library...** then select Tabs Sidebar's **Preferences** tab.
+To configure global preferences, open **Extensions → Tabs Sidebar → Preferences…**.
 
 ## Known limitations
 
