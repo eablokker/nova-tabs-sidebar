@@ -1641,7 +1641,7 @@ To preserve remote tabs you can move them to a different pane.`,
 					this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
 					this.treeView.reload();
 				}, delay);
-			}, () => {
+			}, (err) => {
 				this.isSwitchingTabGroups = false;
 				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
 				this.treeView.reload();
@@ -1649,7 +1649,7 @@ To preserve remote tabs you can move them to a different pane.`,
 		});
 	}
 
-	closeAllTabs(callback?: () => void, error?: () => void) {
+	closeAllTabs(callback?: () => void, error?: (err: any) => void) {
 		this.tabDataProvider
 			.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Other Tabs')])
 			.then(() => {
@@ -1664,19 +1664,31 @@ To preserve remote tabs you can move them to a different pane.`,
 						console.error('Could not click menu item.', err);
 
 						if (error) {
-							error();
+							error(err);
 						}
 					});
 			})
 			.catch(err => {
-				console.error('Could not click menu item.', err);
+				if (nova.inDevMode()) console.error('Could not click menu item.', err);
 
-				const title = nova.localize('Failed to Close All Tabs');
-				this.showPermissionsNotification(title);
+				// Click close tab if close other tabs menu item is disabled
+				this.tabDataProvider
+				.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+				.then(() => {
+					if (callback) {
+						callback();
+					}
+				})
+				.catch(message => {
+					if (nova.inDevMode()) console.error('Could not click menu item.', message);
 
-				if (error) {
-					error();
-				}
+					const title = nova.localize('Failed to Close All Tabs');
+					this.showPermissionsNotification(title);
+
+					if (error) {
+						error(message);
+					}
+				});
 			});
 	}
 }

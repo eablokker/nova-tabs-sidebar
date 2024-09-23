@@ -1742,8 +1742,15 @@ var App = /** @class */ (function () {
                     var reload;
                     var folder = _this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
                     _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);
-                    _this.tabGroupsDataProvider.refresh();
-                    _this.groupsTreeView.reload();
+                    var element = _this.tabGroupsDataProvider.refreshItem(_this.tabGroupsDataProvider.activeGroup);
+                    _this.groupsTreeView.reload(element)
+                        .then(function () {
+                        if (nova.inDevMode())
+                            console.log('groups treeview reloaded');
+                    })
+                        .catch(function (err) {
+                        console.error(err);
+                    });
                     if (folder && _this.groupBy === 'type') {
                         reload = _this.treeView.reload(folder);
                     }
@@ -1780,8 +1787,15 @@ var App = /** @class */ (function () {
                         reload = _this.treeView.reload();
                     }
                     _this.tabDataProvider.loadData(nova.workspace.textDocuments);
-                    _this.tabGroupsDataProvider.refresh();
-                    _this.groupsTreeView.reload();
+                    var element = _this.tabGroupsDataProvider.refreshItem(_this.tabGroupsDataProvider.activeGroup);
+                    _this.groupsTreeView.reload(element)
+                        .then(function () {
+                        if (nova.inDevMode())
+                            console.log('groups treeview reloaded');
+                    })
+                        .catch(function (err) {
+                        console.error(err);
+                    });
                     reload
                         .then(function () {
                         var document = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
@@ -2814,7 +2828,7 @@ var App = /** @class */ (function () {
                     _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);
                     _this.treeView.reload();
                 }, delay);
-            }, function () {
+            }, function (err) {
                 _this.isSwitchingTabGroups = false;
                 _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);
                 _this.treeView.reload();
@@ -2836,17 +2850,30 @@ var App = /** @class */ (function () {
                 .catch(function (err) {
                 console.error('Could not click menu item.', err);
                 if (error) {
-                    error();
+                    error(err);
                 }
             });
         })
             .catch(function (err) {
-            console.error('Could not click menu item.', err);
-            var title = nova.localize('Failed to Close All Tabs');
-            _this.showPermissionsNotification(title);
-            if (error) {
-                error();
-            }
+            if (nova.inDevMode())
+                console.error('Could not click menu item.', err);
+            // Click close tab if close other tabs menu item is disabled
+            _this.tabDataProvider
+                .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+                .then(function () {
+                if (callback) {
+                    callback();
+                }
+            })
+                .catch(function (message) {
+                if (nova.inDevMode())
+                    console.error('Could not click menu item.', message);
+                var title = nova.localize('Failed to Close All Tabs');
+                _this.showPermissionsNotification(title);
+                if (error) {
+                    error(message);
+                }
+            });
         });
     };
     return App;
