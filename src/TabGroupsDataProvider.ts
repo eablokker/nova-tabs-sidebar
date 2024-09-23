@@ -112,6 +112,30 @@ class TabGroupsDataProvider {
 		this.loadData();
 	}
 
+	refreshItem(uuid: string) {
+		const element = this.selectItemByUUID(uuid);
+
+		if (!element) {
+			return;
+		}
+
+		const children = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + uuid, 'array') || nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+
+		element.children = [];
+
+		children.forEach(child => {
+			const name = nova.path.basename(child);
+
+			const tabGroupChild = new TabGroupChild(name);
+			tabGroupChild.uri = decodeURI(child);
+			tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+
+			element.children.push(tabGroupChild);
+		});
+
+		return element;
+	}
+
 	addItem(name: string | null) {
 		const tabGroup = new TabGroupItem(name || 'Untitled');
 
@@ -257,6 +281,9 @@ class TabGroupsDataProvider {
 			}
 
 			if (element.children.length) {
+				if (element.uuid !== '__DEFAULT_GROUP__') {
+					item.descriptiveText = '(' + element.children.length + ')';
+				}
 
 				if (this.expandedGroups.indexOf(element.uuid) > -1) {
 					item.collapsibleState = TreeItemCollapsibleState.Expanded;

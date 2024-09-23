@@ -1293,6 +1293,22 @@ var TabGroupsDataProvider = /** @class */ (function () {
     TabGroupsDataProvider.prototype.refresh = function () {
         this.loadData();
     };
+    TabGroupsDataProvider.prototype.refreshItem = function (uuid) {
+        var element = this.selectItemByUUID(uuid);
+        if (!element) {
+            return;
+        }
+        var children = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + uuid, 'array') || nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+        element.children = [];
+        children.forEach(function (child) {
+            var name = nova.path.basename(child);
+            var tabGroupChild = new TabGroupChild(name);
+            tabGroupChild.uri = decodeURI(child);
+            tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+            element.children.push(tabGroupChild);
+        });
+        return element;
+    };
     TabGroupsDataProvider.prototype.addItem = function (name) {
         var tabGroup = new TabGroupItem(name || 'Untitled');
         var tabGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array') || [];
@@ -1405,6 +1421,9 @@ var TabGroupsDataProvider = /** @class */ (function () {
                 item.contextValue = 'tabGroup';
             }
             if (element.children.length) {
+                if (element.uuid !== '__DEFAULT_GROUP__') {
+                    item.descriptiveText = '(' + element.children.length + ')';
+                }
                 if (this.expandedGroups.indexOf(element.uuid) > -1) {
                     item.collapsibleState = TreeItemCollapsibleState.Expanded;
                 }
@@ -2119,6 +2138,15 @@ var App = /** @class */ (function () {
             // console.log(JSON.stringify(selection[0]));
             // console.log('Move Up: ' + selection.map((e) => e.name));
             _this.tabDataProvider.moveTab(selection[0], -1);
+            var element = _this.tabGroupsDataProvider.refreshItem(_this.tabGroupsDataProvider.activeGroup);
+            _this.groupsTreeView.reload(element)
+                .then(function () {
+                if (nova.inDevMode())
+                    console.log('groups treeview reloaded');
+            })
+                .catch(function (err) {
+                console.error(err);
+            });
         });
         nova.commands.register('tabs-sidebar.down', function () {
             // Invoked when the 'Move Down' header button is clicked
@@ -2138,6 +2166,15 @@ var App = /** @class */ (function () {
             // console.log(JSON.stringify(selection[0]));
             // console.log('Move Down: ' + selection.map((e) => e.name));
             _this.tabDataProvider.moveTab(selection[0], 1);
+            var element = _this.tabGroupsDataProvider.refreshItem(_this.tabGroupsDataProvider.activeGroup);
+            _this.groupsTreeView.reload(element)
+                .then(function () {
+                if (nova.inDevMode())
+                    console.log('groups treeview reloaded');
+            })
+                .catch(function (err) {
+                console.error(err);
+            });
         });
         nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', function (workspace) {
             //console.log('Clean up by tab bar order clicked');
@@ -2152,6 +2189,15 @@ var App = /** @class */ (function () {
                 })
                     .catch(function (err) {
                     console.error('Could not reload treeView.', err);
+                });
+                var element = _this.tabGroupsDataProvider.refreshItem(_this.tabGroupsDataProvider.activeGroup);
+                _this.groupsTreeView.reload(element)
+                    .then(function () {
+                    if (nova.inDevMode())
+                        console.log('groups treeview reloaded');
+                })
+                    .catch(function (err) {
+                    console.error(err);
                 });
             })
                 .catch(function (err) {
@@ -2171,6 +2217,15 @@ var App = /** @class */ (function () {
                 .catch(function (err) {
                 console.error('Could not reload treeView.', err);
             });
+            var element = _this.tabGroupsDataProvider.refreshItem(_this.tabGroupsDataProvider.activeGroup);
+            _this.groupsTreeView.reload(element)
+                .then(function () {
+                if (nova.inDevMode())
+                    console.log('groups treeview reloaded');
+            })
+                .catch(function (err) {
+                console.error(err);
+            });
         });
         nova.commands.register('tabs-sidebar.cleanUpByType', function () {
             if (nova.inDevMode())
@@ -2182,6 +2237,15 @@ var App = /** @class */ (function () {
             })
                 .catch(function (err) {
                 console.error('Could not reload treeView.', err);
+            });
+            var element = _this.tabGroupsDataProvider.refreshItem(_this.tabGroupsDataProvider.activeGroup);
+            _this.groupsTreeView.reload(element)
+                .then(function () {
+                if (nova.inDevMode())
+                    console.log('groups treeview reloaded');
+            })
+                .catch(function (err) {
+                console.error(err);
             });
         });
         nova.commands.register('tabs-sidebar.sortByAlpha', function (workspace) {
@@ -2727,12 +2791,12 @@ var App = /** @class */ (function () {
             _this.tabGroupsDataProvider.openItem(selection.uuid);
             var newElement = _this.tabGroupsDataProvider.selectItemByUUID(selection.uuid);
             // Update tree
-            _this.groupsTreeView.reload(prevElement)
+            Promise.all([_this.groupsTreeView.reload(prevElement), _this.groupsTreeView.reload(newElement)])
                 .then(function () {
-                _this.groupsTreeView.reload(newElement)
-                    .then(function () {
-                    _this.groupsTreeView.reveal(newElement);
-                });
+                _this.groupsTreeView.reveal(newElement);
+            })
+                .catch(function (err) {
+                console.error(err);
             });
             _this.closeAllTabs(function () {
                 nova.workspace.config.set('eablokker.tabsSidebar.config.customTabOrder', switchToTabs);
@@ -2744,11 +2808,12 @@ var App = /** @class */ (function () {
                 switchToTabs.forEach(function (uri) {
                     nova.workspace.openFile(uri);
                 });
+                var delay = switchToTabs.length * 200;
                 setTimeout(function () {
                     _this.isSwitchingTabGroups = false;
                     _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);
                     _this.treeView.reload();
-                }, 1000);
+                }, delay);
             }, function () {
                 _this.isSwitchingTabGroups = false;
                 _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);

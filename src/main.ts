@@ -819,6 +819,15 @@ class App {
 			// console.log('Move Up: ' + selection.map((e) => e.name));
 
 			this.tabDataProvider.moveTab(selection[0], -1);
+
+			const element = this.tabGroupsDataProvider.refreshItem(this.tabGroupsDataProvider.activeGroup);
+			this.groupsTreeView.reload(element)
+				.then(() => {
+					if (nova.inDevMode()) console.log('groups treeview reloaded');
+				})
+				.catch(err => {
+					console.error(err);
+				});
 		});
 
 		nova.commands.register('tabs-sidebar.down', () => {
@@ -844,6 +853,15 @@ class App {
 			// console.log('Move Down: ' + selection.map((e) => e.name));
 
 			this.tabDataProvider.moveTab(selection[0], 1);
+
+			const element = this.tabGroupsDataProvider.refreshItem(this.tabGroupsDataProvider.activeGroup);
+			this.groupsTreeView.reload(element)
+				.then(() => {
+					if (nova.inDevMode()) console.log('groups treeview reloaded');
+				})
+				.catch(err => {
+					console.error(err);
+				});
 		});
 
 		nova.commands.register('tabs-sidebar.cleanUpByTabBarOrder', (workspace: Workspace) => {
@@ -862,6 +880,15 @@ class App {
 						})
 						.catch(err => {
 							console.error('Could not reload treeView.', err);
+						});
+
+					const element = this.tabGroupsDataProvider.refreshItem(this.tabGroupsDataProvider.activeGroup);
+					this.groupsTreeView.reload(element)
+						.then(() => {
+							if (nova.inDevMode()) console.log('groups treeview reloaded');
+						})
+						.catch(err => {
+							console.error(err);
 						});
 				})
 				.catch(err => {
@@ -883,6 +910,15 @@ class App {
 				.catch(err => {
 					console.error('Could not reload treeView.', err);
 				});
+
+			const element = this.tabGroupsDataProvider.refreshItem(this.tabGroupsDataProvider.activeGroup);
+			this.groupsTreeView.reload(element)
+				.then(() => {
+					if (nova.inDevMode()) console.log('groups treeview reloaded');
+				})
+				.catch(err => {
+					console.error(err);
+				});
 		});
 
 		nova.commands.register('tabs-sidebar.cleanUpByType', () => {
@@ -895,6 +931,15 @@ class App {
 				})
 				.catch(err => {
 					console.error('Could not reload treeView.', err);
+				});
+
+			const element = this.tabGroupsDataProvider.refreshItem(this.tabGroupsDataProvider.activeGroup);
+			this.groupsTreeView.reload(element)
+				.then(() => {
+					if (nova.inDevMode()) console.log('groups treeview reloaded');
+				})
+				.catch(err => {
+					console.error(err);
 				});
 		});
 
@@ -1556,12 +1601,12 @@ To preserve remote tabs you can move them to a different pane.`,
 			const newElement = this.tabGroupsDataProvider.selectItemByUUID(selection.uuid);
 
 			// Update tree
-			this.groupsTreeView.reload(prevElement)
+			Promise.all([this.groupsTreeView.reload(prevElement), this.groupsTreeView.reload(newElement)])
 				.then(() => {
-					this.groupsTreeView.reload(newElement)
-					.then(() => {
-						this.groupsTreeView.reveal(newElement);
-					});
+					this.groupsTreeView.reveal(newElement);
+				})
+				.catch(err => {
+					console.error(err);
 				});
 
 			this.closeAllTabs(() => {
@@ -1576,12 +1621,14 @@ To preserve remote tabs you can move them to a different pane.`,
 					nova.workspace.openFile(uri);
 				});
 
+				const delay = switchToTabs.length * 200;
+
 				setTimeout(() => {
 					this.isSwitchingTabGroups = false;
 
 					this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
 					this.treeView.reload();
-				}, 1000);
+				}, delay);
 			}, () => {
 				this.isSwitchingTabGroups = false;
 				this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
