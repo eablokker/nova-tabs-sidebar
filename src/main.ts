@@ -347,8 +347,14 @@ class App {
 					const folder = this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
 
 					this.tabDataProvider.loadData(nova.workspace.textDocuments, this.focusedTab);
-					this.tabGroupsDataProvider.refresh();
-					this.groupsTreeView.reload();
+					const element = this.tabGroupsDataProvider.refreshItem(this.tabGroupsDataProvider.activeGroup);
+					this.groupsTreeView.reload(element)
+						.then(() => {
+							if (nova.inDevMode()) console.log('groups treeview reloaded');
+						})
+						.catch(err => {
+							console.error(err);
+						});
 
 					if (folder && this.groupBy === 'type') {
 						reload = this.treeView.reload(folder);
@@ -390,8 +396,14 @@ class App {
 					}
 
 					this.tabDataProvider.loadData(nova.workspace.textDocuments);
-					this.tabGroupsDataProvider.refresh();
-					this.groupsTreeView.reload();
+					const element = this.tabGroupsDataProvider.refreshItem(this.tabGroupsDataProvider.activeGroup);
+					this.groupsTreeView.reload(element)
+						.then(() => {
+							if (nova.inDevMode()) console.log('groups treeview reloaded');
+						})
+						.catch(err => {
+							console.error(err);
+						});
 
 					reload
 						.then(() => {
