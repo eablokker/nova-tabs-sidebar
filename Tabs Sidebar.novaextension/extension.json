@@ -319,6 +319,11 @@
                             "when": "viewItem == 'document'"
                         },
                         {
+                            "title": "Move to Tab Group…",
+                            "command": "tabs-sidebar.moveToTabGroup",
+                            "when": "viewItem == 'document'"
+                        },
+                        {
                             "title": "Copy Path",
                             "command": "tabs-sidebar.copyTabGroupPath",
                             "when": "viewItem == 'document'"

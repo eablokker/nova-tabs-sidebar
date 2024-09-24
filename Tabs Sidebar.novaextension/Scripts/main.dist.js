@@ -2498,6 +2498,36 @@ var App = /** @class */ (function () {
                 _this.closeTab(selection);
             }
         });
+        nova.commands.register('tabs-sidebar.moveToTabGroup', function (workspace) {
+            var selections = _this.groupsTreeView.selection;
+            if (selections.length <= 0) {
+                return;
+            }
+            var selection = selections[0];
+            if (!selection || selection instanceof TabGroupItem) {
+                return;
+            }
+            var tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+            if (!tabGroups) {
+                workspace.showInformativeMessage('There are no tab groups yet.');
+                return;
+            }
+            var tabNames = tabGroups.map(function (configString) {
+                var matches = configString.match(_this.tabGroupsDataProvider.configRegex);
+                if (!matches || matches.length < 3) {
+                    return 'Untitled';
+                }
+                return matches[2];
+            });
+            var defaultTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.__DEFAULT_GROUP__', 'array') || nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+            tabNames.splice(0, 0, 'Default Group (' + defaultTabs.length + ' Documents)');
+            workspace.showChoicePalette(tabNames, { placeholder: 'Move to Tab Group' }, function (name, index) {
+                if (index === undefined || index === null) {
+                    return;
+                }
+                tabGroups[index];
+            });
+        });
     };
     App.prototype.initFileWatcher = function () {
         return __awaiter(this, void 0, void 0, function () {

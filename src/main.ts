@@ -1247,7 +1247,45 @@ class App {
 				// Remove item from current group
 				this.closeTab(selection);
 			}
+		});
 
+		nova.commands.register('tabs-sidebar.moveToTabGroup', (workspace: Workspace) => {
+			const selections = this.groupsTreeView.selection;
+			if (selections.length <= 0) {
+				return;
+			}
+
+			const selection = selections[0];
+			if (!selection || selection instanceof TabGroupItem) {
+				return;
+			}
+
+			const tabGroups = workspace.config.get('eablokker.tabsSidebar.config.tabGroups', 'array');
+			if (!tabGroups) {
+				workspace.showInformativeMessage('There are no tab groups yet.');
+				return;
+			}
+
+			const tabNames = tabGroups.map((configString) => {
+				const matches = configString.match(this.tabGroupsDataProvider.configRegex);
+				if (!matches || matches.length < 3) {
+					return 'Untitled';
+				}
+
+				return matches[2];
+			});
+
+			const defaultTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.__DEFAULT_GROUP__', 'array') || nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+			tabNames.splice(0, 0, 'Default Group (' + defaultTabs.length + ' Documents)');
+
+			workspace.showChoicePalette(tabNames, { placeholder: 'Move to Tab Group' },
+				(name, index) => {
+					if (index === undefined || index === null) {
+						return;
+					}
+
+					const itemToDelete = tabGroups[index];
+				});
 		});
 	}
 
