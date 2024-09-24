@@ -1226,6 +1226,10 @@ var TabGroupItem = /** @class */ (function () {
         this.children = [];
         this.parent = null;
     }
+    TabGroupItem.prototype.addChild = function (element) {
+        element.parent = this;
+        this.children.push(element);
+    };
     TabGroupItem.randomUUID = function () {
         if (nova.version[0] >= 10) {
             // @ts-ignore
@@ -1241,7 +1245,9 @@ var TabGroupChild = /** @class */ (function () {
         this.name = name;
         this.path = '';
         this.uri = '';
+        this.isRemote = false;
         this.children = [];
+        this.parent = null;
     }
     return TabGroupChild;
 }());
@@ -1262,9 +1268,10 @@ var TabGroupsDataProvider = /** @class */ (function () {
         defaultChildren.forEach(function (child) {
             var name = nova.path.basename(child);
             var tabGroupChild = new TabGroupChild(name);
-            tabGroupChild.uri = decodeURI(child);
-            tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
-            defaultTabGroupItem.children.push(tabGroupChild);
+            tabGroupChild.uri = child;
+            tabGroupChild.path = decodeURI(tabGroupChild.uri).replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+            tabGroupChild.isRemote = tabGroupChild.uri.startsWith('ftp://') || tabGroupChild.uri.startsWith('sftp://');
+            defaultTabGroupItem.addChild(tabGroupChild);
         });
         this.flatItems.push(defaultTabGroupItem);
         if (!tabGroups) {
@@ -1282,9 +1289,10 @@ var TabGroupsDataProvider = /** @class */ (function () {
             children.forEach(function (child) {
                 var name = nova.path.basename(child);
                 var tabGroupChild = new TabGroupChild(name);
-                tabGroupChild.uri = decodeURI(child);
-                tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
-                tabGroupItem.children.push(tabGroupChild);
+                tabGroupChild.uri = child;
+                tabGroupChild.path = decodeURI(tabGroupChild.uri).replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+                tabGroupChild.isRemote = tabGroupChild.uri.startsWith('ftp://') || tabGroupChild.uri.startsWith('sftp://');
+                tabGroupItem.addChild(tabGroupChild);
             });
             return tabGroupItem;
         });
@@ -1303,9 +1311,10 @@ var TabGroupsDataProvider = /** @class */ (function () {
         children.forEach(function (child) {
             var name = nova.path.basename(child);
             var tabGroupChild = new TabGroupChild(name);
-            tabGroupChild.uri = decodeURI(child);
-            tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
-            element.children.push(tabGroupChild);
+            tabGroupChild.uri = child;
+            tabGroupChild.path = decodeURI(tabGroupChild.uri).replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+            tabGroupChild.isRemote = tabGroupChild.uri.startsWith('ftp://') || tabGroupChild.uri.startsWith('sftp://');
+            element.addChild(tabGroupChild);
         });
         return element;
     };
@@ -1438,6 +1447,10 @@ var TabGroupsDataProvider = /** @class */ (function () {
             item.tooltip = element.path.replace(nova.path.expanduser('~'), '~');
             // item.image = '__filetype.' + nova.path.extname(element.uri);
             item.contextValue = 'document';
+            item.command = 'tabs-sidebar.openTabGroup';
+            if (element.isRemote) {
+                item.descriptiveText = '☁️';
+            }
         }
         return item;
     };
@@ -1964,125 +1977,16 @@ var App = /** @class */ (function () {
         var _this = this;
         nova.commands.register('tabs-sidebar.close', function (workspace) {
             // console.log('Close Tab clicked');
-            var selection = _this.treeView.selection;
-            if (!selection[0]) {
+            var selections = _this.treeView.selection;
+            if (!selections[0]) {
                 return;
             }
+            var selection = selections[0];
             // Don't do anything with folders
-            if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
+            if (selection instanceof GroupItem || selection instanceof FolderItem) {
                 return;
             }
-            var activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
-            var activeDocumentIsRemote = activeDocument ? activeDocument.isRemote : false;
-            var selectionIsRemote = selection[0].isRemote;
-            // Close currently active tab
-            if (activeDocument && selection[0].uri === activeDocument.uri) {
-                _this.tabDataProvider
-                    .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-                    .then(function () {
-                    activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
-                    if (activeDocument) {
-                        _this.focusedTab = _this.tabDataProvider.getElementByUri(activeDocument.uri);
-                        _this.highlightTab(_this.focusedTab || null, { focus: true });
-                    }
-                })
-                    .catch(function (err) {
-                    console.error('Could not click menu item.', err);
-                    var title = nova.localize('Failed to Close Tab');
-                    _this.showPermissionsNotification(title);
-                });
-                return;
-            }
-            if (!selectionIsRemote) {
-                // Close non currently active tab by switching to it and back
-                workspace.openFile(selection[0].uri)
-                    .then(function () {
-                    _this.tabDataProvider
-                        .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-                        .then(function () {
-                        if (!activeDocument) {
-                            return;
-                        }
-                        // Switch back to local tab after closing other local tab
-                        if (!activeDocumentIsRemote) {
-                            workspace.openFile(activeDocument.uri)
-                                .then(function (value) {
-                                if (value) {
-                                    _this.focusedTab = _this.tabDataProvider.getElementByUri(value.document.uri);
-                                    _this.highlightTab(_this.focusedTab || null, { focus: true });
-                                }
-                            })
-                                .catch(function (err) {
-                                console.error('Could not open file.', err);
-                            });
-                            return;
-                        }
-                        // Switch back to remote tab after closing other local tab
-                        _this.openRemoteTab(activeDocument.uri)
-                            .then(function () {
-                            if (activeDocument) {
-                                _this.focusedTab = _this.tabDataProvider.getElementByUri(activeDocument.uri);
-                                _this.highlightTab(_this.focusedTab || null, { focus: true });
-                            }
-                        })
-                            .catch(function (err) {
-                            console.error('Could not open remote tab.', err);
-                        });
-                    })
-                        .catch(function (err) {
-                        console.error('Could not click menu item.', err);
-                        var title = nova.localize('Failed to Close Tab');
-                        _this.showPermissionsNotification(title);
-                    });
-                })
-                    .catch(function (err) {
-                    console.error('Could not open file.', err);
-                });
-                return;
-            }
-            _this.openRemoteTab(selection[0].uri)
-                .then(function () {
-                _this.tabDataProvider
-                    .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-                    .then(function () {
-                    if (!activeDocument) {
-                        return;
-                    }
-                    // Switch back to local tab after closing other remote tab
-                    if (!activeDocumentIsRemote) {
-                        workspace.openFile(activeDocument.uri)
-                            .then(function (value) {
-                            if (value) {
-                                _this.focusedTab = _this.tabDataProvider.getElementByUri(value.document.uri);
-                                _this.highlightTab(_this.focusedTab || null, { focus: true });
-                            }
-                        })
-                            .catch(function (err) {
-                            console.error('Could not open file.', err);
-                        });
-                        return;
-                    }
-                    // Switch back to remote tab after closing other remote tab
-                    _this.openRemoteTab(activeDocument.uri)
-                        .then(function (editor) {
-                        if (editor) {
-                            _this.focusedTab = _this.tabDataProvider.getElementByUri(editor.document.uri);
-                            _this.highlightTab(_this.focusedTab || null, { focus: true });
-                        }
-                    })
-                        .catch(function (err) {
-                        console.error('Could not open remote tab.', err);
-                    });
-                })
-                    .catch(function (err) {
-                    console.error('Could not click menu item.', err);
-                    var title = nova.localize('Failed to Close Tab');
-                    _this.showPermissionsNotification(title);
-                });
-            })
-                .catch(function (err) {
-                console.error('Could not open remote tab.', err);
-            });
+            _this.closeTab(selection);
         });
         nova.commands.register('tabs-sidebar.closeAll', function (workspace) {
             nova.workspace.showActionPanel(nova.localize('Are you sure you want to close all tabs?'), {
@@ -2094,41 +1998,18 @@ var App = /** @class */ (function () {
             });
         });
         nova.commands.register('tabs-sidebar.open', function (workspace) {
-            var selection = _this.treeView.selection;
-            // console.log('Selection: ' + selection[0].name);
-            if (!selection[0]) {
+            var selections = _this.treeView.selection;
+            if (selections.length <= 0) {
+                return;
+            }
+            var selection = selections[0];
+            if (!selection) {
                 return;
             }
             // Don't do anything with folders
-            if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
-                return;
+            if (selection instanceof TabItem) {
+                _this.openTab(selection);
             }
-            var isRemote = selection[0].isRemote;
-            // Switch to tab for local file
-            if (!isRemote) {
-                workspace.openFile(selection[0].uri)
-                    .then(function (value) {
-                    if (value) {
-                        _this.focusedTab = _this.tabDataProvider.getElementByUri(value.document.uri);
-                        _this.highlightTab(_this.focusedTab || null, { focus: true });
-                    }
-                })
-                    .catch(function (err) {
-                    console.error('Could not open file.', err);
-                });
-                return;
-            }
-            // Switch to tab for remote file
-            _this.openRemoteTab(selection[0].uri)
-                .then(function (editor) {
-                if (editor) {
-                    _this.focusedTab = _this.tabDataProvider.getElementByUri(editor.document.uri);
-                    _this.highlightTab(_this.focusedTab || null, { focus: true });
-                }
-            })
-                .catch(function (err) {
-                console.error('Could not open remote tab.', err);
-            });
         });
         nova.commands.register('tabs-sidebar.doubleClick', function () {
             // Invoked when an item is double-clicked
@@ -2434,8 +2315,11 @@ var App = /** @class */ (function () {
             workspace.showInputPalette(message, {
                 placeholder: 'Tab Group Name',
             }, function (name) {
-                if (!name) {
+                if (name === undefined) {
                     return;
+                }
+                if (name === '') {
+                    name = 'Untitled';
                 }
                 var selection = _this.tabGroupsDataProvider.addItem(name);
                 _this.groupsTreeView.reload()
@@ -2459,7 +2343,8 @@ var App = /** @class */ (function () {
             });
             _this.checkForUnsaveableTabs(function () {
                 // Add default group as first item in palette
-                tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
+                var defaultTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.__DEFAULT_GROUP__', 'array') || nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+                tabNames.splice(0, 0, 'Default Group (' + defaultTabs.length + ' Documents)');
                 workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' }, function (name, index) {
                     if (index === null) {
                         return;
@@ -2480,7 +2365,7 @@ var App = /** @class */ (function () {
                     if (!selection) {
                         return;
                     }
-                    _this.openTabGroup(selection, workspace);
+                    _this.openTabGroup(selection);
                 });
             });
         });
@@ -2498,7 +2383,7 @@ var App = /** @class */ (function () {
                 return matches[2];
             });
             workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' }, function (name, index) {
-                if (index === null) {
+                if (index === undefined || index === null) {
                     return;
                 }
                 var itemToDelete = tabGroups[index];
@@ -2519,10 +2404,19 @@ var App = /** @class */ (function () {
                 return;
             }
             var selection = selections[0];
-            if (!selection || selection instanceof TabGroupChild) {
+            if (selection instanceof TabGroupItem) {
+                _this.openTabGroup(selection);
                 return;
             }
-            _this.openTabGroup(selection, workspace);
+            if (selection instanceof TabGroupChild) {
+                var uri = selection.uri;
+                var activeGroup = _this.tabGroupsDataProvider.activeGroup;
+                var currentTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + activeGroup, 'array') || [];
+                var index = currentTabs.indexOf(uri);
+                if (index > -1) {
+                    _this.openTab(selection);
+                }
+            }
         });
         nova.commands.register('tabs-sidebar.renameTabGroup', function (workspace) {
             var selections = _this.groupsTreeView.selection;
@@ -2564,6 +2458,45 @@ var App = /** @class */ (function () {
                 _this.tabGroupsDataProvider.removeItemByConfigString(configString);
                 _this.groupsTreeView.reload();
             });
+        });
+        nova.commands.register('tabs-sidebar.closeTabGroupTab', function (workspace) {
+            var _a;
+            var selections = _this.groupsTreeView.selection;
+            if (selections.length <= 0) {
+                return;
+            }
+            var selection = selections[0];
+            if (!selection || selection instanceof TabGroupItem) {
+                return;
+            }
+            var targetGroup = (_a = selection.parent) === null || _a === void 0 ? void 0 : _a.uuid;
+            var uri = selection.uri;
+            var activeGroup = _this.tabGroupsDataProvider.activeGroup;
+            if (!targetGroup) {
+                return;
+            }
+            // Remove item from other group
+            if (targetGroup !== activeGroup) {
+                var items = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + targetGroup, 'array') || [];
+                var index = items.indexOf(uri);
+                if (index > -1) {
+                    items.splice(index, 1);
+                }
+                nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + targetGroup, items);
+                var element = _this.tabGroupsDataProvider.refreshItem(targetGroup);
+                _this.groupsTreeView.reload(element)
+                    .then(function () {
+                    if (nova.inDevMode())
+                        console.log('groups treeview reloaded');
+                })
+                    .catch(function (err) {
+                    console.error(err);
+                });
+            }
+            else {
+                // Remove item from current group
+                _this.closeTab(selection);
+            }
         });
     };
     App.prototype.initFileWatcher = function () {
@@ -2777,7 +2710,7 @@ var App = /** @class */ (function () {
             return;
         }
         if (remoteTabs.length > 0) {
-            nova.workspace.showActionPanel("Your workspace has ".concat(remoteTabs.length, " remote tab").concat(remoteTabs.length > 1 ? 's' : '', ".\n\n").concat(remoteTabString, "\nRemote tabs in the current pane will be closed and cannot be saved to a tab group.\n\nTo preserve remote tabs you can move them to a different pane."), {
+            nova.workspace.showActionPanel("Your workspace has ".concat(remoteTabs.length, " remote tab").concat(remoteTabs.length > 1 ? 's' : '', ".\n\n").concat(remoteTabString, "\nRemote tabs in the current pane will be closed and cannot be saved to a tab group."), {
                 buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
             }, function (index) {
                 if (index === 2) {
@@ -2790,16 +2723,45 @@ var App = /** @class */ (function () {
             callback();
         }
     };
-    App.prototype.openTabGroup = function (selection, workspace) {
+    App.prototype.openTab = function (selection) {
+        var _this = this;
+        var isRemote = selection.isRemote;
+        // Switch to tab for local file
+        if (!isRemote) {
+            nova.workspace.openFile(selection.uri)
+                .then(function (value) {
+                if (value) {
+                    _this.focusedTab = _this.tabDataProvider.getElementByUri(value.document.uri);
+                    _this.highlightTab(_this.focusedTab || null, { focus: true });
+                }
+            })
+                .catch(function (err) {
+                console.error('Could not open file.', err);
+            });
+            return;
+        }
+        // Switch to tab for remote file
+        this.openRemoteTab(selection.uri)
+            .then(function (editor) {
+            if (editor) {
+                _this.focusedTab = _this.tabDataProvider.getElementByUri(editor.document.uri);
+                _this.highlightTab(_this.focusedTab || null, { focus: true });
+            }
+        })
+            .catch(function (err) {
+            console.error('Could not open remote tab.', err);
+        });
+    };
+    App.prototype.openTabGroup = function (selection) {
         var _this = this;
         this.checkForUnsaveableTabs(function () {
             var switchToTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + selection.uuid, 'array') || [];
             _this.isSwitchingTabGroups = true;
             if (selection.uuid === '__DEFAULT_GROUP__') {
-                workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+                nova.workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
             }
             else {
-                workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
+                nova.workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
             }
             var prevElement = _this.tabGroupsDataProvider.selectItemByUUID(_this.tabGroupsDataProvider.activeGroup);
             _this.tabGroupsDataProvider.openItem(selection.uuid);
@@ -2833,6 +2795,120 @@ var App = /** @class */ (function () {
                 _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);
                 _this.treeView.reload();
             });
+        });
+    };
+    App.prototype.closeTab = function (selection) {
+        var _this = this;
+        var activeDocument = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
+        var activeDocumentIsRemote = activeDocument ? activeDocument.isRemote : false;
+        var selectionIsRemote = selection.isRemote;
+        // Close currently active tab
+        if (activeDocument && selection.uri === activeDocument.uri) {
+            this.tabDataProvider
+                .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+                .then(function () {
+                activeDocument = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
+                if (activeDocument) {
+                    _this.focusedTab = _this.tabDataProvider.getElementByUri(activeDocument.uri);
+                    _this.highlightTab(_this.focusedTab || null, { focus: true });
+                }
+            })
+                .catch(function (err) {
+                console.error('Could not click menu item.', err);
+                var title = nova.localize('Failed to Close Tab');
+                _this.showPermissionsNotification(title);
+            });
+            return;
+        }
+        if (!selectionIsRemote) {
+            // Close non currently active tab by switching to it and back
+            nova.workspace.openFile(selection.uri)
+                .then(function () {
+                _this.tabDataProvider
+                    .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+                    .then(function () {
+                    if (!activeDocument) {
+                        return;
+                    }
+                    // Switch back to local tab after closing other local tab
+                    if (!activeDocumentIsRemote) {
+                        nova.workspace.openFile(activeDocument.uri)
+                            .then(function (value) {
+                            if (value) {
+                                _this.focusedTab = _this.tabDataProvider.getElementByUri(value.document.uri);
+                                _this.highlightTab(_this.focusedTab || null, { focus: true });
+                            }
+                        })
+                            .catch(function (err) {
+                            console.error('Could not open file.', err);
+                        });
+                        return;
+                    }
+                    // Switch back to remote tab after closing other local tab
+                    _this.openRemoteTab(activeDocument.uri)
+                        .then(function () {
+                        if (activeDocument) {
+                            _this.focusedTab = _this.tabDataProvider.getElementByUri(activeDocument.uri);
+                            _this.highlightTab(_this.focusedTab || null, { focus: true });
+                        }
+                    })
+                        .catch(function (err) {
+                        console.error('Could not open remote tab.', err);
+                    });
+                })
+                    .catch(function (err) {
+                    console.error('Could not click menu item.', err);
+                    var title = nova.localize('Failed to Close Tab');
+                    _this.showPermissionsNotification(title);
+                });
+            })
+                .catch(function (err) {
+                console.error('Could not open file.', err);
+            });
+            return;
+        }
+        this.openRemoteTab(selection.uri)
+            .then(function () {
+            _this.tabDataProvider
+                .runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+                .then(function () {
+                if (!activeDocument) {
+                    return;
+                }
+                // Switch back to local tab after closing other remote tab
+                if (!activeDocumentIsRemote) {
+                    nova.workspace.openFile(activeDocument.uri)
+                        .then(function (value) {
+                        if (value) {
+                            _this.focusedTab = _this.tabDataProvider.getElementByUri(value.document.uri);
+                            _this.highlightTab(_this.focusedTab || null, { focus: true });
+                        }
+                    })
+                        .catch(function (err) {
+                        console.error('Could not open file.', err);
+                    });
+                    return;
+                }
+                // Switch back to remote tab after closing other remote tab
+                _this.openRemoteTab(activeDocument.uri)
+                    .then(function (editor) {
+                    if (editor) {
+                        _this.focusedTab = _this.tabDataProvider.getElementByUri(editor.document.uri);
+                        _this.highlightTab(_this.focusedTab || null, { focus: true });
+                    }
+                })
+                    .catch(function (err) {
+                    console.error('Could not open remote tab.', err);
+                });
+            })
+                .catch(function (err) {
+                console.error('Could not click menu item.', err);
+                var title = nova.localize('Failed to Close Tab');
+                _this.showPermissionsNotification(title);
+            });
+        })
+            .catch(function (err) {
+            console.error('Could not open remote tab.', err);
         });
     };
     App.prototype.closeAllTabs = function (callback, error) {

@@ -300,7 +300,7 @@
                         {
                             "title": "Open",
                             "command": "tabs-sidebar.openTabGroup",
-                            "when": "viewItem !== null"
+                            "when": "viewItem !== null || viewItem == 'document'",
                         },
                         {
                             "title": "Rename…",

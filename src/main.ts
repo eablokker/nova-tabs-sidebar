@@ -608,146 +608,20 @@ class App {
 		nova.commands.register('tabs-sidebar.close', (workspace: Workspace) => {
 			// console.log('Close Tab clicked');
 
-			const selection = this.treeView.selection;
+			const selections = this.treeView.selection;
 
-			if (!selection[0]) {
+			if (!selections[0]) {
 				return;
 			}
+
+			const selection = selections[0];
 
 			// Don't do anything with folders
-			if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
+			if (selection instanceof GroupItem || selection instanceof FolderItem) {
 				return;
 			}
 
-			let activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
-			const activeDocumentIsRemote = activeDocument ? activeDocument.isRemote : false;
-			const selectionIsRemote = selection[0].isRemote;
-
-			// Close currently active tab
-			if (activeDocument && selection[0].uri === activeDocument.uri) {
-				this.tabDataProvider
-					.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-					.then(() => {
-						activeDocument = workspace.activeTextEditor ? workspace.activeTextEditor.document : null;
-
-						if (activeDocument) {
-							this.focusedTab = this.tabDataProvider.getElementByUri(activeDocument.uri);
-							this.highlightTab(this.focusedTab || null, { focus: true });
-						}
-					})
-					.catch(err => {
-						console.error('Could not click menu item.', err);
-
-						const title = nova.localize('Failed to Close Tab');
-						this.showPermissionsNotification(title);
-					});
-
-				return;
-			}
-
-			if (!selectionIsRemote) {
-				// Close non currently active tab by switching to it and back
-				workspace.openFile(selection[0].uri)
-					.then(() => {
-						this.tabDataProvider
-							.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-							.then(() => {
-								if (!activeDocument) {
-									return;
-								}
-
-								// Switch back to local tab after closing other local tab
-								if (!activeDocumentIsRemote) {
-									workspace.openFile(activeDocument.uri)
-										.then(value => {
-											if (value) {
-												this.focusedTab = this.tabDataProvider.getElementByUri(value.document.uri);
-												this.highlightTab(this.focusedTab || null, { focus: true });
-											}
-										})
-										.catch((err: string) => {
-											console.error('Could not open file.', err);
-										});
-
-									return;
-								}
-
-								// Switch back to remote tab after closing other local tab
-								this.openRemoteTab(activeDocument.uri)
-									.then(() => {
-										if (activeDocument) {
-											this.focusedTab = this.tabDataProvider.getElementByUri(activeDocument.uri);
-											this.highlightTab(this.focusedTab || null, { focus: true });
-										}
-									})
-									.catch(err => {
-										console.error('Could not open remote tab.', err);
-									});
-
-							})
-							.catch(err => {
-								console.error('Could not click menu item.', err);
-
-								const title = nova.localize('Failed to Close Tab');
-								this.showPermissionsNotification(title);
-							});
-					})
-					.catch((err: string) => {
-						console.error('Could not open file.', err);
-					});
-
-				return;
-			}
-
-			this.openRemoteTab(selection[0].uri)
-				.then(() => {
-					this.tabDataProvider
-						.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
-						.then(() => {
-							if (!activeDocument) {
-								return;
-							}
-
-							// Switch back to local tab after closing other remote tab
-							if (!activeDocumentIsRemote) {
-								workspace.openFile(activeDocument.uri)
-									.then(value => {
-										if (value) {
-											this.focusedTab = this.tabDataProvider.getElementByUri(value.document.uri);
-											this.highlightTab(this.focusedTab || null, { focus: true });
-										}
-									})
-									.catch((err: string) => {
-										console.error('Could not open file.', err);
-									});
-
-								return;
-							}
-
-							// Switch back to remote tab after closing other remote tab
-							this.openRemoteTab(activeDocument.uri)
-								.then(editor => {
-
-									if (editor) {
-										this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
-										this.highlightTab(this.focusedTab || null, { focus: true });
-									}
-								})
-								.catch(err => {
-									console.error('Could not open remote tab.', err);
-								});
-
-						})
-						.catch(err => {
-							console.error('Could not click menu item.', err);
-
-							const title = nova.localize('Failed to Close Tab');
-							this.showPermissionsNotification(title);
-						});
-				})
-				.catch(err => {
-					console.error('Could not open remote tab.', err);
-				});
+			this.closeTab(selection);
 		});
 
 		nova.commands.register('tabs-sidebar.closeAll', (workspace: Workspace) => {
@@ -761,46 +635,21 @@ class App {
 		});
 
 		nova.commands.register('tabs-sidebar.open', (workspace: Workspace) => {
-			const selection = this.treeView.selection;
-			// console.log('Selection: ' + selection[0].name);
+			const selections = this.treeView.selection;
+			if (selections.length <= 0) {
+				return;
+			}
 
-			if (!selection[0]) {
+			const selection = selections[0];
+
+			if (!selection) {
 				return;
 			}
 
 			// Don't do anything with folders
-			if (selection[0] instanceof GroupItem || selection[0] instanceof FolderItem) {
-				return;
+			if (selection instanceof TabItem) {
+				this.openTab(selection);
 			}
-
-			const isRemote = selection[0].isRemote;
-
-			// Switch to tab for local file
-			if (!isRemote) {
-				workspace.openFile(selection[0].uri)
-					.then(value => {
-						if (value) {
-							this.focusedTab = this.tabDataProvider.getElementByUri(value.document.uri);
-							this.highlightTab(this.focusedTab || null, { focus: true });
-						}
-					})
-					.catch((err: string) => {
-						console.error('Could not open file.', err);
-					});
-				return;
-			}
-
-			// Switch to tab for remote file
-			this.openRemoteTab(selection[0].uri)
-				.then(editor => {
-					if (editor) {
-						this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
-						this.highlightTab(this.focusedTab || null, { focus: true });
-					}
-				})
-				.catch(err => {
-					console.error('Could not open remote tab.', err);
-				});
 		});
 
 		nova.commands.register('tabs-sidebar.doubleClick', () => {
@@ -1156,8 +1005,12 @@ class App {
 			workspace.showInputPalette(message, {
 					placeholder: 'Tab Group Name',
 				}, (name) => {
-					if (!name) {
+					if (name === undefined) {
 						return;
+					}
+
+					if (name === '') {
+						name = 'Untitled';
 					}
 
 					const selection = this.tabGroupsDataProvider.addItem(name);
@@ -1186,7 +1039,8 @@ class App {
 
 			this.checkForUnsaveableTabs(() => {
 				// Add default group as first item in palette
-				tabNames.splice(0, 0, 'Default Group (' + workspace.textDocuments.length + ' Documents)');
+				const defaultTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.__DEFAULT_GROUP__', 'array') || nova.workspace.config.get('eablokker.tabsSidebar.config.customTabOrder', 'array') || [];
+				tabNames.splice(0, 0, 'Default Group (' + defaultTabs.length + ' Documents)');
 
 				workspace.showChoicePalette(tabNames, { placeholder: 'Open Tab Group' },
 					(name, index) => {
@@ -1215,7 +1069,7 @@ class App {
 							return;
 						}
 
-						this.openTabGroup(selection, workspace);
+						this.openTabGroup(selection);
 					});
 			});
 		});
@@ -1238,7 +1092,7 @@ class App {
 
 			workspace.showChoicePalette(tabNames, { placeholder: 'Delete Tab Group' },
 				(name, index) => {
-					if (index === null) {
+					if (index === undefined || index === null) {
 						return;
 					}
 
@@ -1266,11 +1120,36 @@ class App {
 			}
 
 			const selection = selections[0];
-			if (!selection || selection instanceof TabGroupChild) {
+			if (selection instanceof TabGroupItem) {
+				this.openTabGroup(selection);
 				return;
 			}
 
-			this.openTabGroup(selection, workspace);
+			if (selection instanceof TabGroupChild) {
+				const uri = selection.uri;
+				const activeGroup = this.tabGroupsDataProvider.activeGroup;
+				const currentTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + activeGroup, 'array') || [];
+
+				const index = currentTabs.indexOf(uri);
+
+				if (index > -1) {
+					this.openTab(selection);
+				} else {
+// 					const request = new NotificationRequest('open-tab-restricted');
+//
+// 					request.title = 'Cannot Open Tab';
+// 					request.body = nova.localize('You must switch to that group first before you can open that tab.');
+//
+// 					request.actions = [nova.localize('OK')];
+//
+// 					const promise = nova.notifications.add(request);
+// 					promise.then(response => {
+// 						//
+// 					}, error => {
+// 						console.error(error);
+// 					});
+				}
+			}
 		});
 
 		nova.commands.register('tabs-sidebar.renameTabGroup', (workspace: Workspace) => {
@@ -1324,6 +1203,51 @@ class App {
 					this.groupsTreeView.reload();
 				}
 			);
+		});
+
+		nova.commands.register('tabs-sidebar.closeTabGroupTab', (workspace: Workspace) => {
+			const selections = this.groupsTreeView.selection;
+			if (selections.length <= 0) {
+				return;
+			}
+
+			const selection = selections[0];
+			if (!selection || selection instanceof TabGroupItem) {
+				return;
+			}
+
+			const targetGroup = selection.parent?.uuid;
+			const uri = selection.uri;
+			const activeGroup = this.tabGroupsDataProvider.activeGroup;
+
+			if (!targetGroup) {
+				return;
+			}
+
+			// Remove item from other group
+			if (targetGroup !== activeGroup) {
+				const items = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + targetGroup, 'array') || [];
+
+				const index = items.indexOf(uri);
+				if (index > -1) {
+					items.splice(index, 1);
+				}
+
+				nova.workspace.config.set('eablokker.tabsSidebar.config.tabGroupsOrder.' + targetGroup, items);
+
+				const element = this.tabGroupsDataProvider.refreshItem(targetGroup);
+				this.groupsTreeView.reload(element)
+					.then(() => {
+						if (nova.inDevMode()) console.log('groups treeview reloaded');
+					})
+					.catch(err => {
+						console.error(err);
+					});
+			} else {
+				// Remove item from current group
+				this.closeTab(selection);
+			}
+
 		});
 	}
 
@@ -1577,9 +1501,7 @@ Please save ${unsavedTabs.length > 1 ? 'them' : 'it'} before switching to anothe
 `Your workspace has ${remoteTabs.length} remote tab${remoteTabs.length > 1 ? 's' : ''}.
 
 ${remoteTabString}
-Remote tabs in the current pane will be closed and cannot be saved to a tab group.
-
-To preserve remote tabs you can move them to a different pane.`,
+Remote tabs in the current pane will be closed and cannot be saved to a tab group.`,
 				{
 					buttons: ['Continue', 'Don\'t Show Again', 'Cancel']
 				},
@@ -1596,16 +1518,47 @@ To preserve remote tabs you can move them to a different pane.`,
 		}
 	}
 
-	openTabGroup(selection: TabGroupItem, workspace: Workspace) {
+	openTab(selection: TabItem | TabGroupChild) {
+		const isRemote = selection.isRemote;
+
+		// Switch to tab for local file
+		if (!isRemote) {
+			nova.workspace.openFile(selection.uri)
+				.then(value => {
+					if (value) {
+						this.focusedTab = this.tabDataProvider.getElementByUri(value.document.uri);
+						this.highlightTab(this.focusedTab || null, { focus: true });
+					}
+				})
+				.catch((err: string) => {
+					console.error('Could not open file.', err);
+				});
+			return;
+		}
+
+		// Switch to tab for remote file
+		this.openRemoteTab(selection.uri)
+			.then(editor => {
+				if (editor) {
+					this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
+					this.highlightTab(this.focusedTab || null, { focus: true });
+				}
+			})
+			.catch(err => {
+				console.error('Could not open remote tab.', err);
+			});
+	}
+
+	openTabGroup(selection: TabGroupItem) {
 		this.checkForUnsaveableTabs(() => {
 			const switchToTabs = nova.workspace.config.get('eablokker.tabsSidebar.config.tabGroupsOrder.' + selection.uuid, 'array') || [];
 
 			this.isSwitchingTabGroups = true;
 
 			if (selection.uuid === '__DEFAULT_GROUP__') {
-				workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
+				nova.workspace.config.remove('eablokker.tabsSidebar.config.activeTabGroup');
 			} else {
-				workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
+				nova.workspace.config.set('eablokker.tabsSidebar.config.activeTabGroup', selection.uuid);
 			}
 
 			const prevElement = this.tabGroupsDataProvider.selectItemByUUID(this.tabGroupsDataProvider.activeGroup);
@@ -1647,6 +1600,138 @@ To preserve remote tabs you can move them to a different pane.`,
 				this.treeView.reload();
 			});
 		});
+	}
+
+	closeTab(selection: TabItem | TabGroupChild) {
+		let activeDocument = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
+		const activeDocumentIsRemote = activeDocument ? activeDocument.isRemote : false;
+		const selectionIsRemote = selection.isRemote;
+
+		// Close currently active tab
+		if (activeDocument && selection.uri === activeDocument.uri) {
+			this.tabDataProvider
+				.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+				.then(() => {
+					activeDocument = nova.workspace.activeTextEditor ? nova.workspace.activeTextEditor.document : null;
+
+					if (activeDocument) {
+						this.focusedTab = this.tabDataProvider.getElementByUri(activeDocument.uri);
+						this.highlightTab(this.focusedTab || null, { focus: true });
+					}
+				})
+				.catch(err => {
+					console.error('Could not click menu item.', err);
+
+					const title = nova.localize('Failed to Close Tab');
+					this.showPermissionsNotification(title);
+				});
+
+			return;
+		}
+
+		if (!selectionIsRemote) {
+			// Close non currently active tab by switching to it and back
+			nova.workspace.openFile(selection.uri)
+				.then(() => {
+					this.tabDataProvider
+						.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+						.then(() => {
+							if (!activeDocument) {
+								return;
+							}
+
+							// Switch back to local tab after closing other local tab
+							if (!activeDocumentIsRemote) {
+								nova.workspace.openFile(activeDocument.uri)
+									.then(value => {
+										if (value) {
+											this.focusedTab = this.tabDataProvider.getElementByUri(value.document.uri);
+											this.highlightTab(this.focusedTab || null, { focus: true });
+										}
+									})
+									.catch((err: string) => {
+										console.error('Could not open file.', err);
+									});
+
+								return;
+							}
+
+							// Switch back to remote tab after closing other local tab
+							this.openRemoteTab(activeDocument.uri)
+								.then(() => {
+									if (activeDocument) {
+										this.focusedTab = this.tabDataProvider.getElementByUri(activeDocument.uri);
+										this.highlightTab(this.focusedTab || null, { focus: true });
+									}
+								})
+								.catch(err => {
+									console.error('Could not open remote tab.', err);
+								});
+
+						})
+						.catch(err => {
+							console.error('Could not click menu item.', err);
+
+							const title = nova.localize('Failed to Close Tab');
+							this.showPermissionsNotification(title);
+						});
+				})
+				.catch((err: string) => {
+					console.error('Could not open file.', err);
+				});
+
+			return;
+		}
+
+		this.openRemoteTab(selection.uri)
+			.then(() => {
+				this.tabDataProvider
+					.runProcess(__dirname + '/click_menu_item.sh', [nova.localize('File'), nova.localize('Close Tab')])
+					.then(() => {
+						if (!activeDocument) {
+							return;
+						}
+
+						// Switch back to local tab after closing other remote tab
+						if (!activeDocumentIsRemote) {
+							nova.workspace.openFile(activeDocument.uri)
+								.then(value => {
+									if (value) {
+										this.focusedTab = this.tabDataProvider.getElementByUri(value.document.uri);
+										this.highlightTab(this.focusedTab || null, { focus: true });
+									}
+								})
+								.catch((err: string) => {
+									console.error('Could not open file.', err);
+								});
+
+							return;
+						}
+
+						// Switch back to remote tab after closing other remote tab
+						this.openRemoteTab(activeDocument.uri)
+							.then(editor => {
+
+								if (editor) {
+									this.focusedTab = this.tabDataProvider.getElementByUri(editor.document.uri);
+									this.highlightTab(this.focusedTab || null, { focus: true });
+								}
+							})
+							.catch(err => {
+								console.error('Could not open remote tab.', err);
+							});
+
+					})
+					.catch(err => {
+						console.error('Could not click menu item.', err);
+
+						const title = nova.localize('Failed to Close Tab');
+						this.showPermissionsNotification(title);
+					});
+			})
+			.catch(err => {
+				console.error('Could not open remote tab.', err);
+			});
 	}
 
 	closeAllTabs(callback?: () => void, error?: (err: any) => void) {

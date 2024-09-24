@@ -16,6 +16,11 @@ class TabGroupItem {
 		this.parent = null;
 	}
 
+	addChild(element: TabGroupChild) {
+		element.parent = this;
+		this.children.push(element);
+	}
+
 	static randomUUID() {
 		if (nova.version[0] >= 10) {
 			// @ts-ignore
@@ -31,13 +36,17 @@ class TabGroupChild {
 	name: string;
 	path: string;
 	uri: string;
+	isRemote: boolean;
 	children: TabGroupChild[];
+	parent: TabGroupItem | null;
 
 	constructor(name: string) {
 		this.name = name;
 		this.path = '';
 		this.uri = '';
+		this.isRemote = false;
 		this.children = [];
+		this.parent = null;
 	}
 }
 
@@ -67,10 +76,11 @@ class TabGroupsDataProvider {
 			const name = nova.path.basename(child);
 
 			const tabGroupChild = new TabGroupChild(name);
-			tabGroupChild.uri = decodeURI(child);
-			tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+			tabGroupChild.uri = child;
+			tabGroupChild.path = decodeURI(tabGroupChild.uri).replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+			tabGroupChild.isRemote = tabGroupChild.uri.startsWith('ftp://') || tabGroupChild.uri.startsWith('sftp://');
 
-			defaultTabGroupItem.children.push(tabGroupChild);
+			defaultTabGroupItem.addChild(tabGroupChild);
 		});
 
 		this.flatItems.push(defaultTabGroupItem);
@@ -96,10 +106,11 @@ class TabGroupsDataProvider {
 				const name = nova.path.basename(child);
 
 				const tabGroupChild = new TabGroupChild(name);
-				tabGroupChild.uri = decodeURI(child);
-				tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+				tabGroupChild.uri = child;
+				tabGroupChild.path = decodeURI(tabGroupChild.uri).replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+				tabGroupChild.isRemote = tabGroupChild.uri.startsWith('ftp://') || tabGroupChild.uri.startsWith('sftp://');
 
-				tabGroupItem.children.push(tabGroupChild);
+				tabGroupItem.addChild(tabGroupChild);
 			});
 
 			return tabGroupItem;
@@ -127,10 +138,11 @@ class TabGroupsDataProvider {
 			const name = nova.path.basename(child);
 
 			const tabGroupChild = new TabGroupChild(name);
-			tabGroupChild.uri = decodeURI(child);
-			tabGroupChild.path = tabGroupChild.uri.replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+			tabGroupChild.uri = child;
+			tabGroupChild.path = decodeURI(tabGroupChild.uri).replace(/^file:\/\//, '').replace(/^ftp:\/\//, '').replace(/^sftp:\/\//, '');
+			tabGroupChild.isRemote = tabGroupChild.uri.startsWith('ftp://') || tabGroupChild.uri.startsWith('sftp://');
 
-			element.children.push(tabGroupChild);
+			element.addChild(tabGroupChild);
 		});
 
 		return element;
@@ -299,8 +311,12 @@ class TabGroupsDataProvider {
 			item.tooltip = element.path.replace(nova.path.expanduser('~'), '~');
 			// item.image = '__filetype.' + nova.path.extname(element.uri);
 			item.contextValue = 'document';
-		}
+			item.command = 'tabs-sidebar.openTabGroup';
 
+			if (element.isRemote) {
+				item.descriptiveText = '☁️';
+			}
+		}
 
 		return item;
 	}
