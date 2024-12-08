@@ -169,7 +169,7 @@ class App {
 
 	initConfig() {
 		// Watch for config changes
-		nova.config.onDidChange('eablokker.tabs-sidebar.open-on-single-click', (newVal: boolean, oldVal: boolean) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.open-on-single-click', (newVal: boolean, _oldVal: boolean) => {
 			this.openOnSingleClick = newVal;
 		});
 
@@ -185,43 +185,43 @@ class App {
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal: boolean, oldVal: boolean) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal: boolean, _oldVal: boolean) => {
 			this.alwaysShowParentFolder = newVal;
 
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', (newVal: boolean, oldVal: boolean) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', (newVal: boolean, _oldVal: boolean) => {
 			this.showParentPathInReverse = newVal;
 
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', (newVal: boolean, oldVal: boolean) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', (newVal: boolean, _oldVal: boolean) => {
 			this.showGroupCount = newVal;
 
 			this.tabDataProvider.sortItems();
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol', (newVal: string, oldVal: string) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol', (newVal: string, _oldVal: string) => {
 			this.unsavedSymbol = newVal;
 
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol-location', (newVal: string, oldVal: string) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol-location', (newVal: string, _oldVal: string) => {
 			this.unsavedSymbolLocation = newVal;
 
 			this.treeView.reload();
 		});
 
-		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', (newVal: boolean, oldVal: boolean) => {
+		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', (newVal: boolean, _oldVal: boolean) => {
 			this.tabDataProvider.sortAlpha = newVal;
 			this.treeView.reload();
 		});
 
-		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupBy', (newVal: string, oldVal: string) => {
+		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupBy', (newVal: string, _oldVal: string) => {
 			this.groupBy = newVal;
 
 			this.tabDataProvider.groupBy = newVal;
@@ -625,7 +625,7 @@ class App {
 				});
 		});
 
-		nova.commands.register('tabs-sidebar.closeAll', (workspace: Workspace) => {
+		nova.commands.register('tabs-sidebar.closeAll', (_workspace: Workspace) => {
 			nova.workspace.showActionPanel(nova.localize('Are you sure you want to close all tabs?'), {
 				buttons: [nova.localize('Close All Tabs'), nova.localize('Cancel')]
 			}, (index) => {
@@ -930,7 +930,7 @@ class App {
 			this.treeView.reload();
 		});
 
-		nova.commands.register('tabs-sidebar.openGlobalConfig', (workspace: Workspace) => {
+		nova.commands.register('tabs-sidebar.openGlobalConfig', (_workspace: Workspace) => {
 			nova.openConfig();
 		});
 	}
