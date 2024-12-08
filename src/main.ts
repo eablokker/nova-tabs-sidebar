@@ -373,6 +373,9 @@ class App {
 					this.treeView.reload(this.focusedTab)
 						.then(() => {
 							this.highlightTab(this.focusedTab || null, { focus: true });
+
+							// Update git status
+							this.updateGitStatus();
 						})
 						.catch(err => {
 							console.error('Could not reload treeView.', err);
@@ -974,9 +977,11 @@ class App {
 		// Prevent excessive watch events
 		let watchTimeoutID = setTimeout(() => {
 			//
-		}, 200);
+		}, 500);
 
-		this.fileWatcher = nova.fs.watch(null, () => { /**/ });
+		// Watch git index for changes
+		const indexPath = repoPath.trim() + '/.git/index';
+		this.fileWatcher = nova.fs.watch(indexPath, () => { /**/ });
 
 		// Keep a list of files changed during timeout period
 		let paths: string[] = [];
@@ -992,39 +997,41 @@ class App {
 			watchTimeoutID = setTimeout(() => {
 				if (nova.inDevMode()) console.log('Files changed', paths.join(', '));
 
-				paths.every((path) => {
-					const pathSplit = nova.path.split(nova.path.dirname(path));
+				this.updateGitStatus();
 
-					// Don't respond to changes to nova config
-					if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-						if (nova.inDevMode()) console.log('Dont respond to config changes');
-						return true; // Keep iterating
-					}
-
-					// Check if file is ignored in Git
-					this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
-						.then(status => {
-							if (nova.inDevMode()) console.log('Git ignored status', status);
-
-							// Update git status if changed file is not ignored
-							if (status === '1') {
-								this.updateGitStatus();
-								return false; // Stop iterating
-							}
-
-							return true; // Keep iterating
-						})
-						.catch(err => {
-							console.error('Could not check Git ignore status', err);
-							return true; // Keep iterating
-						});
-
-					return true;
-				});
+// 				paths.every((path) => {
+// 					const pathSplit = nova.path.split(nova.path.dirname(path));
+//
+// 					// Don't respond to changes to nova config
+// 					if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+// 						if (nova.inDevMode()) console.log('Dont respond to config changes');
+// 						return true; // Keep iterating
+// 					}
+//
+// 					// Check if file is ignored in Git
+// 					this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+// 						.then(status => {
+// 							if (nova.inDevMode()) console.log('Git ignored status', status);
+//
+// 							// Update git status if changed file is not ignored
+// 							if (status === '1') {
+// 								this.updateGitStatus();
+// 								return false; // Stop iterating
+// 							}
+//
+// 							return true; // Keep iterating
+// 						})
+// 						.catch(err => {
+// 							console.error('Could not check Git ignore status', err);
+// 							return true; // Keep iterating
+// 						});
+//
+// 					return true;
+// 				});
 
 				// Reset paths array
 				paths = [];
-			}, 200);
+			}, 500);
 		});
 	}
 
