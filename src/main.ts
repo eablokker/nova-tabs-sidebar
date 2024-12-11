@@ -169,7 +169,7 @@ class App {
 
 	initConfig() {
 		// Watch for config changes
-		nova.config.onDidChange('eablokker.tabs-sidebar.open-on-single-click', (newVal: boolean, oldVal: boolean) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.open-on-single-click', (newVal: boolean, _oldVal: boolean) => {
 			this.openOnSingleClick = newVal;
 		});
 
@@ -185,43 +185,43 @@ class App {
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal: boolean, oldVal: boolean) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.always-show-parent-folder', (newVal: boolean, _oldVal: boolean) => {
 			this.alwaysShowParentFolder = newVal;
 
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', (newVal: boolean, oldVal: boolean) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.show-parent-path-reverse', (newVal: boolean, _oldVal: boolean) => {
 			this.showParentPathInReverse = newVal;
 
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', (newVal: boolean, oldVal: boolean) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.show-group-count', (newVal: boolean, _oldVal: boolean) => {
 			this.showGroupCount = newVal;
 
 			this.tabDataProvider.sortItems();
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol', (newVal: string, oldVal: string) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol', (newVal: string, _oldVal: string) => {
 			this.unsavedSymbol = newVal;
 
 			this.treeView.reload();
 		});
 
-		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol-location', (newVal: string, oldVal: string) => {
+		nova.config.onDidChange('eablokker.tabs-sidebar.unsaved-symbol-location', (newVal: string, _oldVal: string) => {
 			this.unsavedSymbolLocation = newVal;
 
 			this.treeView.reload();
 		});
 
-		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', (newVal: boolean, oldVal: boolean) => {
+		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.sortAlpha', (newVal: boolean, _oldVal: boolean) => {
 			this.tabDataProvider.sortAlpha = newVal;
 			this.treeView.reload();
 		});
 
-		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupBy', (newVal: string, oldVal: string) => {
+		nova.workspace.config.onDidChange('eablokker.tabsSidebar.config.groupBy', (newVal: string, _oldVal: string) => {
 			this.groupBy = newVal;
 
 			this.tabDataProvider.groupBy = newVal;
@@ -373,6 +373,9 @@ class App {
 					this.treeView.reload(this.focusedTab)
 						.then(() => {
 							this.highlightTab(this.focusedTab || null, { focus: true });
+
+							// Update git status
+							this.updateGitStatus();
 						})
 						.catch(err => {
 							console.error('Could not reload treeView.', err);
@@ -625,7 +628,7 @@ class App {
 				});
 		});
 
-		nova.commands.register('tabs-sidebar.closeAll', (workspace: Workspace) => {
+		nova.commands.register('tabs-sidebar.closeAll', (_workspace: Workspace) => {
 			nova.workspace.showActionPanel(nova.localize('Are you sure you want to close all tabs?'), {
 				buttons: [nova.localize('Close All Tabs'), nova.localize('Cancel')]
 			}, (index) => {
@@ -930,7 +933,7 @@ class App {
 			this.treeView.reload();
 		});
 
-		nova.commands.register('tabs-sidebar.openGlobalConfig', (workspace: Workspace) => {
+		nova.commands.register('tabs-sidebar.openGlobalConfig', (_workspace: Workspace) => {
 			nova.openConfig();
 		});
 	}
@@ -974,9 +977,11 @@ class App {
 		// Prevent excessive watch events
 		let watchTimeoutID = setTimeout(() => {
 			//
-		}, 200);
+		}, 500);
 
-		this.fileWatcher = nova.fs.watch(null, () => { /**/ });
+		// Watch git index for changes
+		const indexPath = repoPath.trim() + '/.git/index';
+		this.fileWatcher = nova.fs.watch(indexPath, () => { /**/ });
 
 		// Keep a list of files changed during timeout period
 		let paths: string[] = [];
@@ -992,39 +997,41 @@ class App {
 			watchTimeoutID = setTimeout(() => {
 				if (nova.inDevMode()) console.log('Files changed', paths.join(', '));
 
-				paths.every((path) => {
-					const pathSplit = nova.path.split(nova.path.dirname(path));
+				this.updateGitStatus();
 
-					// Don't respond to changes to nova config
-					if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
-						if (nova.inDevMode()) console.log('Dont respond to config changes');
-						return true; // Keep iterating
-					}
-
-					// Check if file is ignored in Git
-					this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
-						.then(status => {
-							if (nova.inDevMode()) console.log('Git ignored status', status);
-
-							// Update git status if changed file is not ignored
-							if (status === '1') {
-								this.updateGitStatus();
-								return false; // Stop iterating
-							}
-
-							return true; // Keep iterating
-						})
-						.catch(err => {
-							console.error('Could not check Git ignore status', err);
-							return true; // Keep iterating
-						});
-
-					return true;
-				});
+// 				paths.every((path) => {
+// 					const pathSplit = nova.path.split(nova.path.dirname(path));
+//
+// 					// Don't respond to changes to nova config
+// 					if (pathSplit[pathSplit.length - 1] === '.nova' && nova.path.basename(path) === 'Configuration.json') {
+// 						if (nova.inDevMode()) console.log('Dont respond to config changes');
+// 						return true; // Keep iterating
+// 					}
+//
+// 					// Check if file is ignored in Git
+// 					this.tabDataProvider.runProcess(this.gitPath, ['-C', repoPath.trim(), 'check-ignore', path])
+// 						.then(status => {
+// 							if (nova.inDevMode()) console.log('Git ignored status', status);
+//
+// 							// Update git status if changed file is not ignored
+// 							if (status === '1') {
+// 								this.updateGitStatus();
+// 								return false; // Stop iterating
+// 							}
+//
+// 							return true; // Keep iterating
+// 						})
+// 						.catch(err => {
+// 							console.error('Could not check Git ignore status', err);
+// 							return true; // Keep iterating
+// 						});
+//
+// 					return true;
+// 				});
 
 				// Reset paths array
 				paths = [];
-			}, 200);
+			}, 500);
 		});
 	}
 

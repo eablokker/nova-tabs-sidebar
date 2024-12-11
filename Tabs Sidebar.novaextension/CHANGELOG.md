@@ -1,3 +1,9 @@
+## v1.8.0 - 2024-12-08
+
+### Fixed
+
+- File watcher for Git changes crashes extension after period of time
+
 ## v1.7.1 - 2024-09-19
 
 ### Fixed
@@ -19,7 +25,7 @@
 
 - Git status not auto-updating in group by folder view when saving document
 
-# v1.6.1 - 2024-02-08
+## v1.6.1 - 2024-02-08
 
 ### Fixed
 
