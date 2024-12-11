@@ -25,7 +25,7 @@
 
 - Git status not auto-updating in group by folder view when saving document
 
-# v1.6.1 - 2024-02-08
+## v1.6.1 - 2024-02-08
 
 ### Fixed
 
