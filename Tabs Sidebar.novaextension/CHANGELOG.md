@@ -1,3 +1,9 @@
+## v1.8.1 - 2025-06-10
+
+### Fixed
+
+- Improve extension deactivation
+
 ## v1.8.0 - 2024-12-08
 
 ### Fixed

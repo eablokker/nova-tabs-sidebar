@@ -3,7 +3,7 @@
     "name": "Tabs Sidebar",
     "organization": "Austen Blokker",
     "description": "Manage open document tabs from the sidebar.",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "categories": ["sidebars"],
     "license": "MIT",
     "repository": "https://github.com/eablokker/nova-tabs-sidebar",
@@ -25,7 +25,7 @@
     "commands": {
         "extensions": [
             {
-                "title": "Preferences…",
+                "title": "Settings…",
                 "command": "tabs-sidebar.openGlobalConfig"
             },
             {"separator": true},

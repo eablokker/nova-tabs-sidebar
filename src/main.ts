@@ -21,6 +21,8 @@ class App {
 
 	collapseTimeoutID: NodeJS.Timeout;
 	highlightTimeoutID: NodeJS.Timeout;
+	reloadTimeoutID: NodeJS.Timeout;
+	watchTimeoutID: NodeJS.Timeout;
 
 	syntaxNames: SyntaxNames;
 	syntaxImages: SyntaxImages;
@@ -45,6 +47,16 @@ class App {
 		this.highlightTimeoutID = setTimeout(() => {
 			//
 		});
+
+		// Prevent excessive reloading
+		this.reloadTimeoutID = setTimeout(() => {
+			//
+		});
+
+		// Prevent excessive watch events
+		this.watchTimeoutID = setTimeout(() => {
+			//
+		}, 500);
 
 		this.syntaxNames = {
 			'plaintext': nova.localize('Plain Text'),
@@ -164,7 +176,32 @@ class App {
 	}
 
 	deactivate() {
-		this.fileWatcher?.dispose();
+		nova.subscriptions.remove(this.treeView);
+
+		if (this.fileWatcher) {
+			this.fileWatcher.dispose()
+			this.fileWatcher = undefined;
+		}
+
+		if (this.collapseTimeoutID) {
+			clearTimeout(this.collapseTimeoutID);
+		}
+
+		if (this.highlightTimeoutID) {
+			clearTimeout(this.highlightTimeoutID);
+		}
+
+		if (this.reloadTimeoutID) {
+			clearTimeout(this.reloadTimeoutID);
+		}
+
+		if (this.watchTimeoutID) {
+			clearTimeout(this.watchTimeoutID);
+		}
+
+		if (this.tabDataProvider.timeoutID) {
+			clearTimeout(this.tabDataProvider.timeoutID);
+		}
 	}
 
 	initConfig() {
@@ -244,16 +281,11 @@ class App {
 	}
 
 	initEditorEvents() {
-		// Prevent excessive reloading
-		let reloadTimeoutID = setTimeout(() => {
-			//
-		});
-
 		nova.workspace.onDidAddTextEditor(editor => {
 			//console.log('Document opened');
 
-			clearTimeout(reloadTimeoutID);
-			reloadTimeoutID = setTimeout(() => {
+			clearTimeout(this.reloadTimeoutID);
+			this.reloadTimeoutID = setTimeout(() => {
 				let reload;
 				const folder = this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
 
@@ -974,11 +1006,6 @@ class App {
 
 		this.updateGitStatus();
 
-		// Prevent excessive watch events
-		let watchTimeoutID = setTimeout(() => {
-			//
-		}, 500);
-
 		// Watch git index for changes
 		const indexPath = repoPath.trim() + '/.git/index';
 		this.fileWatcher = nova.fs.watch(indexPath, () => { /**/ });
@@ -993,8 +1020,8 @@ class App {
 				paths.push(path);
 			}
 
-			clearTimeout(watchTimeoutID);
-			watchTimeoutID = setTimeout(() => {
+			clearTimeout(this.watchTimeoutID);
+			this.watchTimeoutID = setTimeout(() => {
 				if (nova.inDevMode()) console.log('Files changed', paths.join(', '));
 
 				this.updateGitStatus();

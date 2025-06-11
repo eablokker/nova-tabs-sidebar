@@ -145,6 +145,7 @@ class TabDataProvider {
 	collapsedKindGroups: string[];
 	collapsedFolders: string[];
 	uriRegex: RegExp;
+	timeoutID: NodeJS.Timeout;
 
 	constructor(app: App) {
 		this.app = app;
@@ -162,6 +163,10 @@ class TabDataProvider {
 		this.collapsedFolders = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedFolders', 'array') || [];
 
 		this.uriRegex = /^(file:\/\/|sftp:\/\/|ftp:\/\/)/;
+
+		this.timeoutID = setTimeout(() => {
+			//
+		});
 	}
 
 	get sortAlpha() {
@@ -649,14 +654,14 @@ class TabDataProvider {
 				errorString += line;
 			});
 
-			const timeoutID = setTimeout(() => {
+			this.timeoutID = setTimeout(() => {
 				// Ensure the process terminates in a timely fashion
 				reject('The process did not respond in a timely manner.');
 				process.terminate();
 			}, timeout);
 
 			process.onDidExit(status => {
-				clearTimeout(timeoutID);
+				clearTimeout(this.timeoutID);
 
 				// Return error status when checking if file is ignored in Git
 				if (args[2] === 'check-ignore') {

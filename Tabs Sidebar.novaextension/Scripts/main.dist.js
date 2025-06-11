@@ -183,6 +183,9 @@ var TabDataProvider = /** @class */ (function () {
         this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
         this.collapsedFolders = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedFolders', 'array') || [];
         this.uriRegex = /^(file:\/\/|sftp:\/\/|ftp:\/\/)/;
+        this.timeoutID = setTimeout(function () {
+            //
+        });
     }
     Object.defineProperty(TabDataProvider.prototype, "sortAlpha", {
         get: function () {
@@ -571,6 +574,7 @@ var TabDataProvider = /** @class */ (function () {
         });
     };
     TabDataProvider.prototype.runProcess = function (scriptPath, args, cwd, timeout) {
+        var _this = this;
         if (timeout === void 0) { timeout = 3000; }
         return new Promise(function (resolve, reject) {
             var outString = '';
@@ -582,13 +586,13 @@ var TabDataProvider = /** @class */ (function () {
             process.onStderr(function (line) {
                 errorString += line;
             });
-            var timeoutID = setTimeout(function () {
+            _this.timeoutID = setTimeout(function () {
                 // Ensure the process terminates in a timely fashion
                 reject('The process did not respond in a timely manner.');
                 process.terminate();
             }, timeout);
             process.onDidExit(function (status) {
-                clearTimeout(timeoutID);
+                clearTimeout(_this.timeoutID);
                 // Return error status when checking if file is ignored in Git
                 if (args[2] === 'check-ignore') {
                     resolve(status.toString());
@@ -1212,6 +1216,14 @@ var App = /** @class */ (function () {
         this.highlightTimeoutID = setTimeout(function () {
             //
         });
+        // Prevent excessive reloading
+        this.reloadTimeoutID = setTimeout(function () {
+            //
+        });
+        // Prevent excessive watch events
+        this.watchTimeoutID = setTimeout(function () {
+            //
+        }, 500);
         this.syntaxNames = {
             'plaintext': nova.localize('Plain Text'),
             'coffeescript': 'CoffeeScript',
@@ -1322,8 +1334,26 @@ var App = /** @class */ (function () {
         nova.subscriptions.add(this.treeView);
     };
     App.prototype.deactivate = function () {
-        var _a;
-        (_a = this.fileWatcher) === null || _a === void 0 ? void 0 : _a.dispose();
+        nova.subscriptions.remove(this.treeView);
+        if (this.fileWatcher) {
+            this.fileWatcher.dispose();
+            this.fileWatcher = undefined;
+        }
+        if (this.collapseTimeoutID) {
+            clearTimeout(this.collapseTimeoutID);
+        }
+        if (this.highlightTimeoutID) {
+            clearTimeout(this.highlightTimeoutID);
+        }
+        if (this.reloadTimeoutID) {
+            clearTimeout(this.reloadTimeoutID);
+        }
+        if (this.watchTimeoutID) {
+            clearTimeout(this.watchTimeoutID);
+        }
+        if (this.tabDataProvider.timeoutID) {
+            clearTimeout(this.tabDataProvider.timeoutID);
+        }
     };
     App.prototype.initConfig = function () {
         var _this = this;
@@ -1388,14 +1418,10 @@ var App = /** @class */ (function () {
     };
     App.prototype.initEditorEvents = function () {
         var _this = this;
-        // Prevent excessive reloading
-        var reloadTimeoutID = setTimeout(function () {
-            //
-        });
         nova.workspace.onDidAddTextEditor(function (editor) {
             //console.log('Document opened');
-            clearTimeout(reloadTimeoutID);
-            reloadTimeoutID = setTimeout(function () {
+            clearTimeout(_this.reloadTimeoutID);
+            _this.reloadTimeoutID = setTimeout(function () {
                 var reload;
                 var folder = _this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
                 _this.tabDataProvider.loadData(nova.workspace.textDocuments, _this.focusedTab);
@@ -1976,7 +2002,7 @@ var App = /** @class */ (function () {
     };
     App.prototype.initFileWatcher = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var gitPath, repoPath, watchTimeoutID, indexPath, paths;
+            var gitPath, repoPath, indexPath, paths;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -2011,9 +2037,6 @@ var App = /** @class */ (function () {
                         if (nova.inDevMode())
                             console.log('Workspace has Git repo at', repoPath.trim());
                         this.updateGitStatus();
-                        watchTimeoutID = setTimeout(function () {
-                            //
-                        }, 500);
                         indexPath = repoPath.trim() + '/.git/index';
                         this.fileWatcher = nova.fs.watch(indexPath, function () { });
                         paths = [];
@@ -2022,8 +2045,8 @@ var App = /** @class */ (function () {
                             if (paths.indexOf(path) < 0) {
                                 paths.push(path);
                             }
-                            clearTimeout(watchTimeoutID);
-                            watchTimeoutID = setTimeout(function () {
+                            clearTimeout(_this.watchTimeoutID);
+                            _this.watchTimeoutID = setTimeout(function () {
                                 if (nova.inDevMode())
                                     console.log('Files changed', paths.join(', '));
                                 _this.updateGitStatus();
