@@ -1227,20 +1227,10 @@ var App = /** @class */ (function () {
         this.unsavedSymbol = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol', 'string');
         this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
         this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
-        this.collapseTimeoutID = setTimeout(function () {
-            //
-        });
-        this.highlightTimeoutID = setTimeout(function () {
-            //
-        });
-        // Prevent excessive reloading
-        this.reloadTimeoutID = setTimeout(function () {
-            //
-        });
-        // Prevent excessive watch events
-        this.watchTimeoutID = setTimeout(function () {
-            //
-        }, 500);
+        this.collapseTimeoutID = null;
+        this.highlightTimeoutID = null;
+        this.reloadTimeoutID = null; // Prevent excessive reloading
+        this.watchTimeoutID = null; // Prevent excessive watch events
         this.syntaxNames = {
             'plaintext': nova.localize('Plain Text'),
             'coffeescript': 'CoffeeScript',
@@ -1329,12 +1319,24 @@ var App = /** @class */ (function () {
             '/list_menu_items.sh'
         ];
         shellScriptPaths.forEach(function (path) {
-            var scriptExists = nova.fs.access(__dirname + path, nova.fs.constants.F_OK);
+            var scriptExists = false;
+            try {
+                scriptExists = nova.fs.access(__dirname + path, nova.fs.constants.F_OK);
+            }
+            catch (e) {
+                console.error("Failed to access shell script:", e);
+            }
             if (!scriptExists) {
                 console.error('Shell script not found', __dirname + path);
                 return;
             }
-            var scriptIsExecutable = nova.fs.access(__dirname + path, nova.fs.constants.X_OK);
+            var scriptIsExecutable = false;
+            try {
+                scriptIsExecutable = nova.fs.access(__dirname + path, nova.fs.constants.X_OK);
+            }
+            catch (e) {
+                console.error("Failed to access shell script:", e);
+            }
             if (scriptExists && !scriptIsExecutable) {
                 _this.tabDataProvider
                     .runProcess('/bin/chmod', ['744', __dirname + path])
@@ -1434,7 +1436,10 @@ var App = /** @class */ (function () {
         var _this = this;
         nova.workspace.onDidAddTextEditor(function (editor) {
             //console.log('Document opened');
-            clearTimeout(_this.reloadTimeoutID);
+            if (_this.reloadTimeoutID !== null) {
+                clearTimeout(_this.reloadTimeoutID);
+                _this.reloadTimeoutID = null;
+            }
             _this.reloadTimeoutID = setTimeout(function () {
                 var reload;
                 var folder = _this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
@@ -1585,7 +1590,10 @@ var App = /** @class */ (function () {
             }
         });
         this.treeView.onDidCollapseElement(function (element) {
-            clearTimeout(_this.collapseTimeoutID);
+            if (_this.collapseTimeoutID !== null) {
+                clearTimeout(_this.collapseTimeoutID);
+                _this.collapseTimeoutID = null;
+            }
             _this.collapseTimeoutID = setTimeout(function () {
                 // console.log('Collapsed: ' + element?.name, element?.collapsibleState);
                 // Handle Folder Items
@@ -1903,11 +1911,11 @@ var App = /** @class */ (function () {
                 console.log('Sort alphabetically');
             workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', !_this.tabDataProvider.sortAlpha);
         });
-        nova.commands.register('tabs-sidebar.groupByNone', function (workspace) {
-            if (nova.inDevMode())
-                console.log('groupByNone');
-            workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
-        });
+        // 		nova.commands.register('tabs-sidebar.groupByNone', (workspace: Workspace) => {
+        // 			if (nova.inDevMode()) console.log('groupByNone');
+        //
+        // 			workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
+        // 		});
         nova.commands.register('tabs-sidebar.groupByType', function (workspace) {
             if (nova.inDevMode())
                 console.log('groupByType');
@@ -1963,7 +1971,12 @@ var App = /** @class */ (function () {
                     console.log('No path found for selection', selection[0].name);
                 return;
             }
-            nova.fs.reveal(selection[0].path);
+            try {
+                nova.fs.reveal(selection[0].path);
+            }
+            catch (e) {
+                console.error("Failed to reveal in Finder:", e);
+            }
         });
         nova.commands.register('tabs-sidebar.copyPath', function () {
             var selection = _this.treeView.selection;
@@ -2052,14 +2065,25 @@ var App = /** @class */ (function () {
                             console.log('Workspace has Git repo at', repoPath.trim());
                         this.updateGitStatus();
                         indexPath = repoPath.trim() + '/.git/index';
-                        this.fileWatcher = nova.fs.watch(indexPath, function () { });
+                        try {
+                            this.fileWatcher = nova.fs.watch(indexPath, function () { });
+                        }
+                        catch (e) {
+                            console.error("Failed to init file watcher:", e);
+                        }
+                        if (!this.fileWatcher) {
+                            return [2 /*return*/];
+                        }
                         paths = [];
                         this.fileWatcher.onDidChange(function (path) {
                             // Add to paths array if not in array
                             if (paths.indexOf(path) < 0) {
                                 paths.push(path);
                             }
-                            clearTimeout(_this.watchTimeoutID);
+                            if (_this.watchTimeoutID !== null) {
+                                clearTimeout(_this.watchTimeoutID);
+                                _this.watchTimeoutID = null;
+                            }
                             _this.watchTimeoutID = setTimeout(function () {
                                 if (nova.inDevMode())
                                     console.log('Files changed', paths.join(', '));
@@ -2168,7 +2192,10 @@ var App = /** @class */ (function () {
                 _this.treeView.reload(element)
                     .then(function () {
                     // Prevent excessive highlighting
-                    clearTimeout(_this.highlightTimeoutID);
+                    if (_this.highlightTimeoutID !== null) {
+                        clearTimeout(_this.highlightTimeoutID);
+                        _this.highlightTimeoutID = null;
+                    }
                     _this.highlightTimeoutID = setTimeout(function () {
                         _this.highlightTab(activeEditor || null);
                     }, 200);

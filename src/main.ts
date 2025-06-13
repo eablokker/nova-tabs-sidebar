@@ -19,10 +19,10 @@ class App {
 	unsavedSymbolLocation: string | null;
 	groupBy: string | null;
 
-	collapseTimeoutID: NodeJS.Timeout;
-	highlightTimeoutID: NodeJS.Timeout;
-	reloadTimeoutID: NodeJS.Timeout;
-	watchTimeoutID: NodeJS.Timeout;
+	collapseTimeoutID: NodeJS.Timeout | null;
+	highlightTimeoutID: NodeJS.Timeout | null;
+	reloadTimeoutID: NodeJS.Timeout | null;
+	watchTimeoutID: NodeJS.Timeout | null;
 
 	syntaxNames: SyntaxNames;
 	syntaxImages: SyntaxImages;
@@ -40,23 +40,10 @@ class App {
 		this.unsavedSymbolLocation = nova.config.get('eablokker.tabs-sidebar.unsaved-symbol-location', 'string');
 		this.groupBy = nova.workspace.config.get('eablokker.tabsSidebar.config.groupBy', 'string');
 
-		this.collapseTimeoutID = setTimeout(() => {
-			//
-		});
-
-		this.highlightTimeoutID = setTimeout(() => {
-			//
-		});
-
-		// Prevent excessive reloading
-		this.reloadTimeoutID = setTimeout(() => {
-			//
-		});
-
-		// Prevent excessive watch events
-		this.watchTimeoutID = setTimeout(() => {
-			//
-		}, 500);
+		this.collapseTimeoutID = null;
+		this.highlightTimeoutID = null;
+		this.reloadTimeoutID = null; // Prevent excessive reloading
+		this.watchTimeoutID = null; // Prevent excessive watch events
 
 		this.syntaxNames = {
 			'plaintext': nova.localize('Plain Text'),
@@ -150,14 +137,24 @@ class App {
 		];
 
 		shellScriptPaths.forEach(path => {
-			const scriptExists = nova.fs.access(__dirname + path, nova.fs.constants.F_OK);
+			let scriptExists = false;
+			try {
+				scriptExists = nova.fs.access(__dirname + path, nova.fs.constants.F_OK);
+			} catch (e) {
+				console.error("Failed to access shell script:", e);
+			}
 
 			if (!scriptExists) {
 				console.error('Shell script not found', __dirname + path);
 				return;
 			}
 
-			const scriptIsExecutable = nova.fs.access(__dirname + path, nova.fs.constants.X_OK);
+			let scriptIsExecutable = false;
+			try {
+				scriptIsExecutable = nova.fs.access(__dirname + path, nova.fs.constants.X_OK);
+			} catch (e) {
+				console.error("Failed to access shell script:", e);
+			}
 
 			if (scriptExists && !scriptIsExecutable) {
 				this.tabDataProvider
@@ -280,7 +277,11 @@ class App {
 		nova.workspace.onDidAddTextEditor(editor => {
 			//console.log('Document opened');
 
-			clearTimeout(this.reloadTimeoutID);
+			if (this.reloadTimeoutID !== null) {
+				clearTimeout(this.reloadTimeoutID);
+				this.reloadTimeoutID = null;
+			}
+
 			this.reloadTimeoutID = setTimeout(() => {
 				let reload;
 				const folder = this.tabDataProvider.getFolderBySyntax(editor.document.syntax || 'plaintext');
@@ -461,7 +462,11 @@ class App {
 
 		this.treeView.onDidCollapseElement(element => {
 
-			clearTimeout(this.collapseTimeoutID);
+			if (this.collapseTimeoutID !== null) {
+				clearTimeout(this.collapseTimeoutID);
+				this.collapseTimeoutID = null;
+			}
+
 			this.collapseTimeoutID = setTimeout(() => {
 				// console.log('Collapsed: ' + element?.name, element?.collapsibleState);
 
@@ -839,11 +844,11 @@ class App {
 			workspace.config.set('eablokker.tabsSidebar.config.sortAlpha', !this.tabDataProvider.sortAlpha);
 		});
 
-		nova.commands.register('tabs-sidebar.groupByNone', (workspace: Workspace) => {
-			if (nova.inDevMode()) console.log('groupByNone');
-
-			workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
-		});
+// 		nova.commands.register('tabs-sidebar.groupByNone', (workspace: Workspace) => {
+// 			if (nova.inDevMode()) console.log('groupByNone');
+//
+// 			workspace.config.set('eablokker.tabsSidebar.config.groupBy', 'none');
+// 		});
 
 		nova.commands.register('tabs-sidebar.groupByType', (workspace: Workspace) => {
 			if (nova.inDevMode()) console.log('groupByType');
@@ -906,7 +911,11 @@ class App {
 				return;
 			}
 
-			nova.fs.reveal(selection[0].path);
+			try {
+				nova.fs.reveal(selection[0].path);
+			} catch (e) {
+				console.error("Failed to reveal in Finder:", e);
+			}
 		});
 
 		nova.commands.register('tabs-sidebar.copyPath', () => {
@@ -1004,7 +1013,16 @@ class App {
 
 		// Watch git index for changes
 		const indexPath = repoPath.trim() + '/.git/index';
-		this.fileWatcher = nova.fs.watch(indexPath, () => { /**/ });
+
+		try {
+			this.fileWatcher = nova.fs.watch(indexPath, () => { /**/ });
+		} catch (e) {
+			console.error("Failed to init file watcher:", e);
+		}
+
+		if (!this.fileWatcher) {
+			return;
+		}
 
 		// Keep a list of files changed during timeout period
 		let paths: string[] = [];
@@ -1016,7 +1034,11 @@ class App {
 				paths.push(path);
 			}
 
-			clearTimeout(this.watchTimeoutID);
+			if (this.watchTimeoutID !== null) {
+				clearTimeout(this.watchTimeoutID);
+				this.watchTimeoutID = null;
+			}
+
 			this.watchTimeoutID = setTimeout(() => {
 				if (nova.inDevMode()) console.log('Files changed', paths.join(', '));
 
@@ -1136,7 +1158,11 @@ class App {
 					this.treeView.reload(element)
 						.then(() => {
 							// Prevent excessive highlighting
-							clearTimeout(this.highlightTimeoutID);
+							if (this.highlightTimeoutID !== null) {
+								clearTimeout(this.highlightTimeoutID);
+								this.highlightTimeoutID = null;
+							}
+
 							this.highlightTimeoutID = setTimeout(() => {
 								this.highlightTab(activeEditor || null);
 							}, 200);
