@@ -183,9 +183,6 @@ var TabDataProvider = /** @class */ (function () {
         this.collapsedKindGroups = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedKindGroups', 'array') || [];
         this.collapsedFolders = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedFolders', 'array') || [];
         this.uriRegex = /^(file:\/\/|sftp:\/\/|ftp:\/\/)/;
-        this.timeoutID = setTimeout(function () {
-            //
-        });
     }
     Object.defineProperty(TabDataProvider.prototype, "sortAlpha", {
         get: function () {
@@ -574,40 +571,60 @@ var TabDataProvider = /** @class */ (function () {
         });
     };
     TabDataProvider.prototype.runProcess = function (scriptPath, args, cwd, timeout) {
-        var _this = this;
         if (timeout === void 0) { timeout = 3000; }
         return new Promise(function (resolve, reject) {
             var outString = '';
             var errorString = '';
-            var process = new Process(scriptPath, { args: args, cwd: cwd });
+            // Use a local timeout handle so parallel calls can’t clobber one another:
+            var timeoutID = setTimeout(function () {
+                // Wrap terminate() in try/catch so we don’t let an Obj‑C exception escape:
+                try {
+                    process.terminate();
+                }
+                catch (e) {
+                    console.error('Error terminating process on timeout:', e);
+                }
+                return reject(new Error('The process did not respond in a timely manner.'));
+            }, timeout);
+            var process;
+            try {
+                // Only include cwd if defined:
+                var options = { args: args };
+                if (cwd)
+                    options.cwd = cwd;
+                process = new Process(scriptPath, options);
+            }
+            catch (e) {
+                clearTimeout(timeoutID);
+                return reject(e);
+            }
             process.onStdout(function (line) {
                 outString += line;
             });
             process.onStderr(function (line) {
                 errorString += line;
             });
-            _this.timeoutID = setTimeout(function () {
-                // Ensure the process terminates in a timely fashion
-                reject('The process did not respond in a timely manner.');
-                process.terminate();
-            }, timeout);
             process.onDidExit(function (status) {
-                clearTimeout(_this.timeoutID);
+                clearTimeout(timeoutID);
                 // Return error status when checking if file is ignored in Git
                 if (args[2] === 'check-ignore') {
-                    resolve(status.toString());
+                    return resolve(status.toString());
                 }
                 if (status > 0) {
                     reject(new Error('Process returned error status ' + status + ' when executing ' + scriptPath + ' ' + args.join(' ')));
                 }
                 if (errorString.length) {
-                    reject(new Error(errorString));
+                    return reject(new Error(errorString));
                 }
-                else {
-                    resolve(outString);
-                }
+                return resolve(outString);
             });
-            process.start();
+            try {
+                process.start();
+            }
+            catch (e) {
+                clearTimeout(timeoutID);
+                return reject(e);
+            }
         });
     };
     TabDataProvider.prototype.basename = function (uri) {
@@ -1350,9 +1367,6 @@ var App = /** @class */ (function () {
         }
         if (this.watchTimeoutID) {
             clearTimeout(this.watchTimeoutID);
-        }
-        if (this.tabDataProvider.timeoutID) {
-            clearTimeout(this.tabDataProvider.timeoutID);
         }
     };
     App.prototype.initConfig = function () {

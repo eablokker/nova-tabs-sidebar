@@ -145,7 +145,6 @@ class TabDataProvider {
 	collapsedKindGroups: string[];
 	collapsedFolders: string[];
 	uriRegex: RegExp;
-	timeoutID: NodeJS.Timeout;
 
 	constructor(app: App) {
 		this.app = app;
@@ -163,10 +162,6 @@ class TabDataProvider {
 		this.collapsedFolders = nova.workspace.config.get('eablokker.tabsSidebar.config.collapsedFolders', 'array') || [];
 
 		this.uriRegex = /^(file:\/\/|sftp:\/\/|ftp:\/\/)/;
-
-		this.timeoutID = setTimeout(() => {
-			//
-		});
 	}
 
 	get sortAlpha() {
@@ -644,7 +639,27 @@ class TabDataProvider {
 			let outString = '';
 			let errorString = '';
 
-			const process = new Process(scriptPath, { args: args, cwd: cwd });
+			// Use a local timeout handle so parallel calls can’t clobber one another:
+			const timeoutID = setTimeout(() => {
+				// Wrap terminate() in try/catch so we don’t let an Obj‑C exception escape:
+				try {
+					process.terminate();
+				} catch (e) {
+					console.error('Error terminating process on timeout:', e);
+				}
+				return reject(new Error('The process did not respond in a timely manner.'));
+			}, timeout);
+
+			let process: Process;
+			try {
+				// Only include cwd if defined:
+				const options: any = { args };
+				if (cwd) options.cwd = cwd;
+				process = new Process(scriptPath, options);
+			} catch (e) {
+				clearTimeout(timeoutID);
+				return reject(e);
+			}
 
 			process.onStdout(line => {
 				outString += line;
@@ -654,18 +669,12 @@ class TabDataProvider {
 				errorString += line;
 			});
 
-			this.timeoutID = setTimeout(() => {
-				// Ensure the process terminates in a timely fashion
-				reject('The process did not respond in a timely manner.');
-				process.terminate();
-			}, timeout);
-
 			process.onDidExit(status => {
-				clearTimeout(this.timeoutID);
+				clearTimeout(timeoutID);
 
 				// Return error status when checking if file is ignored in Git
 				if (args[2] === 'check-ignore') {
-					resolve(status.toString());
+					return resolve(status.toString());
 				}
 
 				if (status > 0) {
@@ -673,13 +682,18 @@ class TabDataProvider {
 				}
 
 				if (errorString.length) {
-					reject(new Error(errorString));
-				} else {
-					resolve(outString);
+					return reject(new Error(errorString));
 				}
+
+				return resolve(outString);
 			});
 
-			process.start();
+			try {
+				process.start();
+			} catch (e) {
+				clearTimeout(timeoutID);
+				return reject(e);
+			}
 		});
 	}
 

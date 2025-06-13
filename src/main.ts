@@ -198,10 +198,6 @@ class App {
 		if (this.watchTimeoutID) {
 			clearTimeout(this.watchTimeoutID);
 		}
-
-		if (this.tabDataProvider.timeoutID) {
-			clearTimeout(this.tabDataProvider.timeoutID);
-		}
 	}
 
 	initConfig() {

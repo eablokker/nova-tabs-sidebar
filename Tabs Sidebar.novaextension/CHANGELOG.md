@@ -1,3 +1,9 @@
+## v1.8.2 - 2025-06-13
+
+### Fixed
+
+- Attempt to fix extension service crash
+
 ## v1.8.1 - 2025-06-10
 
 ### Fixed
