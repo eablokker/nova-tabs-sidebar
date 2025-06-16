@@ -43,7 +43,11 @@ class App {
 		this.collapseTimeoutID = null;
 		this.highlightTimeoutID = null;
 		this.reloadTimeoutID = null; // Prevent excessive reloading
-		this.watchTimeoutID = null; // Prevent excessive watch events
+
+		// Prevent excessive watch events
+		this.watchTimeoutID = setTimeout(() => {
+			//
+		}, 500);
 
 		this.syntaxNames = {
 			'plaintext': nova.localize('Plain Text'),
@@ -125,49 +129,9 @@ class App {
 		this.initConfig();
 		this.initEditorEvents();
 		this.registerCommands();
-		this.initFileWatcher();
 	}
 
 	init() {
-		// Make shell scripts executable on activation
-		const shellScriptPaths = [
-			'/click_menu_item.sh',
-			'/click_project_item_by_name.sh',
-			'/list_menu_items.sh'
-		];
-
-		shellScriptPaths.forEach(path => {
-			let scriptExists = false;
-			try {
-				scriptExists = nova.fs.access(__dirname + path, nova.fs.constants.F_OK);
-			} catch (e) {
-				console.error("Failed to access shell script:", e);
-			}
-
-			if (!scriptExists) {
-				console.error('Shell script not found', __dirname + path);
-				return;
-			}
-
-			let scriptIsExecutable = false;
-			try {
-				scriptIsExecutable = nova.fs.access(__dirname + path, nova.fs.constants.X_OK);
-			} catch (e) {
-				console.error("Failed to access shell script:", e);
-			}
-
-			if (scriptExists && !scriptIsExecutable) {
-				this.tabDataProvider
-					.runProcess('/bin/chmod', ['744', __dirname + path])
-					.then(() => {
-						if (nova.inDevMode()) console.log('Shell script ' + path + ' changed to 744');
-					})
-					.catch(err => {
-						console.error(err);
-					});
-			}
-		});
-
 		// TreeView implements the Disposable interface
 		nova.subscriptions.add(this.treeView);
 	}
@@ -207,7 +171,11 @@ class App {
 			this.showGitStatus = newVal;
 
 			if (newVal === 'never') {
-				this.fileWatcher?.dispose();
+				if (this.fileWatcher) {
+					this.fileWatcher.dispose();
+					this.fileWatcher = undefined;
+				}
+
 			} else if (oldVal === 'never' && newVal !== 'never') {
 				this.initFileWatcher();
 			}
@@ -975,6 +943,47 @@ class App {
 		});
 	}
 
+	initShellScripts() {
+		// Make shell scripts executable on activation
+		const shellScriptPaths = [
+			'/click_menu_item.sh',
+			'/click_project_item_by_name.sh',
+			'/list_menu_items.sh'
+		];
+
+		shellScriptPaths.forEach(path => {
+			let scriptExists = false;
+			try {
+				scriptExists = nova.fs.access(__dirname + path, nova.fs.constants.F_OK);
+			} catch (e) {
+				console.error("Failed to access shell script:", e);
+			}
+
+			if (!scriptExists) {
+				console.error('Shell script not found', __dirname + path);
+				return;
+			}
+
+			let scriptIsExecutable = false;
+			try {
+				scriptIsExecutable = nova.fs.access(__dirname + path, nova.fs.constants.X_OK);
+			} catch (e) {
+				console.error("Failed to access shell script:", e);
+			}
+
+			if (scriptExists && !scriptIsExecutable) {
+				this.tabDataProvider
+					.runProcess('/bin/chmod', ['744', __dirname + path])
+					.then(() => {
+						if (nova.inDevMode()) console.log('Shell script ' + path + ' changed to 744');
+					})
+					.catch(err => {
+						console.error(err);
+					});
+			}
+		});
+	}
+
 	async initFileWatcher() {
 		// Don't watch files if workspace is not bound to folder
 		if (this.showGitStatus === 'never' || !nova.workspace.path) {
@@ -1196,10 +1205,33 @@ class App {
 	}
 }
 
-
 exports.activate = function() {
 	// Do work when the extension is activated
 	app = new App();
+
+	console.log('Workspace path:', nova.workspace.path);
+
+	// If the workspace was already open (e.g. not a cold launch), start now
+	if (nova.workspace.path) {
+		app.initShellScripts();
+		app.initFileWatcher();
+	}
+
+	// Otherwise wait for Nova to finish setting the workspace path
+	// @ts-ignore incorrect type definition for workspace.onDidChangePath
+	nova.workspace.onDidChangePath((newPath: string) => {
+		console.log('Workspace path did change:', nova.workspace.path);
+
+		if (newPath) {
+			if (app.fileWatcher) {
+				app.fileWatcher.dispose();
+				app.fileWatcher = undefined;
+			}
+
+			app.initShellScripts();
+			app.initFileWatcher();
+		}
+	});
 };
 
 exports.deactivate = function() {
